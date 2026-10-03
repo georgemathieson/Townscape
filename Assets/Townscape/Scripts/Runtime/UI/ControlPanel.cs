@@ -34,14 +34,12 @@ namespace Townscape.Runtime.UI
         private TimeOfDayLighting _lighting;
         private StormSystem _storm;
         private CoffeeShopGame _coffee;
+        private bool _coffeeOpen;
         private PanelSkin _skin;
         private GUIStyle _hint;
         private bool _showKeys;
 
         public bool Visible { get; set; } = true;
-
-        /// <summary>True while another window (the coffee shop) has the panel's place on screen.</summary>
-        public bool Suppressed { get; set; }
 
         public void Initialize(Store<TownState> store, TimeOfDayLighting lighting, StormSystem storm, CoffeeShopGame coffee = null)
         {
@@ -58,7 +56,14 @@ namespace Townscape.Runtime.UI
 
         private void OnGUI()
         {
-            if (_store == null || _lighting == null || Suppressed)
+            // The coffee shop's window takes the panel's place while it's open. Decided on the
+            // layout pass so a frame never lays out one and then draws the other.
+            if (Event.current.type == EventType.Layout)
+            {
+                _coffeeOpen = _coffee != null && _coffee.IsOpen;
+            }
+
+            if (_store == null || _lighting == null || _coffeeOpen)
             {
                 return;
             }
@@ -83,7 +88,7 @@ namespace Townscape.Runtime.UI
             TimeOfDay(state.TimeOfDay);
             Weather(state.Weather);
             Sound(state.Audio);
-            CoffeeShop();
+            CoffeeShopButton();
             Footer();
             GUILayout.EndVertical();
             GUILayout.EndArea();
@@ -197,7 +202,7 @@ namespace Townscape.Runtime.UI
             }
         }
 
-        private void CoffeeShop()
+        private void CoffeeShopButton()
         {
             if (_coffee == null)
             {

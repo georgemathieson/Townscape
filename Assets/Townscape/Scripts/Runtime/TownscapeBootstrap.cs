@@ -191,7 +191,7 @@ namespace Townscape.Runtime
             var controls = TownMeshSpawner.CreateChild("Controls", _root.transform, hideFlags);
             var panel = controls.AddComponent<ControlPanel>();
             panel.Initialize(Store, Lighting, Storm, CoffeeShop);
-            controls.AddComponent<CoffeeShopWindow>().Initialize(CoffeeShop, panel);
+            controls.AddComponent<CoffeeShopWindow>().Initialize(CoffeeShop);
             var performance = controls.AddComponent<PerformanceOverlay>();
             performance.Initialize(Storm, Lights, () => BuildMilliseconds);
             controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop);

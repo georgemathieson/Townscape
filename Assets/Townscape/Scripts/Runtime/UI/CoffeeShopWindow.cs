@@ -25,17 +25,23 @@ namespace Townscape.Runtime.UI
         private const int RecentDays = 7;
 
         private CoffeeShopGame _game;
-        private ControlPanel _panel;
         private PanelSkin _skin;
         private Vector2 _scroll;
         private bool _showUpgrades;
         private bool _confirmNewGame;
         private ShopPhase _lastPhase;
 
-        public void Initialize(CoffeeShopGame game, ControlPanel panel)
+        // What this frame shows, fixed on the layout pass. A click can change the game or the tab
+        // part-way through a pass; drawing the rest of the pass from these keeps every pass's
+        // controls the same as its layout's, which IMGUI requires.
+        private bool _open;
+        private CoffeeShopState _state;
+        private bool _upgradesShown;
+        private bool _confirmShown;
+
+        public void Initialize(CoffeeShopGame game)
         {
             _game = game;
-            _panel = panel;
         }
 
         private void OnDestroy()
@@ -45,13 +51,26 @@ namespace Townscape.Runtime.UI
 
         private void OnGUI()
         {
-            var open = _game != null && _game.IsOpen && _game.Store != null;
-            if (_panel != null)
+            if (Event.current.type == EventType.Layout)
             {
-                _panel.Suppressed = open;
+                _open = _game != null && _game.IsOpen && _game.Store != null;
+                if (_open)
+                {
+                    _state = _game.Store.State;
+                    if (_state.Phase != _lastPhase)
+                    {
+                        // A new screen starts at the top.
+                        _lastPhase = _state.Phase;
+                        _scroll = Vector2.zero;
+                        _showUpgrades = false;
+                    }
+
+                    _upgradesShown = _showUpgrades;
+                    _confirmShown = _confirmNewGame;
+                }
             }
 
-            if (!open)
+            if (!_open || _state == null)
             {
                 return;
             }
@@ -60,20 +79,13 @@ namespace Townscape.Runtime.UI
             var scale = Mathf.Clamp(Screen.height / 900f, 1f, 2.5f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
 
-            var state = _game.Store.State;
-            if (state.Phase != _lastPhase)
-            {
-                // A new screen starts at the top.
-                _lastPhase = state.Phase;
-                _scroll = Vector2.zero;
-                _showUpgrades = false;
-            }
+            var state = _state;
 
             GUILayout.BeginArea(new Rect(16f, 16f, Width, (Screen.height / scale) - 32f));
             GUILayout.BeginVertical(_skin.Panel);
             Header(state);
             _scroll = GUILayout.BeginScrollView(_scroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none);
-            if (_showUpgrades)
+            if (_upgradesShown)
             {
                 Upgrades(state);
             }
@@ -109,13 +121,13 @@ namespace Townscape.Runtime.UI
 
             GUILayout.BeginHorizontal();
             var today = state.Phase == ShopPhase.Prep ? "Prep" : state.Phase == ShopPhase.Review ? "Today's results" : "The last day";
-            if (GUILayout.Toggle(!_showUpgrades, today, _skin.Button) && _showUpgrades)
+            if (GUILayout.Toggle(!_upgradesShown, today, _skin.Button) && _upgradesShown)
             {
                 _showUpgrades = false;
                 _scroll = Vector2.zero;
             }
 
-            if (GUILayout.Toggle(_showUpgrades, "Upgrades", _skin.Button) && !_showUpgrades)
+            if (GUILayout.Toggle(_upgradesShown, "Upgrades", _skin.Button) && !_upgradesShown)
             {
                 _showUpgrades = true;
                 _scroll = Vector2.zero;
@@ -381,7 +393,7 @@ namespace Townscape.Runtime.UI
             }
 
             Heading("START AGAIN");
-            if (!_confirmNewGame)
+            if (!_confirmShown)
             {
                 if (GUILayout.Button("Start a new shop…", _skin.Button))
                 {
