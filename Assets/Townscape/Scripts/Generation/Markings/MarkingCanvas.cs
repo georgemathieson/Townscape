@@ -18,7 +18,6 @@ namespace Townscape.Generation.Markings
         public const float Lift = 0.012f;
 
         private const float MaxStep = 1f;
-        private const float TangentProbe = 0.75f;
 
         private readonly MeshBuilder _builder;
         private readonly GroundModel _ground;
@@ -30,19 +29,9 @@ namespace Townscape.Generation.Markings
         }
 
         /// <summary>Position on a road at arc length <paramref name="along"/>, shifted sideways by <paramref name="offset"/> (left is positive).</summary>
-        public static Vector2 PointOn(RoadSpec road, float along, float offset)
-        {
-            return road.Centre.PointAt(along) + (GeoMath.Left(SmoothTangent(road, along)) * offset);
-        }
+        public static Vector2 PointOn(RoadSpec road, float along, float offset) => road.PointAt(along, offset);
 
-        /// <summary>Road direction averaged over a short window so strips bend smoothly round corners.</summary>
-        public static Vector2 SmoothTangent(RoadSpec road, float along)
-        {
-            var line = road.Centre;
-            var a = line.PointAt(MathF.Max(0f, along - TangentProbe));
-            var b = line.PointAt(MathF.Min(line.Length, along + TangentProbe));
-            return GeoMath.SafeNormalize(b - a, line.TangentAt(along));
-        }
+        public static Vector2 SmoothTangent(RoadSpec road, float along) => road.SmoothTangentAt(along);
 
         /// <summary>A strip following the road between two arc lengths, at a sideways offset.</summary>
         public void PaintAlong(RoadSpec road, float from, float to, float offset, float width, SurfaceMaterial material)

@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Numerics;
+using Townscape.Generation.Buildings.Parts;
+using Townscape.Generation.Buildings.Styles;
+using Townscape.Generation.Geometry;
 using Townscape.Generation.Maths;
 using Townscape.Generation.Markings;
 
@@ -63,6 +66,7 @@ namespace Townscape.Generation.Layout
                 new PathSpec("Riverside Walk (north)", Polyline.Smooth(new[] { new Vector2(10.5f, 6.5f), new Vector2(10f, 30f), new Vector2(7f, 60f), new Vector2(3f, 90f), new Vector2(-2f, 112f) }), 2f),
                 new PathSpec("Riverside Walk (south)", Polyline.Smooth(new[] { new Vector2(-10.5f, -6.5f), new Vector2(-10f, -30f), new Vector2(-8.5f, -55f), new Vector2(-4.5f, -78f), new Vector2(2f, -100f), new Vector2(8f, -112f) }), 2f),
                 new PathSpec("Mill Footpath", new Polyline(new Vector2(-17f, -60f), new Vector2(-7.3f, -62f)), 1.6f),
+                new PathSpec("Church Path", new Polyline(new Vector2(69.5f, 70f), new Vector2(75.2f, 70f)), 1.6f),
             };
 
             return new TownLayout(
@@ -74,7 +78,129 @@ namespace Townscape.Generation.Layout
                 river: river,
                 paths: paths,
                 bridges: new[] { bridge },
-                lake: new LakeSpec(new Vector2(150f, -470f), new Vector2(260f, 150f), depth: 4f));
+                lake: new LakeSpec(new Vector2(150f, -470f), new Vector2(260f, 150f), depth: 4f))
+            {
+                Terraces = Terraces(roads[0]),
+                Detached = Detached(roads[1], roads[2], roads[3]),
+            };
+        }
+
+        /// <summary>
+        /// The high street terraces, west to east. Shops cluster near the bridge; the far ends are
+        /// terraced houses. Gaps are left for the lanes and the riverside paths.
+        /// </summary>
+        private static IReadOnlyList<TerraceSpec> Terraces(RoadSpec high)
+        {
+            float At(float x) => high.AlongNearest(new Vector2(x, 0f));
+            TerraceUnit Shop(Buildings.Shops.ShopDefinition shop, float weight = 1f) => new TerraceUnit(shop, weight);
+            TerraceUnit[] Houses(int count)
+            {
+                var houses = new TerraceUnit[count];
+                for (var i = 0; i < count; i++)
+                {
+                    houses[i] = TerraceUnit.House();
+                }
+
+                return houses;
+            }
+
+            return new[]
+            {
+                // North side.
+                new TerraceSpec("Terrace NW (west)", high, KerbSide.Left, At(-95f), At(-63.5f), Houses(5), 101),
+                new TerraceSpec("Terrace NW (bridge)", high, KerbSide.Left, At(-56.5f), At(-17f), new[]
+                {
+                    TerraceUnit.House(), TerraceUnit.House(), Shop(VillageShops.Butcher), Shop(VillageShops.Ironmonger), Shop(VillageShops.Chemist), Shop(VillageShops.FellGallery),
+                }, 102),
+                new TerraceSpec("Terrace NE (bridge)", high, KerbSide.Left, At(13f), At(46.5f), new[]
+                {
+                    Shop(VillageShops.Packhorse, 1.25f), Shop(VillageShops.FellsideCoffee), Shop(VillageShops.LanternBooks), Shop(VillageShops.HartleysNews), Shop(VillageShops.PixelAndByte),
+                }, 103),
+                new TerraceSpec("Terrace NE (east)", high, KerbSide.Left, At(56f), At(95f), Houses(6), 104),
+
+                // South side.
+                new TerraceSpec("Terrace SW (west)", high, KerbSide.Right, At(-95f), At(-34f), Houses(9), 105),
+                new TerraceSpec("Terrace SW (bridge)", high, KerbSide.Right, At(-26.5f), At(-13f), new[]
+                {
+                    Shop(VillageShops.Barber), Shop(VillageShops.SkeinAndFell),
+                }, 106),
+                new TerraceSpec("Terrace SE (bridge)", high, KerbSide.Right, At(13f), At(40f), new[]
+                {
+                    Shop(VillageShops.CoopersBakery), Shop(VillageShops.MrsDodds), Shop(VillageShops.CopperKettle), Shop(VillageShops.LakesideChippy),
+                }, 107),
+                new TerraceSpec("Terrace SE (middle)", high, KerbSide.Right, At(42.5f), At(70f), new[]
+                {
+                    Shop(VillageShops.PostOffice), Shop(VillageShops.FellAndCrag), Shop(VillageShops.Bluebell), TerraceUnit.House(), TerraceUnit.House(),
+                }, 108),
+                new TerraceSpec("Terrace SE (east)", high, KerbSide.Right, At(73f), At(96f), Houses(4), 109),
+            };
+        }
+
+        /// <summary>Cottages along the lanes, a detached bookshop, the church and the old mill.</summary>
+        private static IReadOnlyList<DetachedBuildingSpec> Detached(RoadSpec fellRoad, RoadSpec millLane, RoadSpec churchLane)
+        {
+            var whitewash = new HouseDesign();
+            var stone = new HouseDesign
+            {
+                Wall = SurfaceMaterial.Stone,
+                Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.Casement, SurfaceMaterial.Kerb),
+                DoorPaint = SurfaceMaterial.PaintOxblood,
+                Trim = SurfaceMaterial.Timber,
+            };
+            var greenStone = new HouseDesign
+            {
+                Wall = SurfaceMaterial.StoneGreen,
+                Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.TwoOverTwo, SurfaceMaterial.Kerb),
+                DoorPaint = SurfaceMaterial.PaintNavy,
+                Trim = SurfaceMaterial.PaintWhite,
+            };
+            var cream = new HouseDesign
+            {
+                Wall = SurfaceMaterial.RenderCream,
+                Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.Casement, SurfaceMaterial.StoneDark, SurfaceMaterial.PaintWhite),
+                DoorPaint = SurfaceMaterial.PaintSage,
+            };
+
+            DetachedBuildingSpec Cottage(string name, RoadSpec road, float along, KerbSide side, HouseDesign design, int seed) =>
+                DetachedBuildingSpec.FacingRoad(name, road, along, side, 4f, 7.5f, 6.5f, new DetachedHouseStyle(design), seed);
+
+            return new[]
+            {
+                Cottage("Fell Road cottage 1", fellRoad, 32f, KerbSide.Right, whitewash, 201),
+                Cottage("Fell Road cottage 2", fellRoad, 50f, KerbSide.Right, stone, 202),
+                Cottage("Fell Road cottage 3", fellRoad, 68f, KerbSide.Right, cream, 203),
+                Cottage("Fell Road cottage 4", fellRoad, 40f, KerbSide.Left, greenStone, 204),
+                Cottage("Fell Road cottage 5", fellRoad, 62f, KerbSide.Left, whitewash, 205),
+                Cottage("Church Lane cottage 1", churchLane, 46f, KerbSide.Left, stone, 206),
+                Cottage("Church Lane cottage 2", churchLane, 36f, KerbSide.Right, whitewash, 207),
+                Cottage("Church Lane cottage 3", churchLane, 58f, KerbSide.Right, greenStone, 208),
+                Cottage("Mill Lane cottage 1", millLane, 30f, KerbSide.Right, cream, 209),
+                Cottage("Mill Lane cottage 2", millLane, 24f, KerbSide.Left, whitewash, 210),
+                Cottage("Mill Lane cottage 3", millLane, 46f, KerbSide.Right, stone, 211),
+
+                DetachedBuildingSpec.FacingRoad("The Inkwell", churchLane, 28f, KerbSide.Left, 2.5f, 7f, 6.5f, new DetachedHouseStyle(new HouseDesign
+                {
+                    Wall = SurfaceMaterial.StoneGreen,
+                    Bays = 2,
+                    Shop = VillageShops.Inkwell,
+                    Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.SixOverSix, SurfaceMaterial.Kerb),
+                }), 212),
+
+                DetachedBuildingSpec.Facing("St Bega's Church", new Vector2(75f, 70f), new Vector2(-1f, 0f), 8f, 22f, new ChurchStyle(), 213),
+
+                DetachedBuildingSpec.Facing("The Old Mill", new Vector2(-19f, -68f), new Vector2(0f, 1f), 12f, 8f, new DetachedHouseStyle(new HouseDesign
+                {
+                    Floors = 3,
+                    Bays = 5,
+                    Wall = SurfaceMaterial.Stone,
+                    Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.SixOverSix, SurfaceMaterial.Kerb),
+                    DoorPaint = SurfaceMaterial.PaintDarkGreen,
+                    Trim = SurfaceMaterial.Timber,
+                    Pitch = 35f,
+                    Sign = "THE OLD MILL",
+                    Pots = 3,
+                }), 214),
+            };
         }
 
         private static RoadSpec HighStreet()

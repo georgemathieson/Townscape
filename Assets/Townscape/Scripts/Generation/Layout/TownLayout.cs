@@ -37,6 +37,22 @@ namespace Townscape.Generation.Layout
         public float PavementWidth { get; }
 
         public IReadOnlyList<IRoadMarking> Markings { get; }
+
+        /// <summary>Road direction averaged over a short window so offsets bend smoothly round corners.</summary>
+        public Vector2 SmoothTangentAt(float along)
+        {
+            const float probe = 0.75f;
+            var a = Centre.PointAt(System.MathF.Max(0f, along - probe));
+            var b = Centre.PointAt(System.MathF.Min(Centre.Length, along + probe));
+            return GeoMath.SafeNormalize(b - a, Centre.TangentAt(along));
+        }
+
+        /// <summary>Position at arc length <paramref name="along"/>, shifted sideways by <paramref name="offset"/> (left is positive).</summary>
+        public Vector2 PointAt(float along, float offset) =>
+            Centre.PointAt(along) + (GeoMath.Left(SmoothTangentAt(along)) * offset);
+
+        /// <summary>Arc length of the point on the centreline nearest <paramref name="p"/>.</summary>
+        public float AlongNearest(Vector2 p) => Centre.Closest(p).Along;
     }
 
     /// <summary>
@@ -202,6 +218,12 @@ namespace Townscape.Generation.Layout
         public IReadOnlyList<BridgeSpec> Bridges { get; }
 
         public LakeSpec Lake { get; }
+
+        /// <summary>Rows of terraced buildings along roads.</summary>
+        public IReadOnlyList<TerraceSpec> Terraces { get; init; } = System.Array.Empty<TerraceSpec>();
+
+        /// <summary>Free-standing buildings: cottages, detached shops, the church, the mill.</summary>
+        public IReadOnlyList<DetachedBuildingSpec> Detached { get; init; } = System.Array.Empty<DetachedBuildingSpec>();
     }
 
     /// <summary>Strategy for producing a town layout. Swap it to generate a different town.</summary>

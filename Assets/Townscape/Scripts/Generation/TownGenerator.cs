@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Townscape.Generation.Buildings;
+using Townscape.Generation.Buildings.Planning;
 using Townscape.Generation.Geometry;
 using Townscape.Generation.Ground;
 using Townscape.Generation.Layout;
@@ -15,6 +17,7 @@ namespace Townscape.Generation
         Water,
         Markings,
         Structure,
+        Building,
     }
 
     public sealed class GeneratedMesh
@@ -33,16 +36,20 @@ namespace Townscape.Generation
     /// <summary>Everything generation produced, plus the ground model for runtime queries.</summary>
     public sealed class GeneratedTown
     {
-        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, GroundMeshStats groundStats)
+        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, IReadOnlyList<TownAnchor> anchors, GroundMeshStats groundStats)
         {
             Context = context;
             Meshes = meshes;
+            Anchors = anchors;
             GroundStats = groundStats;
         }
 
         public TownContext Context { get; }
 
         public IReadOnlyList<GeneratedMesh> Meshes { get; }
+
+        /// <summary>Chimney tops, windows and lamps left by the generators for lighting and effects.</summary>
+        public IReadOnlyList<TownAnchor> Anchors { get; }
 
         public GroundMeshStats GroundStats { get; }
     }
@@ -57,17 +64,21 @@ namespace Townscape.Generation
 
         public TownGenerator(IReadOnlyList<IStructureGenerator> structures = null)
         {
-            _structures = structures ?? new IStructureGenerator[] { new BridgeGenerator() };
+            _structures = structures ?? new IStructureGenerator[] { new BridgeGenerator(), new BuildingGenerator() };
         }
+
+        /// <summary>Apron of flagstones left round each building.</summary>
+        public const float PlotMargin = 0.6f;
 
         public static TownContext CreateContext(TownLayout layout, GenerationSettings settings)
         {
             var terrain = new BaseTerrain(layout, settings);
-            var ground = new GroundModel(terrain, CreateFeatures(layout));
-            return new TownContext(layout, settings, terrain, ground);
+            var buildings = BuildingPlanner.Plan(layout);
+            var ground = new GroundModel(terrain, CreateFeatures(layout, buildings));
+            return new TownContext(layout, settings, terrain, ground, buildings);
         }
 
-        public static IReadOnlyList<IGroundFeature> CreateFeatures(TownLayout layout)
+        public static IReadOnlyList<IGroundFeature> CreateFeatures(TownLayout layout, IReadOnlyList<BuildingPlan> buildings)
         {
             var features = new List<IGroundFeature>();
             features.Add(new RiverFeature(layout.River, layout.WaterLevel));
@@ -84,6 +95,11 @@ namespace Townscape.Generation
             foreach (var path in layout.Paths)
             {
                 features.Add(new PathFeature(path));
+            }
+
+            foreach (var building in buildings)
+            {
+                features.Add(new PlotFeature(building.Footprint.Corners, PlotMargin));
             }
 
             return features;
@@ -123,15 +139,14 @@ namespace Townscape.Generation
                 meshes.Add(new GeneratedMesh(markings.Build("Road Markings"), MeshCategory.Markings));
             }
 
+            var sink = new StructureSink();
             foreach (var structure in _structures)
             {
-                foreach (var mesh in structure.Generate(context))
-                {
-                    meshes.Add(new GeneratedMesh(mesh, MeshCategory.Structure));
-                }
+                structure.Generate(context, sink);
             }
 
-            return new GeneratedTown(context, meshes, groundGenerator.Stats);
+            meshes.AddRange(sink.Meshes);
+            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats);
         }
     }
 }

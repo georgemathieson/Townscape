@@ -18,7 +18,8 @@ namespace Townscape.Editor
             {
                 var stats = town.GroundStats;
                 EditorGUILayout.HelpBox(
-                    $"{town.Meshes.Count} meshes. Ground: {stats.TopTriangles} triangles, {stats.StepFaces} kerb and wall faces.",
+                    $"{town.Context.Buildings.Count} buildings, {town.Meshes.Count} meshes, {town.Anchors.Count} anchors.\n" +
+                    $"Ground: {stats.TopTriangles} triangles, {stats.StepFaces} kerb and wall faces.",
                     MessageType.Info);
             }
 

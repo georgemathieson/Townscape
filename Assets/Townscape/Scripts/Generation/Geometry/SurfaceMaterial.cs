@@ -6,6 +6,7 @@ namespace Townscape.Generation.Geometry
     /// </summary>
     public enum SurfaceMaterial
     {
+        // Ground
         Grass,
         GrassDark,
         FellGrass,
@@ -23,5 +24,38 @@ namespace Townscape.Generation.Geometry
         StoneDark,
         MarkingWhite,
         MarkingYellow,
+
+        // Building shells
+        StoneGreen,
+        RenderWhite,
+        RenderCream,
+        Slate,
+        ChimneyPot,
+        Timber,
+
+        // Glass and interiors
+        WindowGlass,
+        ShopGlass,
+        Interior,
+        InteriorFloor,
+        Screen,
+
+        // Paints for shopfronts, doors, frames and signs
+        PaintWhite,
+        PaintBlack,
+        PaintDarkGreen,
+        PaintNavy,
+        PaintOxblood,
+        PaintTeal,
+        PaintCream,
+        PaintSage,
+        PaintDuckEgg,
+        PaintPink,
+        PaintButter,
+        PaintRed,
+        PaintGold,
+        PaintOrange,
+        PaintPurple,
+        Bread,
     }
 }
