@@ -268,15 +268,17 @@ A small management game in the village's coffee shop; [COFFEE_SHOP.md](COFFEE_SH
 design, the rules and the balance numbers. In outline:
 
 - **`Townscape.CoffeeShop`** is the whole game, engine-free: balance data, a seeded random number
-  generator, the prep plan, the trading day, the reducer and the JSON save. It has its own
+  generator, the prep plan, the trading day, the reducer, the JSON save, and `NewsDesk`, which
+  writes the morning paper's front page. It has its own
   `Store<CoffeeShopState>`, separate from the town's.
 - Unlike the town's store, this one holds the whole game, because the game *is* state: trading a
   day is a pure calculation from the state and the seed, so the reducer stays pure and every day can
   be replayed exactly.
 - **`CoffeeShopGame`** (Runtime) creates the store, loads and saves `fellside-coffee.json` in
   `Application.persistentDataPath`, and glides the camera to the shopfront with
-  `FreeFlyCamera.FlyTo`. **`CoffeeShopWindow`** draws the game with the panel's skin, in the
-  panel's place, and only dispatches actions.
+  `FreeFlyCamera.FlyTo`. When the camera arrives, **`CoffeeShopPaper`** fills the screen with the
+  game as a newspaper (IMGUI, on `PaperSkin`: newsprint, an OS serif, boxed adverts), and holds the
+  camera still while it's read. Like the panel, it only dispatches actions.
 - `ShopLocator` (Generation) finds the building a shop is in.
 
 ## Editor

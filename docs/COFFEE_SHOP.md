@@ -7,22 +7,29 @@ stock the shop, trade for a day, look at how it went, and put the profit into up
 ## Playing it
 
 Press **C** (or **Run the coffee shop** on the control panel). The camera glides across the high
-street to Fellside Coffee and the game's window takes the panel's place. Press **C** again, or
-**Close**, to go back to the town; the game saves itself.
+street to Fellside Coffee, and the morning's paper, *The Fellside Herald*, fills the screen. Press
+**C** or **Escape**, or **Close the paper**, to go back to the town; the game saves itself.
 
-Each day has three steps:
+Every morning's paper has:
 
-1. **Prep.** See who usually comes in at each time of day. Choose the menu, how many croissants to
-   bake and how many servings of each drink to stock for, and the milk. The shop works out the
-   ingredients, what they cost and anything that can't be made. Then **Open for the day**.
-2. **Trade.** The day runs in one go.
-3. **Review.** Money in and out, what sold, what was wasted, what customers wanted and couldn't get
-   (and why), how each kind of customer was served, how bad the queue got, and what each upgrade
-   earned compared with the same day without it.
+- **The front page:** how yesterday went, under a headline about whatever stood out (a loss, a new
+  upgrade, a crowd, a sell-out, a long queue, waste, a quiet day), with the day in numbers and what
+  sold, was wasted and was missed. On day 1 it welcomes the new owner, with notes on how things work.
+- **The inside column:** the footfall forecast for each part of the day, who's about (each kind of
+  customer), yesterday's queue, what each upgrade earned against the same day without it, and the
+  recent trade.
+- **The classifieds,** where everything is bought:
+  - **Suppliers:** the bakery (how many croissants to bake), the roasters and the tea company (how
+    many lattes and pots of tea to stock for, with the order worked out from that) and the milk
+    (dairy or oat).
+  - **For sale:** upgrades.
+  - **Notices:** the shop's own menu, the building society (cash kept back, which upgrades can't
+    spend), and a fresh start.
+  - **Your order:** what it all costs, and the red **Open for the day** button. The day runs in one
+    go, and the next morning's paper reports how it went.
 
-Between days, spend profit on **upgrades**. An upgrade works from the next day you open. Keep some
-cash back with **Keep back**: upgrades can't spend it. A bad day can take cash below zero, but past
-the overdraft the bank closes the shop.
+A bad day can take cash below zero, but past the overdraft the bank closes the shop, and the final
+edition says so.
 
 ## How it's built
 
@@ -31,12 +38,13 @@ Assets/Townscape/Scripts/CoffeeShop/   Townscape.CoffeeShop   engine-free: the w
   Balance/       every number: items, ingredients, milk, segments, time slots, sites, upgrades
   Collections/   ValueList / ValueMap: immutable, compare by contents (for records)
   Trading/       PrepPlan, Forecast, CustomerStream, TradingDay, DayResult
+  Newspaper/     NewsDesk: the front page's headline, standfirst, story and first-day notes
   Game/          CoffeeShopState, actions, CoffeeShopReducer
   Saving/        a small JSON reader and writer, CoffeeShopSave
   SeededRandom   SplitMix64, identical in Unity and .NET
 Assets/Townscape/Scripts/Runtime/
   CoffeeShop/    CoffeeShopGame (store, load/save, camera), CoffeeShopSaveFile
-  UI/            CoffeeShopWindow (IMGUI on the control panel's skin)
+  UI/            CoffeeShopPaper (the full-screen newspaper, IMGUI) and PaperSkin
 tools/coffee-sim/                      plays many games and reports what the numbers add up to
 ```
 
@@ -54,20 +62,24 @@ tools/coffee-sim/                      plays many games and reports what the num
   `SeededRandom` uses integer maths only, because a seeded `System.Random` isn't guaranteed to
   match between Unity's runtime and .NET.
 - **Customers are rolled before trading.** Nothing about a customer depends on the shop, so the
-  review can replay the same customers without an upgrade to show what the upgrade was worth.
+  paper can replay the same customers without an upgrade to show what the upgrade was worth.
+- **The words are game code too.** `NewsDesk` writes the front page from the state, engine-free and
+  tested; the paper only lays it out. Its serif is borrowed from the operating system
+  (`Font.CreateDynamicFontFromOSFont`: Georgia, then Times), so there are still no assets.
 - **Money is whole pence** (`int`), so sums are exact. `Money.Format` shows it as pounds.
 
 ### Data model
 
 | Type | What it is |
 |---|---|
-| `ItemDef` | On the menu: a **drink** (made to order from a recipe) or a **pastry** (baked in the morning, one per customer, wasted if unsold). Price, serve time, dairy-free (pastries). |
-| `IngredientDef` | Bought in portions. Keeps overnight unless it spoils (milk). Milk is one ingredient whose kind the player chooses. |
-| `MilkOption` | Dairy or oat: cost per portion, dairy-free, and appeal (the share of customers who are happy with it in a latte). |
+| `ItemDef` | On the menu: a **drink** (made to order from a recipe) or a **pastry** (baked in the morning, one per customer, wasted if unsold). Price, serve time, dairy-free and supplier (pastries). |
+| `IngredientDef` | Bought in portions from a supplier. Keeps overnight unless it spoils (milk). Milk is one ingredient whose kind the player chooses. A drink is listed under the supplier of its first ingredient that isn't milk. |
+| `MilkOption` | Dairy or oat: cost per portion, dairy-free, appeal (the share of customers who are happy with it in a latte) and supplier. |
+| `SupplierDef` | A supplier's name and advert, for the classifieds. |
 | `SegmentDef` | A kind of customer: chance of wanting a drink and a pastry, tastes, share who can't have dairy, budget, patience, chance of settling for a second choice. |
 | `SlotDef` / `SiteDef` | Part of the day (length, expected customers, segment mix, baristas) and where the shop trades (daily rent, its slots). |
-| `UpgradeDef` | Kind (capacity, range, ambience, efficiency, reach), price, daily upkeep, effects, summary and trade-off. |
-| `CoffeeShopState` | Seed, next day, phase (prep, review, closed down), cash, reserve, site, milk, menu, plan, pantry, owned upgrades (with the first day each works), each upgrade's earnings, the last 14 days' totals, the last day's full result. |
+| `UpgradeDef` | Kind (capacity, range, ambience, efficiency, reach), price, daily upkeep, effects, summary, trade-off and seller. |
+| `CoffeeShopState` | Seed, next day, phase (prep or closed down), cash, reserve, site, milk, menu, plan, pantry, owned upgrades (with the first day each works), each upgrade's earnings, the last 14 days' totals, the last day's full result. |
 | `DayResult` | Customers, served, walked out; per item stocked, wanted, sold, sold as a second choice, wasted, missed by reason; per segment and per slot outcomes; the money; waste; the pantry after; each upgrade's impact. |
 | Save (JSON) | Everything in the state except the last day's full result. Version 1. |
 
@@ -95,9 +107,10 @@ unsold pastries are wasted, milk is poured away and coffee and tea keep.
 
 **Money.** Takings less stock bought, cups and lids (per drink sold), rent and upgrade upkeep.
 
-**Progression (`CoffeeShopReducer`).** Cash carries from day to day. Upgrades can only spend cash
-above the reserve, and each is bought once. An upgrade works from the next day traded, never the
-day already in the review. If cash ends a day below the overdraft, the bank closes the shop.
+**Progression (`CoffeeShopReducer`).** Opening trades the day and lands on the next morning, with
+the results in the paper. Cash carries from day to day. Upgrades can only spend cash above the
+reserve, and each is bought once. An upgrade bought from the morning paper works from that day,
+never a day already traded. If cash ends a day below the overdraft, the bank closes the shop.
 
 ## Balance: the numbers and why
 
@@ -138,7 +151,7 @@ What the sim shows (30 days, averaged over 200 games):
 
 The upgrade is bought around day 4. It earns about **£10 a day if you bake to fill it** (+10
 croissants sold, +4 wasted), paying back in about 18 days, and **almost nothing if you don't**. It
-changes a decision (how many to bake on an uncertain day) rather than a number, and the review shows
+changes a decision (how many to bake on an uncertain day) rather than a number, and the paper shows
 which way the player went.
 
 ## Not sure about (please check)
@@ -147,9 +160,11 @@ which way the player went.
   day can't reach the overdraft. With one upgrade there isn't much to overspend on. More upgrades
   (and running costs) should make the reserve matter more. Rent or the overdraft could also be
   tightened.
-- **Upgrades bought before opening.** "From the next day" here means the next day traded, so an
-  upgrade bought during prep works that same day (no day has been traded since it was bought). The
-  alternative is to make it wait a further day.
+- **One paper a day.** The review and the next day's prep are the same morning paper, so there's no
+  separate review screen. "From the next day" means the next day traded: an upgrade bought from the
+  morning paper works that day. The alternative is to make it wait a further day.
+- **The serif comes from the operating system.** Georgia or Times New Roman are on every Windows
+  and macOS machine; if neither is found, Unity falls back to its default font.
 - **Stock is cash accounting.** Coffee and tea bought today are a cost today even if they're used
   tomorrow, so a day that stocks up looks worse than it was.
 - **Second choices** only come from a customer's own ranking of what their segment likes. Nobody
@@ -157,7 +172,7 @@ which way the player went.
 - **The queue** serves everyone already waiting at closing time.
 - **The display case** holds pastries only; drinks need no display space.
 - **The forecast** is the true average and is shown exactly. Real days vary by up to ±30% (the
-  review says whether it was a quiet or a busy day).
+  paper says when it was a quiet or a busy day).
 
 ## Next, once the slice has been played
 

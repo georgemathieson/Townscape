@@ -51,9 +51,6 @@ namespace Townscape.CoffeeShop
                 case OpenForTheDay when state.Phase == ShopPhase.Prep && PrepPlan.For(balance, state).CanAfford:
                     next = Trade(balance, state);
                     break;
-                case ContinueToPrep when state.Phase == ShopPhase.Review:
-                    next = state with { Phase = ShopPhase.Prep };
-                    break;
                 default:
                     return state;
             }
@@ -84,7 +81,7 @@ namespace Townscape.CoffeeShop
             return state with
             {
                 Day = state.Day + 1,
-                Phase = closedDown ? ShopPhase.ClosedDown : ShopPhase.Review,
+                Phase = closedDown ? ShopPhase.ClosedDown : ShopPhase.Prep,
                 CashPence = result.CashAfterPence,
                 Pantry = result.PantryAfter,
                 UpgradeEarnings = earnings,

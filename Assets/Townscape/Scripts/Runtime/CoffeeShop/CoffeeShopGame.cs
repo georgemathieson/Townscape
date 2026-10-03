@@ -11,8 +11,9 @@ namespace Townscape.Runtime.CoffeeShop
     /// <summary>
     /// Fellside Coffee, the management game in the village's coffee shop. It owns the game's own
     /// store (separate from the town's), loads and saves it, and takes the camera to the shopfront
-    /// when the game is opened. The rules all live in Townscape.CoffeeShop; this only connects them
-    /// to Unity, and the window only dispatches actions.
+    /// when the game is opened; the paper comes up once the camera arrives, and the camera stays put
+    /// while it's being read. The rules all live in Townscape.CoffeeShop; this only connects them to
+    /// Unity, and the paper only dispatches actions.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CoffeeShopGame : MonoBehaviour
@@ -31,8 +32,11 @@ namespace Townscape.Runtime.CoffeeShop
 
         public Store<CoffeeShopState> Store { get; private set; }
 
-        /// <summary>Whether the game's window is showing.</summary>
+        /// <summary>Whether the game is open: the camera on its way to the shop, or the paper up.</summary>
         public bool IsOpen { get; private set; }
+
+        /// <summary>Whether the paper is up: the game is open and the camera has arrived.</summary>
+        public bool IsReading => IsOpen && (_camera == null || !_camera.IsGliding);
 
         /// <param name="shop">The coffee shop's building, or null if the village doesn't have one.</param>
         /// <param name="groundHeight">Ground height at a ground-plane position (x, z).</param>
@@ -86,6 +90,11 @@ namespace Townscape.Runtime.CoffeeShop
         public void Close()
         {
             IsOpen = false;
+            if (_camera != null)
+            {
+                _camera.enabled = true;
+            }
+
             Save();
         }
 
@@ -103,6 +112,12 @@ namespace Townscape.Runtime.CoffeeShop
 
         private void Update()
         {
+            // Hold the camera still behind the paper, so the scroll wheel and keys don't fly it about.
+            if (IsReading && _camera != null && _camera.enabled)
+            {
+                _camera.enabled = false;
+            }
+
             if (_dirty && Time.unscaledTime - _changedAt >= SaveDelay)
             {
                 Save();

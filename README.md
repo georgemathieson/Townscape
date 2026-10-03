@@ -88,10 +88,11 @@ puts them back. Everything also has a key:
 ## Fellside Coffee
 
 There's a small management game in the village's coffee shop. Press **C** (or **Run the coffee
-shop** on the panel) and the camera glides to Fellside Coffee on the high street. Each day, stock the
-shop (the menu, how many croissants to bake, servings of each drink, and dairy or oat milk), open
-for the day, and look at what sold, what was wasted and what customers couldn't get. Spend the
-profit on upgrades, and keep some cash back for bad days. The game saves itself to
+shop** on the panel) and the camera glides to Fellside Coffee on the high street, where the morning
+paper, *The Fellside Herald*, fills the screen. The front page reports how yesterday went: what
+sold, what was wasted and what customers couldn't get. In the classifieds you order the day's
+stock from the suppliers, choose dairy or oat milk, buy upgrades and keep some cash back for bad
+days. Then open for the day, and read about it in tomorrow's paper. The game saves itself to
 `fellside-coffee.json` in Unity's persistent data folder (**Townscape > Fellside Coffee > Show Save
 File** finds it). See [docs/COFFEE_SHOP.md](docs/COFFEE_SHOP.md) for how it works and how to tune
 it.

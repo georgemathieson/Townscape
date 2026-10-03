@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Townscape.CoffeeShop;
 using Townscape.State;
@@ -20,7 +21,6 @@ namespace Townscape.Tests.CoffeeShop
             for (var day = 0; day < 3; day++)
             {
                 store.Dispatch(new OpenForTheDay());
-                store.Dispatch(new ContinueToPrep());
             }
 
             store.Dispatch(new SetOnMenu(DefaultBalance.Tea, false));
@@ -59,14 +59,14 @@ namespace Townscape.Tests.CoffeeShop
         }
 
         [Test]
-        public void SavingMidReview_ResumesAtPrep()
+        public void ALoadedGame_HasNoFullResults_ButKeepsTheHistory()
         {
-            var reviewing = CoffeeShopReducer.Reduce(Balance, NewGame(), new OpenForTheDay());
+            var traded = CoffeeShopReducer.Reduce(Balance, NewGame(), new OpenForTheDay());
 
-            var loaded = Read(CoffeeShopSave.Write(reviewing));
+            var loaded = Read(CoffeeShopSave.Write(traded));
 
-            Assert.That(reviewing.Phase, Is.EqualTo(ShopPhase.Review));
-            Assert.That(loaded.Phase, Is.EqualTo(ShopPhase.Prep));
+            Assert.That(loaded.LastResult, Is.Null, "the full results aren't saved");
+            Assert.That(loaded.History.Single(), Is.EqualTo(traded.LastResult.Summary));
             Assert.That(loaded.Day, Is.EqualTo(2));
         }
 

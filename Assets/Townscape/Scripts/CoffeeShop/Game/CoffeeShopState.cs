@@ -4,11 +4,11 @@ namespace Townscape.CoffeeShop
 {
     public enum ShopPhase
     {
-        /// <summary>Before opening: choosing the menu, the milk and how much to stock.</summary>
+        /// <summary>
+        /// The morning before opening: yesterday's results are in the paper, and the menu, the milk
+        /// and the stock are being chosen.
+        /// </summary>
         Prep,
-
-        /// <summary>The day has been traded; its results are showing.</summary>
-        Review,
 
         /// <summary>The overdraft ran out: the bank has closed the shop. Only a new game goes on from here.</summary>
         ClosedDown,
@@ -58,7 +58,7 @@ namespace Townscape.CoffeeShop
         /// <summary>The most recent days' totals, oldest first.</summary>
         public ValueList<DaySummary> History { get; init; } = ValueList<DaySummary>.Empty;
 
-        /// <summary>The full results of the day just traded, for the review. Not saved.</summary>
+        /// <summary>The full results of the day just traded, for the morning paper. Not saved.</summary>
         public DayResult LastResult { get; init; }
 
         public static CoffeeShopState NewGame(CoffeeShopBalance balance, int seed) => new CoffeeShopState

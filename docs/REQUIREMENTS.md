@@ -105,7 +105,9 @@ before work started; later changes should be recorded here too.
 6. **Fellside Coffee, minimum playable slice:** a coffee shop management game in the village's coffee
    shop. One site, two customer segments, three menu items (a latte with a milk choice, a pot of tea,
    croissants), prep, a simulated day, a review, profit carried between days, a cash reserve, and one
-   upgrade that changes a decision (a bigger display case). Saved as JSON. *(this pull request)*
+   upgrade that changes a decision (a bigger display case). Saved as JSON. Played as a full-screen
+   morning newspaper: yesterday's results on the front page, buying in the classifieds.
+   *(this pull request)*
 
 ## Fellside Coffee
 
@@ -120,6 +122,8 @@ before work started; later changes should be recorded here too.
   customers. Demand is random but seeded, so a day always replays the same.
 - **Review:** sold, wasted and missed (with reasons), money, how each segment was served, and what
   each upgrade earned compared with the same day without it.
+- **Presented as a newspaper** filling the screen: each morning's paper reports the day before on
+  its front page and carries classifieds where stock and upgrades are bought.
 - **Upgrades** have a price, an effect and at least one trade-off (upkeep, space or opportunity). They
   can't spend the reserve, and work from the next day traded.
 - **Instant results, fixed prices, Unity only.** Game logic is engine-free and tested; every balance

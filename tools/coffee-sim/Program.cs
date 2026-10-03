@@ -123,8 +123,6 @@ namespace Townscape.CoffeeSim
                         store.Dispatch(new BuyUpgrade(DefaultBalance.BiggerDisplay));
                         boughtOn.Add(store.State.Day);
                     }
-
-                    store.Dispatch(new ContinueToPrep());
                 }
 
                 closed += store.State.Phase == ShopPhase.ClosedDown ? 1 : 0;

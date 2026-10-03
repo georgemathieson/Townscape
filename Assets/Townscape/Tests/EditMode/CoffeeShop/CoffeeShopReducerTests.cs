@@ -76,7 +76,7 @@ namespace Townscape.Tests.CoffeeShop
             store.Dispatch(new OpenForTheDay());
 
             var state = store.State;
-            Assert.That(state.Phase, Is.EqualTo(ShopPhase.Review));
+            Assert.That(state.Phase, Is.EqualTo(ShopPhase.Prep), "straight on to the next morning");
             Assert.That(state.Day, Is.EqualTo(2));
             Assert.That(state.LastResult, Is.EqualTo(expected));
             Assert.That(state.CashPence, Is.EqualTo(expected.CashAfterPence));
@@ -85,19 +85,16 @@ namespace Townscape.Tests.CoffeeShop
         }
 
         [Test]
-        public void ADay_IsTradedOnce_AndPrepWaitsForTheReview()
+        public void EachOpening_TradesTheNextDay_AndKeepsThePlan()
         {
             var store = CreateStore();
             store.Dispatch(new OpenForTheDay());
-            var reviewing = store.State;
-
+            store.Dispatch(new SetPlanned(DefaultBalance.Latte, 5));
             store.Dispatch(new OpenForTheDay());
-            store.Dispatch(new SetPlanned(DefaultBalance.Latte, 5));
-            Assert.That(store.State, Is.SameAs(reviewing));
 
-            store.Dispatch(new ContinueToPrep());
-            store.Dispatch(new SetPlanned(DefaultBalance.Latte, 5));
-            Assert.That(store.State.Phase, Is.EqualTo(ShopPhase.Prep));
+            Assert.That(store.State.Day, Is.EqualTo(3));
+            Assert.That(store.State.LastResult.Day, Is.EqualTo(2));
+            Assert.That(store.State.History.Select(d => d.Day), Is.EqualTo(new[] { 1, 2 }));
             Assert.That(store.State.Planned.Get(DefaultBalance.Latte), Is.EqualTo(5));
             Assert.That(store.State.Planned.Get(DefaultBalance.Croissant), Is.EqualTo(10), "yesterday's plan stays");
         }
@@ -111,7 +108,6 @@ namespace Townscape.Tests.CoffeeShop
                 for (var day = 0; day < 5; day++)
                 {
                     store.Dispatch(new OpenForTheDay());
-                    store.Dispatch(new ContinueToPrep());
                 }
 
                 return store.State;
@@ -181,7 +177,6 @@ namespace Townscape.Tests.CoffeeShop
             Assert.That(store.State.LastResult.UpgradeImpacts, Is.Empty, "the day already traded is unchanged");
             Assert.That(store.State.Upgrades.Get(DefaultBalance.BiggerDisplay), Is.EqualTo(2));
 
-            store.Dispatch(new ContinueToPrep());
             store.Dispatch(new SetPlanned(DefaultBalance.Croissant, 26));
             store.Dispatch(new OpenForTheDay());
 
@@ -202,7 +197,6 @@ namespace Townscape.Tests.CoffeeShop
             {
                 store.Dispatch(new OpenForTheDay());
                 total += store.State.LastResult.UpgradeImpacts.Single().ProfitPence;
-                store.Dispatch(new ContinueToPrep());
             }
 
             Assert.That(store.State.UpgradeEarnings.Get(DefaultBalance.BiggerDisplay), Is.EqualTo(total));
@@ -221,7 +215,7 @@ namespace Townscape.Tests.CoffeeShop
             Assert.That(store.State.Phase, Is.EqualTo(ShopPhase.ClosedDown));
 
             var closed = store.State;
-            store.Dispatch(new ContinueToPrep());
+            store.Dispatch(new SetPlanned(DefaultBalance.Latte, 3));
             store.Dispatch(new OpenForTheDay());
             store.Dispatch(new BuyUpgrade(DefaultBalance.BiggerDisplay));
             Assert.That(store.State, Is.SameAs(closed));
@@ -236,7 +230,7 @@ namespace Townscape.Tests.CoffeeShop
             store.Dispatch(new OpenForTheDay());
 
             Assert.That(store.State.CashPence, Is.Zero);
-            Assert.That(store.State.Phase, Is.EqualTo(ShopPhase.Review));
+            Assert.That(store.State.Phase, Is.EqualTo(ShopPhase.Prep));
         }
 
         [Test]
@@ -246,7 +240,6 @@ namespace Townscape.Tests.CoffeeShop
             for (var day = 0; day < Balance.HistoryDays + 3; day++)
             {
                 store.Dispatch(new OpenForTheDay());
-                store.Dispatch(new ContinueToPrep());
             }
 
             Assert.That(store.State.History, Has.Count.EqualTo(Balance.HistoryDays));

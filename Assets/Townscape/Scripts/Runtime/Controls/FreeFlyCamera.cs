@@ -44,6 +44,9 @@ namespace Townscape.Runtime.Controls
             _pitch = euler.x > 180f ? euler.x - 360f : euler.x;
         }
 
+        /// <summary>True while <see cref="FlyTo"/> is moving the camera.</summary>
+        public bool IsGliding => _gliding;
+
         /// <summary>Glides to <paramref name="position"/>, ending up looking at <paramref name="lookAt"/>.</summary>
         public void FlyTo(Vector3 position, Vector3 lookAt)
         {

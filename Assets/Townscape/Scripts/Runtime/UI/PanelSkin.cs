@@ -21,8 +21,6 @@ namespace Townscape.Runtime.UI
         private static readonly Color Text = new Color(0.9f, 0.9f, 0.88f, 1f);
         private static readonly Color Quiet = new Color(0.62f, 0.64f, 0.68f, 1f);
         private static readonly Color Dark = new Color(0.1f, 0.08f, 0.05f, 1f);
-        private static readonly Color Gain = new Color(0.56f, 0.84f, 0.56f, 1f);
-        private static readonly Color Loss = new Color(0.96f, 0.52f, 0.46f, 1f);
 
         private readonly List<Texture2D> _textures = new List<Texture2D>();
 
@@ -38,16 +36,11 @@ namespace Townscape.Runtime.UI
 
             Title = new GUIStyle { fontSize = 17, fontStyle = FontStyle.Bold, normal = { textColor = Text } };
             Clock = new GUIStyle(Title) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Normal };
-            Status = new GUIStyle { fontSize = 12, wordWrap = true, richText = true, normal = { textColor = Quiet }, margin = new RectOffset(0, 0, 2, 4) };
+            Status = new GUIStyle { fontSize = 12, wordWrap = true, normal = { textColor = Quiet }, margin = new RectOffset(0, 0, 2, 4) };
             Heading = new GUIStyle { fontSize = 11, fontStyle = FontStyle.Bold, normal = { textColor = Quiet }, margin = new RectOffset(0, 0, 12, 6) };
             Label = new GUIStyle { fontSize = 13, alignment = TextAnchor.MiddleLeft, normal = { textColor = Text }, fixedHeight = 22 };
             Value = new GUIStyle(Label) { alignment = TextAnchor.MiddleRight, normal = { textColor = Quiet } };
             Keys = new GUIStyle { fontSize = 12, richText = true, normal = { textColor = Quiet }, margin = new RectOffset(0, 0, 6, 0) };
-            Body = new GUIStyle { fontSize = 13, wordWrap = true, richText = true, normal = { textColor = Text }, margin = new RectOffset(0, 0, 2, 2) };
-            Warning = new GUIStyle(Body) { normal = { textColor = Accent } };
-            Bold = new GUIStyle(Label) { fontStyle = FontStyle.Bold };
-            Positive = new GUIStyle(Value) { normal = { textColor = Gain } };
-            Negative = new GUIStyle(Value) { normal = { textColor = Loss } };
 
             Button = new GUIStyle
             {
@@ -64,17 +57,6 @@ namespace Townscape.Runtime.UI
                 onHover = { background = Rounded(16, 16, 6, AccentHover), textColor = Dark },
                 onActive = { background = Rounded(16, 16, 6, Accent), textColor = Dark },
             };
-
-            Primary = new GUIStyle(Button)
-            {
-                normal = { background = Rounded(16, 16, 6, Accent), textColor = Dark },
-                hover = { background = Rounded(16, 16, 6, AccentHover), textColor = Dark },
-                active = { background = Rounded(16, 16, 6, Accent), textColor = Dark },
-            };
-
-            // Text that sits in a row of buttons: as tall as a button, so it lines up with their labels.
-            Count = new GUIStyle(Bold) { alignment = TextAnchor.MiddleCenter, fixedHeight = 28, margin = new RectOffset(0, 0, 2, 2) };
-            Note = new GUIStyle(Value) { fixedHeight = 28, margin = new RectOffset(0, 0, 2, 2) };
 
             Slider = new GUIStyle
             {
@@ -111,31 +93,8 @@ namespace Townscape.Runtime.UI
 
         public GUIStyle Keys { get; }
 
-        /// <summary>Wrapping text, for sentences.</summary>
-        public GUIStyle Body { get; }
-
-        /// <summary>Wrapping text in the accent colour, for things to sort out.</summary>
-        public GUIStyle Warning { get; }
-
-        public GUIStyle Bold { get; }
-
-        /// <summary>A right-aligned value that's good news (a profit).</summary>
-        public GUIStyle Positive { get; }
-
-        /// <summary>A right-aligned value that's bad news (a loss).</summary>
-        public GUIStyle Negative { get; }
-
         /// <summary>A button; as a toggle, "on" is drawn in the accent colour.</summary>
         public GUIStyle Button { get; }
-
-        /// <summary>The one button that moves things on (open for the day), in the accent colour.</summary>
-        public GUIStyle Primary { get; }
-
-        /// <summary>A number between buttons, centred and lined up with them.</summary>
-        public GUIStyle Count { get; }
-
-        /// <summary>A quiet, right-aligned note at the end of a row of buttons.</summary>
-        public GUIStyle Note { get; }
 
         public GUIStyle Slider { get; }
 

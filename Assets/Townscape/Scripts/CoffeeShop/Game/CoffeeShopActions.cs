@@ -17,11 +17,11 @@ namespace Townscape.CoffeeShop
     /// <summary>Keep this much cash back so upgrades can't spend it.</summary>
     public sealed record SetReserve(int Pence) : IAction;
 
-    /// <summary>Buy the stock and trade the day. Does nothing unless prepping and the stock is affordable.</summary>
+    /// <summary>
+    /// Buy the stock and trade the day, ending on the next morning with the results in. Does nothing
+    /// unless prepping and the stock is affordable.
+    /// </summary>
     public sealed record OpenForTheDay : IAction;
-
-    /// <summary>Done reviewing: start prepping the next day.</summary>
-    public sealed record ContinueToPrep : IAction;
 
     /// <summary>Buy an upgrade with cash above the reserve. It works from the next day traded.</summary>
     public sealed record BuyUpgrade(string UpgradeId) : IAction;
