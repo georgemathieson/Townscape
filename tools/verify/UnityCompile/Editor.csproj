@@ -10,6 +10,7 @@
     <ProjectReference Include="State.csproj" />
     <ProjectReference Include="Generation.csproj" />
     <ProjectReference Include="Simulation.csproj" />
+    <ProjectReference Include="CoffeeShop.csproj" />
     <ProjectReference Include="Runtime.csproj" />
     <ProjectReference Include="Stubs.csproj" />
   </ItemGroup>

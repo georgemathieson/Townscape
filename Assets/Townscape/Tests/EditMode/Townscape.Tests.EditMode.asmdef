@@ -5,6 +5,7 @@
         "Townscape.State",
         "Townscape.Generation",
         "Townscape.Simulation",
+        "Townscape.CoffeeShop",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
