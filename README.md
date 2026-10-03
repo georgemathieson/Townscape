@@ -1,5 +1,7 @@
 # Townscape
 
+![The high street at dusk in the rain: wet tarmac, glowing shop windows and lit homes above](docs/images/gallery/high-street-dusk.jpg)
+
 A cosy, small, low poly Lake District village in a never-ending thunderstorm, built in Unity 6 (URP)
 with C#. Everything you see is generated from code: the ground, roads and markings, the river and
 the stone humpback bridge, the terraces and shops, street furniture and trees, the fells around the
@@ -8,6 +10,34 @@ mist), and even its sounds.
 
 - [Requirements](docs/REQUIREMENTS.md): what we're building, and the milestone plan
 - [Architecture](docs/ARCHITECTURE.md): how the code is organised and why
+
+## Gallery
+
+### Day and night
+
+| | |
+|---|---|
+| ![The high street on a wet afternoon](docs/images/gallery/high-street-day.jpg) | ![The same street at night, lit by lamps, shop windows and homes](docs/images/gallery/high-street-night.jpg) |
+| A wet afternoon on the high street | The same street at night: street lamps, shop windows, and homes lit one by one |
+
+### The storm
+
+| | |
+|---|---|
+| ![A lightning bolt at the far end of the high street](docs/images/gallery/lightning-high-street.jpg) | ![A strike lighting up the whole village and the river](docs/images/gallery/lightning-village.jpg) |
+| Lightning at the end of the high street | A strike lights up the whole village |
+| ![Wet tarmac and puddles reflecting the lamps at dusk](docs/images/gallery/wet-street-dusk.jpg) | ![Chimney smoke streaming downwind over the rooftops](docs/images/gallery/chimney-smoke-dusk.jpg) |
+| Wet tarmac at dusk, with puddles in the gutters | Smoke from the chimneys streams away downwind |
+
+### The village
+
+| | |
+|---|---|
+| ![Fellside Coffee and Lantern Books after dark](docs/images/gallery/bookshop-night.jpg) | ![The village across the valley at dusk](docs/images/gallery/village-across-the-valley.jpg) |
+| Fellside Coffee and Lantern Books after dark | The village from across the valley at dusk |
+
+*Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
+outside Unity. In Unity the rain and smoke move, the water ripples and the lightning flickers.*
 
 ## Getting started (macOS or Windows)
 
