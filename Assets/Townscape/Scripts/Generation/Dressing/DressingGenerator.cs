@@ -17,7 +17,17 @@ namespace Townscape.Generation.Dressing
 
             foreach (var (_, layer, mesh) in dressing.Build())
             {
-                sink.AddMesh(mesh, layer == DressingLayer.Furniture ? MeshCategory.Furniture : MeshCategory.Vegetation);
+                sink.AddMesh(mesh, CategoryOf(layer));
+            }
+        }
+
+        private static MeshCategory CategoryOf(DressingLayer layer)
+        {
+            switch (layer)
+            {
+                case DressingLayer.Vegetation: return MeshCategory.Vegetation;
+                case DressingLayer.Puddles: return MeshCategory.Puddles;
+                default: return MeshCategory.Furniture;
             }
         }
     }

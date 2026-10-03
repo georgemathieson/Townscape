@@ -94,8 +94,9 @@ before work started; later changes should be recorded here too.
      dormers, the church and the old mill. *(done)*
    - **2b Street furniture and greenery:** lamps, phone and post boxes, benches, beacons, railings,
      trees, grass, flowers and dry-stone walls. *(done)*
-3. **Lighting:** full time-of-day treatment, lit windows, street lamps and light sources.
-   *(this pull request)*
-4. **Storm:** rain, splashes, lightning, thunder timing, wet surfaces, puddles, mist and wind.
+3. **Lighting:** full time-of-day treatment, lit windows, street lamps and light sources. *(done)*
+4. **Storm:** rain, splashes, lightning, thunder timing, wet surfaces, puddles, mist and wind, with
+   keyboard controls for rain, lightning and wind until the control panel arrives. *(this pull request)*
 5. **Finish:** control panel UI, audio hooks and polish. Includes a player build that keeps the
-   shader variants the runtime materials switch on (transparent glass, emission).
+   shaders and variants the runtime materials use (transparent glass, emission, normal maps, URP
+   particles and the lightning bolt shader).

@@ -140,7 +140,10 @@ namespace Townscape.Generation.Dressing.Rules
                     }
 
                     var root = GeoMath.At(p, context.HeightAt(p) - 0.02f);
-                    Planting.Tuft(context.BuilderAt(p, DressingLayer.Vegetation), random, root, 0.22f + (0.25f * (float)random.NextDouble()));
+                    var builder = context.BuilderAt(p, DressingLayer.Vegetation);
+                    builder.SwayBase = root.Y;
+                    Planting.Tuft(builder, random, root, 0.22f + (0.25f * (float)random.NextDouble()));
+                    builder.SwayBase = null;
                 }
             }
 

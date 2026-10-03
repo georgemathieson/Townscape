@@ -12,6 +12,10 @@ namespace Townscape.Runtime.Controls
         HourBack,
         HourForward,
         ToggleHelp,
+        CycleRain,
+        CycleLightning,
+        CycleWind,
+        StrikeLightning,
     }
 
     /// <summary>

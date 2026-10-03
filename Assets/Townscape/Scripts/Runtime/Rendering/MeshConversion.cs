@@ -28,10 +28,33 @@ namespace Townscape.Runtime.Rendering
 
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
+            if (data.Uvs != null)
+            {
+                var uvs = new Vector2[data.VertexCount];
+                for (var i = 0; i < data.VertexCount; i++)
+                {
+                    uvs[i] = new Vector2(data.Uvs[i].X, data.Uvs[i].Y);
+                }
+
+                mesh.SetUVs(0, uvs);
+            }
+
+            // Plants are re-shaped every frame by the wind.
+            if (data.SwayHeights != null)
+            {
+                mesh.MarkDynamic();
+            }
+
             mesh.subMeshCount = data.Submeshes.Count;
             for (var i = 0; i < data.Submeshes.Count; i++)
             {
                 mesh.SetTriangles(data.Submeshes[i].Indices, i, false);
+            }
+
+            // Textured surfaces (water, puddles) carry normal maps, which need tangents.
+            if (data.Uvs != null)
+            {
+                mesh.RecalculateTangents();
             }
 
             mesh.RecalculateBounds();

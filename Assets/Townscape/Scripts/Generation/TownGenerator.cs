@@ -21,6 +21,7 @@ namespace Townscape.Generation
         Building,
         Furniture,
         Vegetation,
+        Puddles,
     }
 
     public sealed class GeneratedMesh
@@ -125,7 +126,8 @@ namespace Townscape.Generation
                 meshes.Add(new GeneratedMesh(mesh, MeshCategory.Fells));
             }
 
-            meshes.Add(new GeneratedMesh(WaterPlaneGenerator.Generate(settings.WaterHalfExtent, layout.WaterLevel), MeshCategory.Water));
+            meshes.Add(new GeneratedMesh(WaterPlaneGenerator.Generate(settings.WaterHalfExtent, layout.WaterLevel - WaterPlaneGenerator.RiverClearance), MeshCategory.Water));
+            meshes.Add(new GeneratedMesh(RiverSurfaceGenerator.Generate(layout.River, layout.WaterLevel), MeshCategory.Water));
 
             var markings = new MeshBuilder();
             var canvas = new MarkingCanvas(markings, context.Ground);
