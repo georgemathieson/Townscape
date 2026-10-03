@@ -238,7 +238,7 @@ namespace Townscape.Runtime.UI
             var line = plan.Line(item.Id);
             if (line == null)
             {
-                GUILayout.Label("not on the menu", _skin.Value);
+                GUILayout.Label("not on the menu", _skin.Note);
                 GUILayout.EndHorizontal();
                 return;
             }
@@ -251,7 +251,7 @@ namespace Townscape.Runtime.UI
                 Dispatch(new SetPlanned(item.Id, planned - step));
             }
 
-            GUILayout.Label(line.Count.ToString(), _skin.Bold, GUILayout.Width(CountWidth));
+            GUILayout.Label(line.Count.ToString(), _skin.Count, GUILayout.Width(CountWidth));
             if (GUILayout.Button("+", _skin.Button, GUILayout.Width(StepWidth)))
             {
                 Dispatch(new SetPlanned(item.Id, planned + step));
@@ -260,7 +260,7 @@ namespace Townscape.Runtime.UI
             var wanted = forecast.FirstChoicesOf(item.Id);
             var unit = item.Kind == ItemKind.Pastry ? "to bake" : "servings";
             var extra = item.Kind == ItemKind.Drink && line.Makeable > line.Count ? $", can make {line.Makeable}" : string.Empty;
-            GUILayout.Label($"{unit}{extra}  ·  ~{wanted:0} want", _skin.Value);
+            GUILayout.Label($"{unit}{extra}  ·  ~{wanted:0} want", _skin.Note);
             GUILayout.EndHorizontal();
         }
 
@@ -284,7 +284,7 @@ namespace Townscape.Runtime.UI
             var usual = Forecast.For(Balance, Balance.Site(result.SiteId)).Customers;
             Heading($"DAY {result.Day}");
             GUILayout.Label(
-                $"{result.Customers} customers came in ({Busyness(result.Customers, usual)}). {result.Served} bought something"
+                $"{result.Customers} customers came in, {Busyness(result.Customers, usual)}. {result.Served} bought something"
                 + (result.WalkedOut > 0 ? $" and {result.WalkedOut} gave up queuing." : "."),
                 _skin.Body);
 
@@ -348,7 +348,8 @@ namespace Townscape.Runtime.UI
             foreach (var slot in result.Slots)
             {
                 var walked = slot.WalkedOut > 0 ? $", {slot.WalkedOut} gave up" : string.Empty;
-                GUILayout.Label($"<b>{slot.Name}</b>: {slot.Customers} customers, longest wait {Duration(slot.LongestWaitSeconds)}{walked}.", _skin.Body);
+                var wait = slot.LongestWaitSeconds > 0 ? $"longest wait {Duration(slot.LongestWaitSeconds)}" : "no waiting";
+                GUILayout.Label($"<b>{slot.Name}</b>: {slot.Customers} customers, {wait}{walked}.", _skin.Body);
             }
 
             if (result.UpgradeImpacts.Count > 0)
@@ -458,7 +459,7 @@ namespace Townscape.Runtime.UI
                 case ShopPhase.Prep:
                     var plan = PrepPlan.For(Balance, state);
                     GUI.enabled = plan.CanAfford;
-                    if (GUILayout.Button($"Open for day {state.Day}", _skin.Button))
+                    if (GUILayout.Button($"Open for day {state.Day}", _skin.Primary))
                     {
                         Dispatch(new OpenForTheDay());
                     }
@@ -466,14 +467,14 @@ namespace Townscape.Runtime.UI
                     GUI.enabled = true;
                     break;
                 case ShopPhase.Review:
-                    if (GUILayout.Button($"Plan day {state.Day}", _skin.Button))
+                    if (GUILayout.Button($"Plan day {state.Day}", _skin.Primary))
                     {
                         Dispatch(new ContinueToPrep());
                     }
 
                     break;
                 default:
-                    if (GUILayout.Button("Start a new shop", _skin.Button))
+                    if (GUILayout.Button("Start a new shop", _skin.Primary))
                     {
                         StartNewGame();
                     }
@@ -523,8 +524,9 @@ namespace Townscape.Runtime.UI
         private static string Busyness(int customers, double usual)
         {
             var ratio = usual > 0 ? customers / usual : 1.0;
-            var feel = ratio < 0.85 ? "a quiet day" : ratio > 1.15 ? "a busy day" : "about usual";
-            return $"{feel}; usually about {usual:0}";
+            return ratio < 0.85 ? $"a quiet day (usually about {usual:0})"
+                : ratio > 1.15 ? $"a busy day (usually about {usual:0})"
+                : "about as many as usual";
         }
 
         private static string Name(ItemDef item, int count) => (count == 1 ? item.Name : item.PluralName).ToLowerInvariant();
