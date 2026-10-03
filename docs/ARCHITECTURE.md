@@ -251,8 +251,10 @@ applies them. Everything is driven from code on stock URP materials, apart from 
 - **`TownAudio`** plays rain and wind loops, the river from the nearest point on its course, and
   thunder from a pool of voices placed towards each strike when `StormSystem.ThunderArrived` fires.
   Volumes come from `AudioMix`. Any clip slot left empty on the bootstrap is filled by
-  `ProceduralSounds`, which synthesises rain, wind, the river and thunder from filtered noise:
-  seamless loops, and close thunder that cracks while distant thunder only rumbles.
+  `ProceduralSounds` on a background thread, so play mode never stalls: rain as a soft patter of
+  drops on an umbrella, the river as a smooth rush with hundreds of tiny bubbles a second, wind as
+  a dull roar, and thunder that cracks when close and only rumbles from afar. The loops are
+  seamless, and tests hold the rain to almost no hiss and the river to a steady, unchoppy level.
 
 ## Editor
 

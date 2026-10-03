@@ -13,7 +13,10 @@ namespace Townscape.Simulation.Audio
 
         private const float LoopFadeSeconds = 0.6f;
 
-        /// <summary>Steady rain: a soft hiss and body with drops pattering through it.</summary>
+        /// <summary>
+        /// Rain on an umbrella: a soft, warm wash with a dense patter of drops on taut fabric. Each
+        /// drop is a gentle tap with a short low "tok", eased in so nothing crackles or fizzes.
+        /// </summary>
         public static float[] Rain(int seed, float seconds = 6f, int sampleRate = SampleRate)
         {
             var count = Samples(seconds, sampleRate);
@@ -21,32 +24,46 @@ namespace Townscape.Simulation.Audio
             var random = new Random(seed);
             var samples = new float[total];
 
-            var hissTop = new OnePole(6500f, sampleRate);
-            var hissBottom = new OnePole(600f, sampleRate);
-            var body = new OnePole(900f, sampleRate);
+            // The wash: pink noise with its hiss taken off, swelling gently with the gusts.
+            var pink = new Pink();
+            var wash = new LowPass2(3600f, sampleRate);
+            var rumble = new OnePole(500f, sampleRate);
             for (var i = 0; i < total; i++)
             {
-                var white = Noise(random);
-                var hiss = hissTop.Low(white);
-                hiss -= hissBottom.Low(hiss);
-                samples[i] = (0.55f * hiss) + (0.3f * body.Low(white));
+                var loop = (float)(i % count) / count;
+                var swell = 1f + (0.12f * MathF.Sin((2f * MathF.PI * 3f * loop) + 0.7f)) + (0.06f * MathF.Sin((2f * MathF.PI * 7f * loop) + 2.1f));
+                var soft = wash.Low(pink.Next(Noise(random)));
+                samples[i] = (soft - rumble.Low(soft)) * 0.5f * swell;
             }
 
-            // Individual drops: short, bright ticks of noise.
-            var drops = (int)(total / (float)sampleRate * 160f);
+            // The patter: drops drumming on the fabric, many soft and a few heavier.
+            var drops = (int)(total / (float)sampleRate * 320f);
             for (var d = 0; d < drops; d++)
             {
+                var rib = random.NextDouble() < 0.12;
+                var frequency = rib ? Between(random, 1000f, 2000f) : MathF.Exp(Between(random, MathF.Log(220f), MathF.Log(700f)));
+                var decay = (rib ? Between(random, 0.006f, 0.012f) : Between(random, 0.012f, 0.035f)) * sampleRate;
+                var weight = (float)random.NextDouble();
+                var amplitude = 0.03f + (0.2f * weight * weight * weight);
+                Tone(samples, random.Next(total), frequency, 0f, decay, amplitude * 0.55f, sampleRate, random);
+
+                // The tap of the drop itself: a very short puff, crisp but with no fizz.
+                var tapTop = new LowPass2(4000f, sampleRate);
+                var tapBottom = new OnePole(700f, sampleRate);
                 var start = random.Next(total);
-                var size = (float)random.NextDouble();
-                var amplitude = 0.04f + (0.3f * size * size);
-                var decay = (0.0015f + (0.005f * (float)random.NextDouble())) * sampleRate;
-                var length = Math.Min(total - start, (int)(decay * 6f));
-                var brightness = new OnePole(1800f + (2500f * (float)random.NextDouble()), sampleRate);
-                for (var k = 0; k < length; k++)
+                var tapDecay = 0.003f * sampleRate;
+                for (var k = 0; k < tapDecay * 5f && start + k < total; k++)
                 {
-                    var white = Noise(random);
-                    samples[start + k] += (white - brightness.Low(white)) * amplitude * MathF.Exp(-k / decay);
+                    var puff = tapTop.Low(Noise(random));
+                    samples[start + k] += (puff - tapBottom.Low(puff)) * amplitude * 1.6f * Ease(k, sampleRate) * MathF.Exp(-k / tapDecay);
                 }
+            }
+
+            // Nothing above a gentle top end: rain on fabric, not static.
+            var top = new LowPass2(5000f, sampleRate);
+            for (var i = 0; i < total; i++)
+            {
+                samples[i] = top.Low(samples[i]);
             }
 
             return Normalise(Loop(samples, count, sampleRate), 0.7f);
@@ -80,7 +97,11 @@ namespace Townscape.Simulation.Audio
             return Normalise(Loop(samples, count, sampleRate), 0.65f);
         }
 
-        /// <summary>The river: a low rush with water babbling over stones.</summary>
+        /// <summary>
+        /// Flowing water: a smooth, steady rush and wash that only swell slowly, with a dense cloud of
+        /// tiny bubbles gurgling through it. The bubbles overlap so much that the water flows rather
+        /// than chops.
+        /// </summary>
         public static float[] River(int seed, float seconds = 8f, int sampleRate = SampleRate)
         {
             var count = Samples(seconds, sampleRate);
@@ -88,31 +109,35 @@ namespace Townscape.Simulation.Audio
             var random = new Random(seed);
             var samples = new float[total];
 
-            // Bubbles: short swells of brightness at random.
-            var bubbles = new float[total];
-            var bubbleCount = (int)(total / (float)sampleRate * 35f);
-            for (var b = 0; b < bubbleCount; b++)
-            {
-                var start = random.Next(total);
-                var length = (int)((0.02f + (0.07f * (float)random.NextDouble())) * sampleRate);
-                var amplitude = 0.3f + (0.7f * (float)random.NextDouble());
-                for (var k = 0; k < length && start + k < total; k++)
-                {
-                    bubbles[start + k] += amplitude * 0.5f * (1f - MathF.Cos(2f * MathF.PI * k / length));
-                }
-            }
-
-            var rush1 = new OnePole(220f, sampleRate);
-            var rush2 = new OnePole(300f, sampleRate);
-            var babbleTop = new OnePole(2800f, sampleRate);
-            var babbleBottom = new OnePole(700f, sampleRate);
+            var rush = new LowPass2(380f, sampleRate);
+            var pink = new Pink();
+            var washTop = new LowPass2(2200f, sampleRate);
+            var washBottom = new OnePole(260f, sampleRate);
             for (var i = 0; i < total; i++)
             {
-                var white = Noise(random);
-                var rush = rush2.Low(rush1.Low(white));
-                var babble = babbleTop.Low(white);
-                babble -= babbleBottom.Low(babble);
-                samples[i] = (rush * 2.5f) + (babble * (0.25f + bubbles[i]) * 0.6f);
+                // Slow swells only (whole cycles of the loop), so the flow never jerks.
+                var loop = (float)(i % count) / count;
+                var flow = 1f + (0.1f * MathF.Sin((2f * MathF.PI * 2f * loop) + 0.4f)) + (0.05f * MathF.Sin((2f * MathF.PI * 5f * loop) + 1.9f));
+                var lap = 1f + (0.12f * MathF.Sin((2f * MathF.PI * 3f * loop) + 2.6f));
+                var wash = washTop.Low(pink.Next(Noise(random)));
+                wash -= washBottom.Low(wash);
+                samples[i] = (rush.Low(Noise(random)) * 0.7f * flow) + (wash * 0.55f * lap);
+            }
+
+            // Bubbles: short tones that rise a little in pitch as they burst, hundreds a second.
+            var bubbles = (int)(total / (float)sampleRate * 420f);
+            for (var b = 0; b < bubbles; b++)
+            {
+                var frequency = MathF.Exp(Between(random, MathF.Log(260f), MathF.Log(1300f)));
+                var decay = Between(random, 0.008f, 0.022f) * sampleRate;
+                var amplitude = Between(random, 0.02f, 0.07f);
+                Tone(samples, random.Next(total), frequency, Between(random, 4f, 12f), decay, amplitude, sampleRate, random);
+            }
+
+            var top = new LowPass2(3200f, sampleRate);
+            for (var i = 0; i < total; i++)
+            {
+                samples[i] = top.Low(samples[i]);
             }
 
             return Normalise(Loop(samples, count, sampleRate), 0.6f);
@@ -180,6 +205,28 @@ namespace Townscape.Simulation.Audio
 
         private static int Samples(float seconds, int sampleRate) => (int)MathF.Round(seconds * sampleRate);
 
+        private static float Between(Random random, float min, float max) => min + ((float)random.NextDouble() * (max - min));
+
+        // A 1.5 ms raised-cosine fade-in, so a sound never starts with a click.
+        private static float Ease(int sample, int sampleRate)
+        {
+            var t = sample / (0.0015f * sampleRate);
+            return t >= 1f ? 1f : 0.5f - (0.5f * MathF.Cos(MathF.PI * t));
+        }
+
+        // Adds a decaying tone (a drop on fabric, a bubble) that glides up by `rise` per second of pitch.
+        private static void Tone(float[] samples, int start, float frequency, float rise, float decay, float amplitude, int sampleRate, Random random)
+        {
+            var phase = (float)(random.NextDouble() * Math.PI * 2.0);
+            var length = (int)(decay * 5f);
+            for (var k = 0; k < length && start + k < samples.Length; k++)
+            {
+                var t = (float)k / sampleRate;
+                phase += 2f * MathF.PI * frequency * (1f + (rise * t)) / sampleRate;
+                samples[start + k] += MathF.Sin(phase) * amplitude * Ease(k, sampleRate) * MathF.Exp(-k / decay);
+            }
+        }
+
         private static float Noise(Random random) => ((float)random.NextDouble() * 2f) - 1f;
 
         private static float Smooth(float t) => t * t * (3f - (2f * t));
@@ -236,6 +283,37 @@ namespace Townscape.Simulation.Audio
             {
                 _y += _a * (x - _y);
                 return _y;
+            }
+        }
+
+        /// <summary>Two one-pole low-passes in a row: a steeper slope, for taking hiss off.</summary>
+        private struct LowPass2
+        {
+            private OnePole _first;
+            private OnePole _second;
+
+            public LowPass2(float cutoff, int sampleRate)
+            {
+                _first = new OnePole(cutoff, sampleRate);
+                _second = new OnePole(cutoff, sampleRate);
+            }
+
+            public float Low(float x) => _second.Low(_first.Low(x));
+        }
+
+        /// <summary>Pink noise from white (Paul Kellet's filter): softer and warmer than white noise.</summary>
+        private struct Pink
+        {
+            private float _b0;
+            private float _b1;
+            private float _b2;
+
+            public float Next(float white)
+            {
+                _b0 = (0.99765f * _b0) + (white * 0.099046f);
+                _b1 = (0.963f * _b1) + (white * 0.2965164f);
+                _b2 = (0.57f * _b2) + (white * 1.0526913f);
+                return (_b0 + _b1 + _b2 + (white * 0.1848f)) * 0.25f;
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Townscape.Generation.Layout;
 using Townscape.Runtime.Rendering;
 using Townscape.Runtime.Weather;
@@ -15,6 +16,10 @@ namespace Townscape.Runtime.Audio
     /// The village's sound: rain and wind all round, the river nearby, and thunder from the
     /// direction of each strike, arriving when the storm says the sound gets here.
     /// </summary>
+    /// <remarks>
+    /// Sounds made in code are synthesised on a background thread (it takes a moment), so starting
+    /// play mode never stalls; each starts playing as soon as it is ready.
+    /// </remarks>
     [DisallowMultipleComponent]
     public sealed class TownAudio : MonoBehaviour
     {
@@ -34,6 +39,7 @@ namespace Townscape.Runtime.Audio
         private AudioSource _riverSource;
         private AudioClip[] _cracks;
         private AudioClip[] _rumbles;
+        private Task<Synthesised> _synthesis;
         private int _nextVoice;
 
         public void Initialize(Store<TownState> store, StormSystem storm, TownLayout layout, Transform listener, TownAudioClips clips, HideFlags hideFlags)
@@ -44,22 +50,23 @@ namespace Townscape.Runtime.Audio
             _listener = listener;
             clips ??= new TownAudioClips();
 
-            _rain = Loop("Rain", Or(clips.rainLoop, () => Generate("Rain", ProceduralSounds.Rain(11))), spatial: false, hideFlags);
-            _wind = Loop("Wind", Or(clips.windLoop, () => Generate("Wind", ProceduralSounds.Wind(12))), spatial: false, hideFlags);
-            _riverSource = Loop("River", Or(clips.riverLoop, () => Generate("River", ProceduralSounds.River(13))), spatial: true, hideFlags);
+            _rain = Loop("Rain", spatial: false, hideFlags);
+            _wind = Loop("Wind", spatial: false, hideFlags);
+            _riverSource = Loop("River", spatial: true, hideFlags);
             _riverSource.minDistance = 6f;
             _riverSource.maxDistance = 70f;
-
             _cracks = Assigned(clips.thunderCracks);
-            if (_cracks.Length == 0)
-            {
-                _cracks = new[] { Generate("Thunder Crack 1", ProceduralSounds.Thunder(21, true)), Generate("Thunder Crack 2", ProceduralSounds.Thunder(22, true)) };
-            }
-
             _rumbles = Assigned(clips.thunderRumbles);
-            if (_rumbles.Length == 0)
+
+            // Recordings play straight away; anything missing is made on a background thread.
+            // (Unity's null check, which also catches empty slots in the inspector, has to run here.)
+            var needed = new Needed(clips.rainLoop == null, clips.windLoop == null, clips.riverLoop == null, _cracks.Length == 0, _rumbles.Length == 0);
+            Play(_rain, clips.rainLoop);
+            Play(_wind, clips.windLoop);
+            Play(_riverSource, clips.riverLoop);
+            if (needed.Any)
             {
-                _rumbles = new[] { Generate("Thunder Rumble 1", ProceduralSounds.Thunder(31, false)), Generate("Thunder Rumble 2", ProceduralSounds.Thunder(32, false)), Generate("Thunder Rumble 3", ProceduralSounds.Thunder(33, false)) };
+                _synthesis = Task.Run(() => Synthesised.Make(needed));
             }
 
             for (var i = 0; i < _thunder.Length; i++)
@@ -83,6 +90,12 @@ namespace Townscape.Runtime.Audio
             if (_storm == null || _listener == null)
             {
                 return;
+            }
+
+            if (_synthesis != null && _synthesis.IsCompleted)
+            {
+                UseSynthesised(_synthesis);
+                _synthesis = null;
             }
 
             var conditions = _storm.Conditions;
@@ -138,25 +151,66 @@ namespace Townscape.Runtime.Audio
             _generated.Clear();
         }
 
-        private AudioSource Loop(string name, AudioClip clip, bool spatial, HideFlags hideFlags)
+        private void UseSynthesised(Task<Synthesised> synthesis)
+        {
+            if (synthesis.IsFaulted)
+            {
+                Debug.LogWarning($"[Townscape] Could not make the town's sounds: {synthesis.Exception?.GetBaseException().Message}");
+                return;
+            }
+
+            var sounds = synthesis.Result;
+            if (sounds.Rain != null)
+            {
+                Play(_rain, Generate("Rain", sounds.Rain));
+            }
+
+            if (sounds.Wind != null)
+            {
+                Play(_wind, Generate("Wind", sounds.Wind));
+            }
+
+            if (sounds.River != null)
+            {
+                Play(_riverSource, Generate("River", sounds.River));
+            }
+
+            if (sounds.Cracks != null)
+            {
+                _cracks = Array.ConvertAll(sounds.Cracks, samples => Generate("Thunder Crack", samples));
+            }
+
+            if (sounds.Rumbles != null)
+            {
+                _rumbles = Array.ConvertAll(sounds.Rumbles, samples => Generate("Thunder Rumble", samples));
+            }
+        }
+
+        private AudioSource Loop(string name, bool spatial, HideFlags hideFlags)
         {
             var source = TownMeshSpawner.CreateChild(name, transform, hideFlags).AddComponent<AudioSource>();
-            source.clip = clip;
             source.loop = true;
             source.playOnAwake = false;
             source.volume = 0f;
             source.spatialBlend = spatial ? 1f : 0f;
             source.dopplerLevel = 0f;
             source.rolloffMode = AudioRolloffMode.Linear;
+            return source;
+        }
+
+        private static void Play(AudioSource source, AudioClip clip)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            source.clip = clip;
 
             // Start somewhere different in each loop, so they never line up the same way twice.
             source.timeSamples = clip.samples > 0 ? UnityEngine.Random.Range(0, clip.samples) : 0;
             source.Play();
-            return source;
         }
-
-        // Unity's own null check, which also catches empty slots in the inspector (C#'s ?? would not).
-        private static AudioClip Or(AudioClip assigned, Func<AudioClip> fallback) => assigned != null ? assigned : fallback();
 
         private static AudioClip[] Assigned(AudioClip[] clips)
         {
@@ -179,6 +233,53 @@ namespace Townscape.Runtime.Audio
             clip.hideFlags = HideFlags.DontSave;
             _generated.Add(clip);
             return clip;
+        }
+
+        private readonly struct Needed
+        {
+            public Needed(bool rain, bool wind, bool river, bool cracks, bool rumbles)
+            {
+                Rain = rain;
+                Wind = wind;
+                River = river;
+                Cracks = cracks;
+                Rumbles = rumbles;
+            }
+
+            public bool Rain { get; }
+
+            public bool Wind { get; }
+
+            public bool River { get; }
+
+            public bool Cracks { get; }
+
+            public bool Rumbles { get; }
+
+            public bool Any => Rain || Wind || River || Cracks || Rumbles;
+        }
+
+        // Plain sample arrays: made on a background thread, turned into clips on the main thread.
+        private sealed class Synthesised
+        {
+            public float[] Rain { get; private set; }
+
+            public float[] Wind { get; private set; }
+
+            public float[] River { get; private set; }
+
+            public float[][] Cracks { get; private set; }
+
+            public float[][] Rumbles { get; private set; }
+
+            public static Synthesised Make(Needed needed) => new Synthesised
+            {
+                Rain = needed.Rain ? ProceduralSounds.Rain(11) : null,
+                Wind = needed.Wind ? ProceduralSounds.Wind(12) : null,
+                River = needed.River ? ProceduralSounds.River(13) : null,
+                Cracks = needed.Cracks ? new[] { ProceduralSounds.Thunder(21, true), ProceduralSounds.Thunder(22, true) } : null,
+                Rumbles = needed.Rumbles ? new[] { ProceduralSounds.Thunder(31, false), ProceduralSounds.Thunder(32, false), ProceduralSounds.Thunder(33, false) } : null,
+            };
         }
     }
 }

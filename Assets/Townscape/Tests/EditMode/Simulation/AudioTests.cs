@@ -80,6 +80,50 @@ namespace Townscape.Tests.Simulation
             Assert.That(Brightness(rain, 0, rain.Length), Is.GreaterThan(Brightness(wind, 0, wind.Length) * 1.5f));
         }
 
+        // Share of the sound's energy above a frequency, measured through three one-pole high-passes.
+        private static float ShareAbove(float[] samples, float frequency, int sampleRate)
+        {
+            var a = (float)Math.Exp(-2.0 * Math.PI * frequency / sampleRate);
+            var high = (float[])samples.Clone();
+            for (var stage = 0; stage < 3; stage++)
+            {
+                var low = 0f;
+                for (var i = 0; i < high.Length; i++)
+                {
+                    low = (a * low) + ((1f - a) * high[i]);
+                    high[i] -= low;
+                }
+            }
+
+            return (float)(high.Sum(x => (double)x * x) / samples.Sum(x => (double)x * x));
+        }
+
+        // How much the loudness jumps about from one 20 ms slice to the next, relative to its average.
+        private static float Choppiness(float[] samples, int sampleRate)
+        {
+            var window = sampleRate / 50;
+            var levels = Enumerable.Range(0, samples.Length / window).Select(w => Rms(samples, w * window, (w + 1) * window)).ToList();
+            var mean = levels.Average();
+            return (float)Math.Sqrt(levels.Average(l => (l - mean) * (l - mean))) / mean;
+        }
+
+        [Test]
+        public void Rain_IsASoftPatter_NotAHiss()
+        {
+            var rain = ProceduralSounds.Rain(11, 2f);
+
+            Assert.That(ShareAbove(rain, 4000f, ProceduralSounds.SampleRate), Is.LessThan(0.05f), "rain on an umbrella, not static");
+        }
+
+        [Test]
+        public void River_Flows_WithoutChopping()
+        {
+            var river = ProceduralSounds.River(13, 2f);
+
+            Assert.That(Choppiness(river, ProceduralSounds.SampleRate), Is.LessThan(0.16f));
+            Assert.That(ShareAbove(river, 4000f, ProceduralSounds.SampleRate), Is.LessThan(0.05f));
+        }
+
         [Test]
         public void Thunder_RollsAndThenDiesAway()
         {
