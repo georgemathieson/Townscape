@@ -39,6 +39,18 @@ namespace Townscape.Generation.Geometry
 
         public IReadOnlyList<SubmeshData> Submeshes { get; }
 
+        /// <summary>
+        /// Texture coordinates in metres, for the few surfaces that carry a texture (water and
+        /// puddles). Null for everything else, which is flat coloured.
+        /// </summary>
+        public Vector2[] Uvs { get; init; }
+
+        /// <summary>
+        /// For plants: each vertex's height above the base of the plant it belongs to, so the wind
+        /// can bend it. Null for meshes that never sway.
+        /// </summary>
+        public float[] SwayHeights { get; init; }
+
         public int VertexCount => Positions.Length;
 
         public int TriangleCount

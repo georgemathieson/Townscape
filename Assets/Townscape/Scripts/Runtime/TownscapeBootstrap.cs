@@ -6,6 +6,7 @@ using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Rendering;
 using Townscape.Runtime.UI;
+using Townscape.Runtime.Weather;
 using Townscape.State;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -21,7 +22,7 @@ namespace Townscape.Runtime
     /// <remarks>
     /// In edit mode it builds a preview (geometry, the sun and the town's lights) so the Scene view
     /// shows the town.
-    /// In play mode it also creates the camera, post-processing, fog, shortcuts and help overlay.
+    /// In play mode it also creates the camera, post-processing, fog, the storm, shortcuts and help overlay.
     /// </remarks>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -45,6 +46,7 @@ namespace Townscape.Runtime
         private readonly List<Object> _owned = new List<Object>();
         private GameObject _root;
         private MaterialLibrary _materials;
+        private IReadOnlyList<SpawnedMesh> _spawned;
         private bool _builtForPlayMode;
 
         public Store<TownState> Store { get; private set; }
@@ -54,6 +56,9 @@ namespace Townscape.Runtime
         public TimeOfDayLighting Lighting { get; private set; }
 
         public TownLights Lights { get; private set; }
+
+        /// <summary>The storm, in play mode only. Audio listens to its thunder.</summary>
+        public StormSystem Storm { get; private set; }
 
         /// <summary>Throws away everything generated and builds it again.</summary>
         public void Rebuild()
@@ -104,7 +109,7 @@ namespace Townscape.Runtime
 
             Town = new TownGenerator().Generate(new LakeDistrictVillageLayout().Create());
             _materials = new MaterialLibrary();
-            TownMeshSpawner.Spawn(Town, _materials, _root.transform, hideFlags, _owned);
+            _spawned = TownMeshSpawner.Spawn(Town, _materials, _root.transform, hideFlags, _owned);
 
             var sun = CreateSunAndMoon(hideFlags);
             Lighting = TownMeshSpawner.CreateChild("Time Of Day", _root.transform, hideFlags).AddComponent<TimeOfDayLighting>();
@@ -132,6 +137,9 @@ namespace Townscape.Runtime
             camera.gameObject.AddComponent<FreeFlyCamera>().Initialize(
                 input,
                 flat => Mathf.Max(ground.HeightAt(new System.Numerics.Vector2(flat.x, flat.y)), waterLevel));
+
+            Storm = TownMeshSpawner.CreateChild("Storm", _root.transform, hideFlags).AddComponent<StormSystem>();
+            Storm.Initialize(Store, Town, _materials, Lighting, camera.transform, _spawned, hideFlags);
 
             var controls = TownMeshSpawner.CreateChild("Controls", _root.transform, hideFlags);
             var help = controls.AddComponent<HelpOverlay>();
@@ -182,6 +190,8 @@ namespace Townscape.Runtime
             }
 
             _owned.Clear();
+            _spawned = null;
+            Storm = null;
             _materials?.Dispose();
             _materials = null;
             Lighting = null;

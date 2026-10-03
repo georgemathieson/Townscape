@@ -9,8 +9,9 @@ namespace Townscape.Runtime.Rendering
 {
     /// <summary>
     /// Creates one URP Lit material per <see cref="SurfaceMaterial"/>, coloured from the shared
-    /// <see cref="SurfacePalette"/>. Later milestones swap the shader for a custom one (wet
-    /// surfaces, rain ripples) without the generators noticing.
+    /// <see cref="SurfacePalette"/>. Systems change them while running (glow at night, a wet
+    /// sheen in the rain, ripples on water) through the methods here, so the generators never
+    /// need to know.
     /// </summary>
     public sealed class MaterialLibrary : IDisposable
     {
@@ -28,6 +29,9 @@ namespace Townscape.Runtime.Rendering
         private static readonly int DstBlendAlphaId = Shader.PropertyToID("_DstBlendAlpha");
         private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+        private static readonly int BumpMapId = Shader.PropertyToID("_BumpMap");
+        private static readonly int BumpScaleId = Shader.PropertyToID("_BumpScale");
 
         private readonly Dictionary<SurfaceMaterial, Material> _materials = new Dictionary<SurfaceMaterial, Material>();
         private readonly Shader _shader;
@@ -73,6 +77,50 @@ namespace Townscape.Runtime.Rendering
             if (material.HasProperty(EmissionColorId))
             {
                 material.SetVector(EmissionColorId, new Vector4(linearEmission.r, linearEmission.g, linearEmission.b, 1f));
+            }
+        }
+
+        /// <summary>Changes a material's colour, opacity and smoothness, for example to make it look wet.</summary>
+        public void SetAppearance(SurfaceMaterial surface, SurfaceAppearance appearance)
+        {
+            var material = Get(surface);
+            var colour = new Color(appearance.R, appearance.G, appearance.B, appearance.Alpha);
+            SetColorIfPresent(material, BaseColorId, colour);
+            SetColorIfPresent(material, ColorId, colour);
+            SetFloatIfPresent(material, SmoothnessId, appearance.Smoothness);
+            SetFloatIfPresent(material, GlossinessId, appearance.Smoothness);
+        }
+
+        /// <summary>
+        /// Gives a material a normal map that repeats every <paramref name="tileMetres"/> metres
+        /// of its texture coordinates (which are in metres). Swapping the texture each frame plays
+        /// a flipbook.
+        /// </summary>
+        public void SetNormalMap(SurfaceMaterial surface, Texture texture, float strength, float tileMetres)
+        {
+            var material = Get(surface);
+            if (!material.HasProperty(BumpMapId))
+            {
+                return;
+            }
+
+            material.EnableKeyword("_NORMALMAP");
+            material.SetTexture(BumpMapId, texture);
+            SetFloatIfPresent(material, BumpScaleId, strength);
+            if (material.HasProperty(BaseMapId))
+            {
+                // URP Lit reads every map with the base map's tiling and offset.
+                material.SetTextureScale(BaseMapId, Vector2.one / tileMetres);
+            }
+        }
+
+        /// <summary>Slides a material's textures, for water flowing downstream.</summary>
+        public void SetTextureOffset(SurfaceMaterial surface, Vector2 offset)
+        {
+            var material = Get(surface);
+            if (material.HasProperty(BaseMapId))
+            {
+                material.SetTextureOffset(BaseMapId, offset);
             }
         }
 

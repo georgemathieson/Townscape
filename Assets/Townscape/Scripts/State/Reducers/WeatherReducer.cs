@@ -19,6 +19,9 @@ namespace Townscape.State
                 case SetWindStrength wind:
                     next = state with { WindStrength = TimeMath.Clamp01(wind.Strength) };
                     break;
+                case RequestLightningStrike:
+                    next = state with { StrikeRequests = state.StrikeRequests + 1 };
+                    break;
                 default:
                     return state;
             }

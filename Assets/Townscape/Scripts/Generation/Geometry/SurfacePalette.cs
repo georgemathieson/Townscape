@@ -111,6 +111,9 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.WindowShop] = Glass,
                 [SurfaceMaterial.InnWindow] = Glass,
                 [SurfaceMaterial.SignGlass] = new SurfaceAppearance(0.90f, 0.88f, 0.80f, 0.80f),
+
+                [SurfaceMaterial.RiverWater] = new SurfaceAppearance(0.09f, 0.15f, 0.17f, 0.92f),
+                [SurfaceMaterial.Puddle] = new SurfaceAppearance(0.14f, 0.16f, 0.18f, 0.97f, 0.85f),
             };
 
         public static SurfaceAppearance Get(SurfaceMaterial material) =>

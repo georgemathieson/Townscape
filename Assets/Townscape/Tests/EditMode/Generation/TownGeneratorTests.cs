@@ -25,6 +25,7 @@ namespace Townscape.Tests.Generation
                 MeshCategory.Structure,
                 MeshCategory.Building,
                 MeshCategory.Furniture,
+                MeshCategory.Puddles,
                 MeshCategory.Vegetation,
             }));
         }

@@ -3,7 +3,8 @@
 A cosy, small, low poly Lake District village in a never-ending thunderstorm, built in Unity 6 (URP)
 with C#. Everything you see is generated from code: the ground, roads and markings, the river and
 the stone humpback bridge, the terraces and shops, street furniture and trees, the fells around the
-village, and the lamps and windows that light it after dark.
+village, the lamps and windows that light it after dark, and the storm: rain, lightning, wind and
+mist.
 
 - [Requirements](docs/REQUIREMENTS.md): what we're building, and the milestone plan
 - [Architecture](docs/ARCHITECTURE.md): how the code is organised and why
@@ -37,6 +38,10 @@ same setup.
 | 1 / 2 / 3 / 4 | Dawn / Day / Dusk / Night |
 | [ / ] | An hour earlier / later |
 | T | Start or stop the clock |
+| R | More rain (cycles back to light rain) |
+| L | More lightning (cycles back to none) |
+| G | More wind (cycles back to calm) |
+| B | A lightning strike now |
 | H | Show or hide the help |
 
 ## Working on it

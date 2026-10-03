@@ -7,11 +7,12 @@ using Townscape.Generation.Maths;
 
 namespace Townscape.Generation.Dressing
 {
-    /// <summary>Furniture (lamps, boxes, walls) and vegetation are kept in separate meshes so they can be treated differently later (wind).</summary>
+    /// <summary>Furniture (lamps, boxes, walls), vegetation and puddles are kept in separate meshes because they are treated differently: plants sway in the wind and puddles ripple.</summary>
     public enum DressingLayer
     {
         Furniture,
         Vegetation,
+        Puddles,
     }
 
     /// <summary>
@@ -44,6 +45,20 @@ namespace Townscape.Generation.Dressing
 
         /// <summary>Height of the ground surface, matching whichever terrain mesh covers <paramref name="p"/>.</summary>
         public float HeightAt(Vector2 p) => InCore(p) ? Ground.HeightAt(p) : Town.Terrain.FarHeightAt(p);
+
+        /// <summary>True if <paramref name="p"/> is inside a building, or within <paramref name="margin"/> metres of its walls.</summary>
+        public bool InsideBuilding(Vector2 p, float margin = 0f)
+        {
+            foreach (var building in Town.Buildings)
+            {
+                if (building.Footprint.Contains(p, margin))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>The region at <paramref name="p"/>. Outside the core everything is open ground.</summary>
         public RegionKind KindAt(Vector2 p) => InCore(p) ? Ground.Classify(p).Kind : RegionKind.OpenGround;
@@ -129,7 +144,12 @@ namespace Townscape.Generation.Dressing
         public void Place(IProp prop, Vector2 position, Vector2 facing, DressingLayer layer, Random random, float footprint = 0.8f)
         {
             var origin = GeoMath.At(position, HeightAt(position));
-            prop.Build(new PropFrame(BuilderAt(position, layer), Anchors, random, origin, facing));
+            var builder = BuilderAt(position, layer);
+
+            // Plants remember how high each vertex is above their base, so the wind can bend them.
+            builder.SwayBase = layer == DressingLayer.Vegetation ? origin.Y : (float?)null;
+            prop.Build(new PropFrame(builder, Anchors, random, origin, facing));
+            builder.SwayBase = null;
             Occupy(position, footprint);
         }
 

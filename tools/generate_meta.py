@@ -49,6 +49,17 @@ AssemblyDefinitionImporter:
   assetBundleName: 
   assetBundleVariant: 
 """,
+    ".shader": """fileFormatVersion: 2
+guid: {guid}
+ShaderImporter:
+  externalObjects: {{}}
+  defaultTextures: []
+  nonModifiableTextures: []
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+""",
 }
 
 TEXT = """fileFormatVersion: 2

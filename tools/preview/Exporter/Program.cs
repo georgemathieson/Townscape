@@ -93,6 +93,23 @@ foreach (var generated in town.Meshes)
     accessors.Add($"{{\"bufferView\":{AddView(normalBytes, 34962)},\"componentType\":5126,\"count\":{mesh.VertexCount},\"type\":\"VEC3\"}}");
     var normalAccessor = accessors.Count - 1;
 
+    // Texture coordinates (in metres) for the textured surfaces: water and puddles.
+    var uvAttribute = string.Empty;
+    if (mesh.Uvs != null)
+    {
+        var uvs = new float[mesh.VertexCount * 2];
+        for (var i = 0; i < mesh.VertexCount; i++)
+        {
+            uvs[i * 2] = mesh.Uvs[i].X;
+            uvs[(i * 2) + 1] = mesh.Uvs[i].Y;
+        }
+
+        var uvBytes = new byte[uvs.Length * 4];
+        Buffer.BlockCopy(uvs, 0, uvBytes, 0, uvBytes.Length);
+        accessors.Add($"{{\"bufferView\":{AddView(uvBytes, 34962)},\"componentType\":5126,\"count\":{mesh.VertexCount},\"type\":\"VEC2\"}}");
+        uvAttribute = $",\"TEXCOORD_0\":{accessors.Count - 1}";
+    }
+
     var primitives = new List<string>();
     foreach (var submesh in mesh.Submeshes)
     {
@@ -107,7 +124,7 @@ foreach (var generated in town.Meshes)
         var indexBytes = new byte[indices.Length * 4];
         Buffer.BlockCopy(indices, 0, indexBytes, 0, indexBytes.Length);
         accessors.Add($"{{\"bufferView\":{AddView(indexBytes, 34963)},\"componentType\":5125,\"count\":{indices.Length},\"type\":\"SCALAR\"}}");
-        primitives.Add($"{{\"attributes\":{{\"POSITION\":{positionAccessor},\"NORMAL\":{normalAccessor}}},\"indices\":{accessors.Count - 1},\"material\":{MaterialFor(submesh.Material)}}}");
+        primitives.Add($"{{\"attributes\":{{\"POSITION\":{positionAccessor},\"NORMAL\":{normalAccessor}{uvAttribute}}},\"indices\":{accessors.Count - 1},\"material\":{MaterialFor(submesh.Material)}}}");
     }
 
     meshes.Add($"{{\"name\":\"{mesh.Name}\",\"primitives\":[{string.Join(",", primitives)}]}}");
@@ -132,4 +149,5 @@ json.Append($"\"nodes\":[{string.Join(",", nodes)}],");
 json.Append($"\"scenes\":[{{\"nodes\":[{string.Join(",", nodeIndices)}]}}],\"scene\":0}}");
 File.WriteAllText(Path.Combine(output, "town.gltf"), json.ToString());
 LightsExport.Write(town, Path.Combine(output, "lights.json"));
+StormExport.Write(town, Path.Combine(output, "storm.json"));
 Console.WriteLine($"Wrote {Path.Combine(output, "town.gltf")} ({binary.Length / 1024} KiB of geometry)");

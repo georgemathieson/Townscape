@@ -15,13 +15,39 @@ namespace Townscape.Generation.Geometry
         private readonly List<Vector3> _positions = new List<Vector3>();
         private readonly List<Vector3> _normals = new List<Vector3>();
         private readonly Dictionary<SurfaceMaterial, List<int>> _indices = new Dictionary<SurfaceMaterial, List<int>>();
+        private List<Vector2> _uvs;
+        private List<float> _sway;
 
         public int VertexCount => _positions.Count;
 
         public bool IsEmpty => _positions.Count == 0;
 
+        /// <summary>
+        /// While set, every vertex added records its height above this level, so the wind can sway
+        /// it. Set it to the ground level under a plant while building the plant, then clear it.
+        /// </summary>
+        public float? SwayBase { get; set; }
+
         /// <summary>Adds a triangle wound clockwise as seen from its front (Unity's convention).</summary>
         public void AddTriangle(Vector3 a, Vector3 b, Vector3 c, SurfaceMaterial material)
+        {
+            Add(a, b, c, material, null);
+        }
+
+        /// <summary>Adds a triangle with texture coordinates, wound clockwise as seen from its front.</summary>
+        public void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Vector2 uvA, Vector2 uvB, Vector2 uvC, SurfaceMaterial material)
+        {
+            Add(a, b, c, material, (uvA, uvB, uvC));
+        }
+
+        /// <summary>Adds the quad a-b-c-d with texture coordinates, wound clockwise from the front.</summary>
+        public void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector2 uvA, Vector2 uvB, Vector2 uvC, Vector2 uvD, SurfaceMaterial material)
+        {
+            Add(a, b, c, material, (uvA, uvB, uvC));
+            Add(a, c, d, material, (uvA, uvC, uvD));
+        }
+
+        private void Add(Vector3 a, Vector3 b, Vector3 c, SurfaceMaterial material, (Vector2 A, Vector2 B, Vector2 C)? uvs)
         {
             var cross = Vector3.Cross(b - a, c - a);
             var length = cross.Length();
@@ -38,6 +64,34 @@ namespace Townscape.Generation.Geometry
             }
 
             var start = _positions.Count;
+            if (uvs.HasValue)
+            {
+                EnsureUvs();
+                _uvs.Add(uvs.Value.A);
+                _uvs.Add(uvs.Value.B);
+                _uvs.Add(uvs.Value.C);
+            }
+            else if (_uvs != null)
+            {
+                _uvs.Add(PlanUv(a));
+                _uvs.Add(PlanUv(b));
+                _uvs.Add(PlanUv(c));
+            }
+
+            if (SwayBase.HasValue)
+            {
+                EnsureSway();
+                _sway.Add(MathF.Max(0f, a.Y - SwayBase.Value));
+                _sway.Add(MathF.Max(0f, b.Y - SwayBase.Value));
+                _sway.Add(MathF.Max(0f, c.Y - SwayBase.Value));
+            }
+            else if (_sway != null)
+            {
+                _sway.Add(0f);
+                _sway.Add(0f);
+                _sway.Add(0f);
+            }
+
             _positions.Add(a);
             _positions.Add(b);
             _positions.Add(c);
@@ -230,7 +284,35 @@ namespace Townscape.Generation.Geometry
                 }
             }
 
-            return new MeshData(name, _positions.ToArray(), _normals.ToArray(), submeshes);
+            return new MeshData(name, _positions.ToArray(), _normals.ToArray(), submeshes)
+            {
+                Uvs = _uvs?.ToArray(),
+                SwayHeights = _sway?.ToArray(),
+            };
+        }
+
+        // Vertices added before the first one with texture coordinates are mapped from above, in metres.
+        private static Vector2 PlanUv(Vector3 p) => new Vector2(p.X, p.Z);
+
+        private void EnsureUvs()
+        {
+            if (_uvs == null)
+            {
+                _uvs = new List<Vector2>(_positions.Count + 3);
+                foreach (var position in _positions)
+                {
+                    _uvs.Add(PlanUv(position));
+                }
+            }
+        }
+
+        private void EnsureSway()
+        {
+            if (_sway == null)
+            {
+                _sway = new List<float>(_positions.Count + 3);
+                _sway.AddRange(new float[_positions.Count]);
+            }
         }
     }
 }

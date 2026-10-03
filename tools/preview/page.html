@@ -24,6 +24,16 @@ const presets = {
   night: { fog: 0x12161f, density: 0.011, sky: 0x2a3550, ground: 0x0c0c10, hemi: 0.7, sun: 0x8aa0d0, sunIntensity: 0.45, elevation: 35, azimuth: 120, exposure: 1.3 },
 };
 
+// Rain and smoke catch whatever light there is: pale by day, dim at night.
+const rainTint = { day: 0xc8ced6, dusk: 0x8a90a6, night: 0x55607a };
+const smokeTint = { day: 0x9a9da3, dusk: 0x5d6070, night: 0x2c3140 };
+
+// A lightning strike at night, frozen at the brightest moment of its flash.
+presets.flash = { ...presets.night, flash: true };
+rainTint.flash = 0xb8c4e8;
+smokeTint.flash = 0x7e86a0;
+const flashColour = new THREE.Color(0.62, 0.68, 0.92);
+
 const views = {
   overview: { position: [-62, 42, -70], target: [5, 0, 5], fov: 50 },
   bridge:   { position: [-21, 4.5, -23], target: [0, 0.6, 0], fov: 50 },
@@ -45,6 +55,7 @@ const views = {
   phonebox: { position: [-14, 2.2, 3.5], target: [-11, 1.5, 10], fov: 55 },
   lane:     { position: [-60.6, 2, 15], target: [-64, 2, 45], fov: 60 },
   riverside: { position: [9.5, 2, 20], target: [3, 1, 45], fov: 60 },
+  puddles:  { position: [-13, 1.4, -1.5], target: [-30, 0.4, -3], fov: 60 },
 };
 
 const unity = ([x, y, z]) => new THREE.Vector3(x, y, -z);
@@ -79,6 +90,141 @@ gltf.scene.traverse((object) => {
 });
 const lampGroup = new THREE.Group();
 scene.add(lampGroup);
+
+// The storm, worked out by the same C# simulation Unity uses (see Exporter/StormExport.cs).
+const storm = await (await fetch('/out/storm.json')).json();
+
+// It always rains, so every surface the rain changes is wet: darker and glossier.
+for (const [name, [r, g, b, roughness]] of Object.entries(storm.wet)) {
+  const material = materials[name];
+  if (!material) continue;
+  material.color.setRGB(r, g, b);
+  material.roughness = roughness;
+}
+
+// Raindrop rings on puddles, the river and the lake: one frame of Unity's normal-map flipbooks.
+function normalTexture(base64, tileMetres) {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const texture = new THREE.DataTexture(bytes, storm.ripples.size, storm.ripples.size, THREE.RGBAFormat);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1 / tileMetres, 1 / tileMetres);
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
+const ripples = { Puddle: [normalTexture(storm.ripples.puddle, 1.3), 0.8], Water: [normalTexture(storm.ripples.water, 3.5), 0.7], RiverWater: [normalTexture(storm.ripples.water, 3.5), 0.75] };
+for (const [name, [map, strength]] of Object.entries(ripples)) {
+  const material = materials[name];
+  if (!material) continue;
+  material.normalMap = map;
+  material.normalScale.set(strength, strength);
+  material.needsUpdate = true;
+}
+
+// A deterministic random sequence, so renders are repeatable.
+function random(seed) {
+  let state = seed;
+  return () => (state = (state * 16807) % 2147483647) / 2147483647;
+}
+
+// Rain: short streaks along the drops' velocity in a box round the camera, as in Unity.
+const rainGroup = new THREE.Group();
+scene.add(rainGroup);
+function makeRain(cameraPosition, presetName) {
+  rainGroup.clear();
+  const count = Math.round(9000 * storm.rain.amount);
+  const fall = new THREE.Vector3(...storm.rain.velocity).normalize().multiplyScalar(0.45);
+  const positions = new Float32Array(count * 6);
+  const next = random(7);
+  for (let i = 0; i < count; i++) {
+    const p = new THREE.Vector3((next() - 0.5) * 40, (next() - 0.35) * 22, (next() - 0.5) * 40).add(cameraPosition);
+    positions.set([p.x, p.y, p.z, p.x + fall.x, p.y + fall.y, p.z + fall.z], i * 6);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  rainGroup.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: rainTint[presetName], transparent: true, opacity: 0.4, depthWrite: false })));
+}
+
+// Chimney smoke: puffs drifting downwind from each chimney with a fire lit at this hour.
+const puffTexture = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const context = canvas.getContext('2d');
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.55, 'rgba(255,255,255,0.45)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+})();
+const smokeGroup = new THREE.Group();
+scene.add(smokeGroup);
+function makeSmoke(cameraPosition, presetName) {
+  smokeGroup.clear();
+  const wind = new THREE.Vector3(...storm.wind);
+  const next = random(11);
+  for (const top of storm.smoke[presetName === 'flash' ? 'night' : presetName] ?? []) {
+    const base = new THREE.Vector3(...top);
+    if (base.distanceTo(cameraPosition) > 220) continue;
+    for (let k = 0; k < 22; k++) {
+      // Same motion as ChimneySmokeEffect: rising fast and slowing as it cools, carried and pushed by the wind,
+      // with a little wander for the turbulence Unity's noise module adds.
+      const age = (k + next()) * 0.31;
+      const lifetime = 6.8;
+      const position = base.clone()
+        .addScaledVector(new THREE.Vector3(0, 1, 0), (1.3 * age) - (0.575 * age * age / lifetime))
+        .addScaledVector(wind, (0.4 * age) + (0.025 * age * age))
+        .add(new THREE.Vector3(next() - 0.5, next() - 0.5, next() - 0.5).multiplyScalar(0.35 * age));
+      const life = age / lifetime;
+      const opacity = 0.32 * Math.min(1, life * 12) * Math.max(0, 1 - life) ** 0.8;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTexture, color: smokeTint[presetName], transparent: true, opacity, depthWrite: false }));
+      sprite.position.copy(position);
+      sprite.scale.setScalar(3 * (0.25 + (0.75 * life)));
+      smokeGroup.add(sprite);
+    }
+  }
+}
+
+// Lightning bolts, drawn like LightningEffect: far bolts brought nearer and scaled to look the same.
+const boltGroup = new THREE.Group();
+scene.add(boltGroup);
+const lightning = new THREE.DirectionalLight(flashColour, 0);
+scene.add(lightning);
+scene.add(lightning.target);
+function makeBolts(camera, flash) {
+  boltGroup.clear();
+  if (!flash) return;
+  const toCamera = new THREE.Vector3();
+  for (const bolt of storm.bolts) {
+    const ground = new THREE.Vector3(...bolt[bolt.length - 1][1]);
+    const distance = ground.distanceTo(camera.position);
+    const scale = Math.min(1, 950 / distance);
+    const width = 0.0012 * distance * scale * 1.6;
+    for (const [glow, colour] of [[1, new THREE.Color(7, 7.5, 10)], [4, new THREE.Color(0.35, 0.37, 0.5)]]) {
+      const positions = [];
+      for (const [a, b, w] of bolt) {
+        if (glow > 1 && w < 1) continue;
+        const start = camera.position.clone().lerp(new THREE.Vector3(...a), scale);
+        const end = camera.position.clone().lerp(new THREE.Vector3(...b), scale);
+        toCamera.subVectors(camera.position, start);
+        const side = new THREE.Vector3().subVectors(end, start).cross(toCamera).normalize().multiplyScalar(width * w * glow * 0.5);
+        positions.push(...start.clone().add(side).toArray(), ...start.clone().sub(side).toArray(), ...end.clone().add(side).toArray());
+        positions.push(...end.clone().add(side).toArray(), ...start.clone().sub(side).toArray(), ...end.clone().sub(side).toArray());
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      boltGroup.add(new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: colour, fog: false, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, side: THREE.DoubleSide })));
+    }
+  }
+  // Light from the first bolt's direction, as LightningEffect does.
+  const strike = new THREE.Vector3(...storm.bolts[0][storm.bolts[0].length - 1][1]);
+  lightning.position.copy(strike).setY(400);
+  lightning.target.position.set(0, 0, 0);
+}
 gltf.scene.traverse((object) => {
   if (!object.isMesh) return;
   const category = object.parent?.userData?.category ?? object.userData?.category;
@@ -117,17 +263,21 @@ window.renderView = (viewName, presetName) => {
   scene.environment = environmentFor(preset);
   scene.environmentIntensity = 0.6;
   const view = views[viewName];
-  scene.background = new THREE.Color(preset.fog);
-  scene.fog = viewName === 'map' ? null : new THREE.FogExp2(preset.fog, preset.density);
-  hemi.color.set(preset.sky);
+  // Lightning washes the fog and the shadows with a cold light (WeatherLighting in Unity); mist thickens the fog.
+  const flash = preset.flash ? 1 : 0;
+  const fog = new THREE.Color(preset.fog).lerp(flashColour.clone().multiplyScalar(0.75), flash * 0.4);
+  scene.background = fog;
+  scene.fog = viewName === 'map' ? null : new THREE.FogExp2(fog, preset.density * (0.9 + (0.3 * storm.rain.mist)));
+  hemi.color.set(preset.sky).lerp(flashColour, flash * 0.5);
   hemi.groundColor.set(preset.ground);
-  hemi.intensity = preset.hemi;
+  hemi.intensity = preset.hemi * (1 + (1.2 * flash));
+  lightning.intensity = 1.6 * Math.PI * flash;
   sun.color.set(preset.sun);
   sun.intensity = preset.sunIntensity;
   renderer.toneMappingExposure = preset.exposure;
 
   // Glow and point lights for this time of day, as worked out by NightLights in C#.
-  const night = lighting[presetName];
+  const night = lighting[presetName === 'flash' ? 'night' : presetName];
   for (const [name, rgb] of Object.entries(night?.emission ?? {})) {
     const material = materials[name];
     if (!material) continue;
@@ -161,6 +311,14 @@ window.renderView = (viewName, presetName) => {
     camera.position.copy(unity(view.position));
     camera.lookAt(unity(view.target));
   }
+
+  const showWeather = viewName !== 'map';
+  rainGroup.visible = smokeGroup.visible = showWeather;
+  if (showWeather) {
+    makeRain(camera.position, presetName);
+    makeSmoke(camera.position, presetName);
+  }
+  makeBolts(camera, flash > 0 && showWeather);
 
   renderer.render(scene, camera);
   return renderer.domElement.toDataURL('image/png');

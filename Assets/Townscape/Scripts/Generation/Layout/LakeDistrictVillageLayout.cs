@@ -145,6 +145,7 @@ namespace Townscape.Generation.Layout
                 new DryStoneWallsRule(walls),
                 new TreesRule(new[] { new OpenSpace(new Vector2(-30f, 44f), 9f), new OpenSpace(new Vector2(87f, 72f), 12f) }),
                 new GroundCoverRule(),
+                new PuddlesRule(),
             };
         }
 

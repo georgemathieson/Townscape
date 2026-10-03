@@ -34,6 +34,10 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.HourBack: return Input.GetKeyDown(KeyCode.LeftBracket);
                 case Shortcut.HourForward: return Input.GetKeyDown(KeyCode.RightBracket);
                 case Shortcut.ToggleHelp: return Input.GetKeyDown(KeyCode.H);
+                case Shortcut.CycleRain: return Input.GetKeyDown(KeyCode.R);
+                case Shortcut.CycleLightning: return Input.GetKeyDown(KeyCode.L);
+                case Shortcut.CycleWind: return Input.GetKeyDown(KeyCode.G);
+                case Shortcut.StrikeLightning: return Input.GetKeyDown(KeyCode.B);
                 default: return false;
             }
         }

@@ -84,5 +84,9 @@ namespace Townscape.Generation.Geometry
         WindowShop,
         InnWindow,
         SignGlass,
+
+        // Water that moves: the river flows and puddles ripple in the rain.
+        RiverWater,
+        Puddle,
     }
 }

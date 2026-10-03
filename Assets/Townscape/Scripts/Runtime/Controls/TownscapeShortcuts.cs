@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Townscape.Runtime.Controls
 {
-    /// <summary>Turns key presses into store actions. It never changes lighting directly.</summary>
+    /// <summary>Turns key presses into store actions. It never changes lighting or weather directly.</summary>
     [DisallowMultipleComponent]
     public sealed class TownscapeShortcuts : MonoBehaviour
     {
@@ -50,6 +50,27 @@ namespace Townscape.Runtime.Controls
             if (_input.WasPressed(Shortcut.HourForward))
             {
                 _store.Dispatch(new SetTargetHour(Mathf.Round(baseHour) + 1f));
+            }
+
+            var weather = _store.State.Weather;
+            if (_input.WasPressed(Shortcut.CycleRain))
+            {
+                _store.Dispatch(new SetRainIntensity(WeatherSteps.Next(weather.RainIntensity, WeatherSteps.Rain)));
+            }
+
+            if (_input.WasPressed(Shortcut.CycleLightning))
+            {
+                _store.Dispatch(new SetLightningFrequency(WeatherSteps.Next(weather.LightningFrequency, WeatherSteps.Lightning)));
+            }
+
+            if (_input.WasPressed(Shortcut.CycleWind))
+            {
+                _store.Dispatch(new SetWindStrength(WeatherSteps.Next(weather.WindStrength, WeatherSteps.Wind)));
+            }
+
+            if (_input.WasPressed(Shortcut.StrikeLightning))
+            {
+                _store.Dispatch(new RequestLightningStrike());
             }
 
             if (_input.WasPressed(Shortcut.ToggleHelp) && _help != null)

@@ -51,6 +51,10 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.HourBack: return keyboard.leftBracketKey.wasPressedThisFrame;
                 case Shortcut.HourForward: return keyboard.rightBracketKey.wasPressedThisFrame;
                 case Shortcut.ToggleHelp: return keyboard.hKey.wasPressedThisFrame;
+                case Shortcut.CycleRain: return keyboard.rKey.wasPressedThisFrame;
+                case Shortcut.CycleLightning: return keyboard.lKey.wasPressedThisFrame;
+                case Shortcut.CycleWind: return keyboard.gKey.wasPressedThisFrame;
+                case Shortcut.StrikeLightning: return keyboard.bKey.wasPressedThisFrame;
                 default: return false;
             }
         }

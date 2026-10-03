@@ -6,9 +6,10 @@
 Assets/Townscape/Scripts/
   State/        Townscape.State        engine-free: Redux-style store, actions, reducers
   Generation/   Townscape.Generation   engine-free: layout, terrain, ground, structures, markings
-  Simulation/   Townscape.Simulation   engine-free: what is lit after dark, when, and how brightly
+  Simulation/   Townscape.Simulation   engine-free: lights after dark, and the storm (weather, wind, lightning, rain)
   Runtime/      Townscape.Runtime      Unity: bootstrap, rendering, lighting, controls, UI
   Editor/       Townscape.Editor       Unity editor: project setup, menus, inspectors
+Assets/Townscape/Shaders/              the one hand-written shader: the fog-free lightning bolt
 Assets/Townscape/Tests/EditMode/       NUnit tests for State, Generation and Simulation
 Assets/Scenes/Town.unity               holds a single TownscapeBootstrap
 tools/                                 checks and previews that run without Unity
@@ -33,8 +34,8 @@ order.
 |---|---|
 | Target hour, preset, auto-cycle on/off, cycle speed | The hour currently shown while blending |
 | Rain intensity, lightning frequency, wind strength | Particle rates, gusts, the flash brightness |
-| Weather profile | Lightning and thunder timing |
-| | Which windows and lamps are lit, the beacons' flash |
+| Weather profile | Lightning and thunder timing, how wet things are |
+| Requests for a lightning strike (a count that only goes up) | Which windows and lamps are lit, the beacons' flash |
 
 Pushing per-frame values through reducers would create garbage for the garbage collector every frame
 (stutters) and adds nothing, because nobody asked for those changes. So, for example,
@@ -59,9 +60,11 @@ data.
 | `IBuildingStyle` | terraced unit, detached house (cottages, the mill, a detached shop), church | chapel, barn |
 | `IGroundFloorStyle` | traditional shopfront, inn, house front | bay-windowed shop |
 | `IShopDisplay` | books, coffee, computers, newsagent, bakery, chippy, florist, gallery, generic shelves | anything new a shop needs |
-| `IDressingRule` | street lamps, Belisha beacons, river railings, placed props, dry-stone walls, churchyard, trees, ground cover, flower beds | hedges, parked cars |
+| `IDressingRule` | street lamps, Belisha beacons, river railings, placed props, dry-stone walls, churchyard, trees, ground cover, flower beds, puddles | hedges, parked cars |
 | `IProp` | lamp post, K6 phone box, pillar box, bench, bus stop, Belisha beacon, memorial, gravestone, tree (four species), flower clump | anything placed |
 | `ITownscapeInput` | Input System, legacy Input Manager | gamepad |
+| `IWeatherProfile` | thunderstorm | clear skies, fog, snow |
+| `IWeatherEffect` | rain and splashes, lightning, wet surfaces, water, mist, chimney smoke, wind sway | hail, a rainbow |
 
 Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes), `NightLights` (glow
 colours and light brightness), `GenerationSettings` and `VillageShops` (each shop's name, paint,
@@ -85,7 +88,9 @@ submesh per `SurfaceMaterial`):
      makes the kerbs, verge edges and stone river embankments.
 3. **Fells:** a coarse 10 m grid from the edge of the core out to 700 m, with the river valley and the
    lake carved in. The core border is perfectly flat so the two meshes meet cleanly.
-4. **Water:** one plane at water level. Terrain sits above it everywhere except the river and lake.
+4. **Water:** one plane just below water level; terrain sits above it everywhere except the river
+   and lake. The river has its own ribbon of water on top whose texture coordinates run downstream,
+   so its ripples can flow round the bends.
 5. **Markings:** each road's `IRoadMarking`s paint thin quads just above the carriageway. Anything
    that would land off the road (over the bridge, on a pavement) is dropped.
 6. **Structures:** every `IStructureGenerator` adds its meshes. The bridge footprint leaves a hole in
@@ -121,15 +126,17 @@ place `IProp`s (each built in its own `PropFrame`: x right, y up, z towards its 
 long features directly (railings, dry-stone walls). The `DressingContext` gives them:
 - ground height and region queries that also cover the fells beyond the core
 - an occupancy map, so trees keep clear of lamps, benches, walls and each other
-- mesh builders chunked by area: 50 m in the village and 200 m on the fells, split into Furniture
-  and Vegetation so vegetation can sway in the wind later
+- mesh builders chunked by area: 50 m in the village and 200 m on the fells, split into Furniture,
+  Vegetation and Puddles because each is treated differently
+- sway heights: while a plant is built, every vertex records how high it is above the plant's base
+  (`MeshData.SwayHeights`), so the wind can bend tree tops more than trunks
 
 Rules lean on the ground model, so placement stays sensible without hand-tuning. For example,
 dry-stone walls break wherever they would cross a road, path or yard, which leaves gateways at
 every cottage and junction.
 
 Generators also leave **anchors** (`TownAnchor`) for later systems:
-- chimney pots, for smoke
+- chimney pots, for smoke from the fires
 - windows, fanlights and shop windows
 - the inn's lanterns and the street lamps
 - Belisha beacons, which flash
@@ -194,6 +201,41 @@ Unity doesn't, so the preview multiplies light intensities by π. Both use ACES 
 bleaches bright glows towards white, so glow colours are set more saturated than they should look:
 the street lamps' glass comes out a creamy warm white and the beacons amber-orange.
 
+## The storm
+
+Like the lights, the rules are engine-free (`Simulation/Weather`) and tested, and Unity only
+applies them. Everything is driven from code on stock URP materials, apart from one small shader.
+
+- **Profiles.** An `IWeatherProfile` turns the user's settings and the clock into
+  `WeatherConditions`: how hard it is raining, the wind, strikes a minute and mist. The
+  `ThunderstormProfile` makes rain come in surges, the south-westerly wind gust and veer, and storm
+  cells drift through so lightning comes in bursts.
+- **`StormSystem`** (Runtime) samples the profile each frame, moves the wetness on, runs the
+  lightning and ticks every `IWeatherEffect` with a `WeatherFrame`. It also raises `Struck` and
+  `ThunderArrived` events for the audio milestone.
+- **Lightning.** `LightningStorm` schedules strikes at random at the current rate. Each is a few
+  return strokes a fraction of a second apart, which makes the flicker. Its thunder arrives
+  distance ÷ 343 m/s later, louder and sharper when close. `LightningBolt` draws the jagged channel
+  and its branches by midpoint displacement. The flash lifts the ambient light and the fog through
+  `TimeOfDayLighting.Weather` (lamps keep reading the clean time of day), and a directional light
+  shines from the strike.
+- **Bolts** use the one custom shader (`Shaders/LightningBolt.shader`): unlit, additive and without
+  fog, because the storm's fog would otherwise hide a bolt a kilometre away completely. Bolts beyond
+  the camera's far plane are drawn nearer and scaled down so they look the same.
+- **Rain** is a particle system in a box that follows the camera, slanted by the wind.
+  `RainCatchMap` is a height map of whatever rain hits first (roofs, awnings, the bridge, the road,
+  the river), rasterised once from the generated meshes; drops end there and splash.
+- **Wet surfaces.** `Wetness` darkens and glosses each kind of surface: tarmac and flagstones most,
+  render and paint less, glass not at all. Surfaces soak up in about half a minute of heavy rain.
+- **Water.** `RippleField` makes looping, tileable normal maps of raindrop rings (and a swell for
+  open water). They play as flipbooks on puddles, the lake and the river, and the river's texture
+  slides downstream.
+- **Mist** is big soft particles near the ground plus thicker fog. **Chimney smoke** comes from the
+  chimneys with a fire lit (more in the evening): it rises, slows as it cools and bends downwind.
+- **Wind sway** moves plant vertices on the CPU, only near the camera. `WindSway.Motion` is worked
+  out once per 2.5 m patch (gusts roll across the land as waves, so neighbours move together), and
+  each vertex scales it by its own bend.
+
 ## Editor
 
 - `TownscapeProjectSetup` runs on editor load and is idempotent. It creates and assigns the URP
@@ -208,7 +250,7 @@ the street lamps' glass comes out a creamy warm white and the beacons amber-oran
 |---|---|
 | `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State, Generation and Simulation) under .NET 8 |
 | `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs |
-| `tools/preview` | Runs the real generator, exports glTF and the night lights, and renders PNGs with three.js in headless Chromium |
+| `tools/preview` | Runs the real generator, exports glTF, the night lights and the storm, and renders PNGs with three.js in headless Chromium |
 | `python3 tools/generate_meta.py` | Creates `.meta` files with GUIDs derived from the path, so references can be written by hand |
 
 The compile check uses an older Unity's reference assemblies, so code behind newer version checks

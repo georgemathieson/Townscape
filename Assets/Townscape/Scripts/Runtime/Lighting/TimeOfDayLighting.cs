@@ -35,7 +35,11 @@ namespace Townscape.Runtime.Lighting
         /// <summary>The hour currently shown, which may lag the requested hour while blending.</summary>
         public float CurrentHour { get; private set; }
 
+        /// <summary>The time of day's lighting before the weather changes it, so lamps don't react to lightning.</summary>
         public LightingKeyframe Current { get; private set; }
+
+        /// <summary>Set each frame by the storm: the lightning flash and the mist's extra fog.</summary>
+        public WeatherLighting Weather { get; set; } = WeatherLighting.None;
 
         /// <param name="controlEnvironment">
         /// When false (edit-mode preview) only the light is driven, so opening the scene does not
@@ -134,20 +138,21 @@ namespace Townscape.Runtime.Lighting
                 return;
             }
 
+            var shown = Weather.ApplyTo(key);
             RenderSettings.sun = _light;
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = key.AmbientSky;
-            RenderSettings.ambientEquatorColor = key.AmbientEquator;
-            RenderSettings.ambientGroundColor = key.AmbientGround;
+            RenderSettings.ambientSkyColor = shown.AmbientSky;
+            RenderSettings.ambientEquatorColor = shown.AmbientEquator;
+            RenderSettings.ambientGroundColor = shown.AmbientGround;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = key.FogColour;
-            RenderSettings.fogDensity = key.FogDensity;
+            RenderSettings.fogColor = shown.FogColour;
+            RenderSettings.fogDensity = shown.FogDensity;
 
             if (_camera != null)
             {
                 _camera.clearFlags = CameraClearFlags.SolidColor;
-                _camera.backgroundColor = key.FogColour;
+                _camera.backgroundColor = shown.FogColour;
             }
 
             if (_colorAdjustments != null)

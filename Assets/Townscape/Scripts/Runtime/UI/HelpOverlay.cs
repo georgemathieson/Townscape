@@ -17,7 +17,9 @@ namespace Townscape.Runtime.UI
             "Shift  faster    Scroll  change speed\n" +
             "1 Dawn   2 Day   3 Dusk   4 Night\n" +
             "[ / ]  an hour earlier / later\n" +
-            "T  run the clock    H  hide this help";
+            "T  run the clock    H  hide this help\n" +
+            "R  rain    L  lightning    G  wind\n" +
+            "B  lightning strike now";
 
         private Store<TownState> _store;
         private TimeOfDayLighting _lighting;
@@ -46,10 +48,15 @@ namespace Townscape.Runtime.UI
                 richText = true,
             };
 
-            var text = $"<b>Townscape</b>   {Describe(_store.State.TimeOfDay, _lighting.CurrentHour)}\n\n{Controls}";
+            var text = $"<b>Townscape</b>   {Describe(_store.State.TimeOfDay, _lighting.CurrentHour)}\n{Describe(_store.State.Weather)}\n\n{Controls}";
             var size = _style.CalcSize(new GUIContent(text));
             GUI.Box(new Rect(16f, 16f, size.x, size.y), text, _style);
         }
+
+        private static string Describe(WeatherState weather) =>
+            $"Rain {Percent(weather.RainIntensity)}   Lightning {Percent(weather.LightningFrequency)}   Wind {Percent(weather.WindStrength)}";
+
+        private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)}%";
 
         private static string Describe(TimeOfDayState time, float currentHour)
         {

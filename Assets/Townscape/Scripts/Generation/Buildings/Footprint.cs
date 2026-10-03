@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Townscape.Generation.Buildings.Parts;
 using Townscape.Generation.Maths;
@@ -63,6 +64,36 @@ namespace Townscape.Generation.Buildings
             var back = Vector2.Lerp(BackLeft, BackRight, a);
             return Vector2.Lerp(front, back, b);
         }
+
+        /// <summary>
+        /// True if <paramref name="p"/> is inside the footprint or within <paramref name="margin"/>
+        /// metres of it (footprints are convex, so each edge is checked in turn).
+        /// </summary>
+        public bool Contains(Vector2 p, float margin = 0f)
+        {
+            var corners = Corners;
+            var area = 0f;
+            for (var i = 0; i < corners.Length; i++)
+            {
+                area += Cross(corners[i], corners[(i + 1) % corners.Length]);
+            }
+
+            var winding = MathF.Sign(area);
+            for (var i = 0; i < corners.Length; i++)
+            {
+                var a = corners[i];
+                var edge = corners[(i + 1) % corners.Length] - a;
+                var length = edge.Length();
+                if (length > 1e-5f && winding * Cross(edge, p - a) / length < -margin)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static float Cross(Vector2 a, Vector2 b) => (a.X * b.Y) - (a.Y * b.X);
 
         /// <summary>A rectangle centred on <paramref name="frontCentre"/>, facing <paramref name="outward"/>.</summary>
         public static Footprint FromFront(Vector2 frontCentre, Vector2 outward, float width, float depth)
