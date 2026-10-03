@@ -35,6 +35,8 @@ namespace Townscape.Generation.Geometry
     /// </summary>
     public static class SurfacePalette
     {
+        private static readonly SurfaceAppearance Glass = new SurfaceAppearance(0.10f, 0.13f, 0.16f, 0.92f);
+
         private static readonly Dictionary<SurfaceMaterial, SurfaceAppearance> Appearances =
             new Dictionary<SurfaceMaterial, SurfaceAppearance>
             {
@@ -97,6 +99,18 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.LeafAutumn] = new SurfaceAppearance(0.62f, 0.42f, 0.16f, 0.15f),
                 [SurfaceMaterial.PineGreen] = new SurfaceAppearance(0.13f, 0.25f, 0.18f, 0.12f),
                 [SurfaceMaterial.GrassTuft] = new SurfaceAppearance(0.40f, 0.52f, 0.26f, 0.15f),
+
+                [SurfaceMaterial.Window0] = Glass,
+                [SurfaceMaterial.Window1] = Glass,
+                [SurfaceMaterial.Window2] = Glass,
+                [SurfaceMaterial.Window3] = Glass,
+                [SurfaceMaterial.Window4] = Glass,
+                [SurfaceMaterial.Window5] = Glass,
+                [SurfaceMaterial.Window6] = Glass,
+                [SurfaceMaterial.Window7] = Glass,
+                [SurfaceMaterial.WindowShop] = Glass,
+                [SurfaceMaterial.InnWindow] = Glass,
+                [SurfaceMaterial.SignGlass] = new SurfaceAppearance(0.90f, 0.88f, 0.80f, 0.80f),
             };
 
         public static SurfaceAppearance Get(SurfaceMaterial material) =>

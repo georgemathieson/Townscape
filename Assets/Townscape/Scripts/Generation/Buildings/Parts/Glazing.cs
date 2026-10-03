@@ -52,7 +52,7 @@ namespace Townscape.Generation.Buildings.Parts
         {
             var builder = context.Builder;
             var back = -opening.Depth;
-            wall.Quad(builder, opening.X0, opening.Y0, opening.X1, opening.Y1, back, style.Glass);
+            wall.Quad(builder, opening.X0, opening.Y0, opening.X1, opening.Y1, back, GlassFor(context, style));
             Frames(builder, wall, opening.X0, opening.Y0, opening.X1, opening.Y1, back, style);
             SillAndSurround(builder, wall, opening.X0, opening.Y0, opening.X1, opening.Y1, style);
 
@@ -64,7 +64,7 @@ namespace Townscape.Generation.Buildings.Parts
         public static void AppliedWindow(BuildContext context, WallFrame wall, float x0, float y0, float x1, float y1, WindowStyle style, bool anchor = true)
         {
             var builder = context.Builder;
-            wall.Quad(builder, x0, y0, x1, y1, 0.012f, style.Glass);
+            wall.Quad(builder, x0, y0, x1, y1, 0.012f, GlassFor(context, style));
             Frames(builder, wall, x0, y0, x1, y1, 0.012f, style);
             SillAndSurround(builder, wall, x0, y0, x1, y1, style);
             if (anchor)
@@ -93,12 +93,22 @@ namespace Townscape.Generation.Buildings.Parts
 
             if (fanlight)
             {
-                wall.Quad(builder, opening.X0, doorTop, opening.X1, opening.Y1, back, SurfaceMaterial.WindowGlass);
+                wall.Quad(builder, opening.X0, doorTop, opening.X1, opening.Y1, back, HomeWindowGroup(context));
                 wall.Block(builder, opening.X0, doorTop, opening.X1, doorTop + 0.06f, back, back + BarDepth, frame);
                 wall.Block(builder, midX - (BarWidth * 0.5f), doorTop, midX + (BarWidth * 0.5f), opening.Y1, back, back + BarDepth, frame);
-                context.Anchor(AnchorKind.DoorLamp, wall.Point(opening.CentreX, opening.Y1 + 0.2f, 0.1f), wall.Out, opening.Width);
+                context.Anchor(AnchorKind.Fanlight, wall.Point(opening.CentreX, (doorTop + opening.Y1) * 0.5f, back), wall.Out, opening.Width);
             }
         }
+
+        /// <summary>
+        /// Plain window glass becomes one of the home window groups at random, so each window
+        /// lights up at its own time in the evening. Other glass is kept as styled.
+        /// </summary>
+        private static SurfaceMaterial GlassFor(BuildContext context, WindowStyle style) =>
+            style.Glass == SurfaceMaterial.WindowGlass ? HomeWindowGroup(context) : style.Glass;
+
+        public static SurfaceMaterial HomeWindowGroup(BuildContext context) =>
+            SurfaceMaterial.Window0 + context.Random.Next(8);
 
         private static void Frames(MeshBuilder builder, WallFrame wall, float x0, float y0, float x1, float y1, float glassZ, WindowStyle style)
         {

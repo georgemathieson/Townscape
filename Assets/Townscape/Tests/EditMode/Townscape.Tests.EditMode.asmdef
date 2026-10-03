@@ -4,6 +4,7 @@
     "references": [
         "Townscape.State",
         "Townscape.Generation",
+        "Townscape.Simulation",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -19,7 +19,8 @@ namespace Townscape.Runtime
     /// rebuilt from code whenever the scene opens or play mode starts.
     /// </summary>
     /// <remarks>
-    /// In edit mode it builds a preview (geometry and the sun) so the Scene view shows the town.
+    /// In edit mode it builds a preview (geometry, the sun and the town's lights) so the Scene view
+    /// shows the town.
     /// In play mode it also creates the camera, post-processing, fog, shortcuts and help overlay.
     /// </remarks>
     [ExecuteAlways]
@@ -51,6 +52,8 @@ namespace Townscape.Runtime
         public GeneratedTown Town { get; private set; }
 
         public TimeOfDayLighting Lighting { get; private set; }
+
+        public TownLights Lights { get; private set; }
 
         /// <summary>Throws away everything generated and builds it again.</summary>
         public void Rebuild()
@@ -106,6 +109,8 @@ namespace Townscape.Runtime
             var sun = CreateSunAndMoon(hideFlags);
             Lighting = TownMeshSpawner.CreateChild("Time Of Day", _root.transform, hideFlags).AddComponent<TimeOfDayLighting>();
             Lighting.Initialize(Store, sun, LightingProfile.CreateStorm(), controlEnvironment: playing);
+            Lights = TownMeshSpawner.CreateChild("Lights", _root.transform, hideFlags).AddComponent<TownLights>();
+            Lights.Initialize(Town, _materials, Lighting, hideFlags);
 
             if (playing)
             {
@@ -180,6 +185,7 @@ namespace Townscape.Runtime
             _materials?.Dispose();
             _materials = null;
             Lighting = null;
+            Lights = null;
             Town = null;
             Store = null;
         }

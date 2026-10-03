@@ -28,6 +28,7 @@ const views = {
   overview: { position: [-62, 42, -70], target: [5, 0, 5], fov: 50 },
   bridge:   { position: [-21, 4.5, -23], target: [0, 0.6, 0], fov: 50 },
   street:   { position: [-62, 1.8, -3], target: [0, 1.4, 0], fov: 60 },
+  bridgeNight: { position: [-8.5, 2.6, -20], target: [3, 1.2, 3], fov: 55 },
   junction: { position: [30, 12, -22], target: [48, 0, 6], fov: 55 },
   river:    { position: [-6, 3, -42], target: [0, -0.5, 0], fov: 55 },
   valley:   { position: [25, 28, -95], target: [-30, 10, 220], fov: 55 },
@@ -69,6 +70,15 @@ scene.add(sun);
 scene.add(sun.target);
 
 const gltf = await new GLTFLoader().loadAsync('/out/town.gltf');
+const lighting = await (await fetch('/out/lights.json')).json();
+const materials = {};
+gltf.scene.traverse((object) => {
+  if (object.isMesh) {
+    for (const material of [object.material].flat()) materials[material.name] = material;
+  }
+});
+const lampGroup = new THREE.Group();
+scene.add(lampGroup);
 gltf.scene.traverse((object) => {
   if (!object.isMesh) return;
   const category = object.parent?.userData?.category ?? object.userData?.category;
@@ -115,6 +125,22 @@ window.renderView = (viewName, presetName) => {
   sun.color.set(preset.sun);
   sun.intensity = preset.sunIntensity;
   renderer.toneMappingExposure = preset.exposure;
+
+  // Glow and point lights for this time of day, as worked out by NightLights in C#.
+  const night = lighting[presetName];
+  for (const [name, rgb] of Object.entries(night?.emission ?? {})) {
+    const material = materials[name];
+    if (!material) continue;
+    material.emissive = new THREE.Color(rgb[0], rgb[1], rgb[2]);
+    material.emissiveIntensity = 1;
+  }
+  lampGroup.clear();
+  for (const light of night?.lights ?? []) {
+    // Unity's diffuse lighting has no 1/π, three.js's does, so the same light needs π times the intensity here.
+    const point = new THREE.PointLight(new THREE.Color(light.c[0], light.c[1], light.c[2]), light.i * Math.PI, light.r, 2);
+    point.position.set(light.p[0], light.p[1], light.p[2]);
+    lampGroup.add(point);
+  }
 
   const el = THREE.MathUtils.degToRad(preset.elevation);
   const az = THREE.MathUtils.degToRad(preset.azimuth);

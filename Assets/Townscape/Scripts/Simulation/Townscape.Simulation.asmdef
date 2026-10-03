@@ -1,0 +1,16 @@
+{
+    "name": "Townscape.Simulation",
+    "rootNamespace": "Townscape.Simulation",
+    "references": [
+        "Townscape.Generation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -93,7 +93,9 @@ before work started; later changes should be recorded here too.
    - **2a Buildings:** terraces with shops and flats, detached houses and shops, roofs, chimneys and
      dormers, the church and the old mill. *(done)*
    - **2b Street furniture and greenery:** lamps, phone and post boxes, benches, beacons, railings,
-     trees, grass, flowers and dry-stone walls. *(this pull request)*
+     trees, grass, flowers and dry-stone walls. *(done)*
 3. **Lighting:** full time-of-day treatment, lit windows, street lamps and light sources.
+   *(this pull request)*
 4. **Storm:** rain, splashes, lightning, thunder timing, wet surfaces, puddles, mist and wind.
-5. **Finish:** control panel UI, audio hooks and polish.
+5. **Finish:** control panel UI, audio hooks and polish. Includes a player build that keeps the
+   shader variants the runtime materials switch on (transparent glass, emission).

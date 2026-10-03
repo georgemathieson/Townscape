@@ -6,14 +6,15 @@
 Assets/Townscape/Scripts/
   State/        Townscape.State        engine-free: Redux-style store, actions, reducers
   Generation/   Townscape.Generation   engine-free: layout, terrain, ground, structures, markings
+  Simulation/   Townscape.Simulation   engine-free: what is lit after dark, when, and how brightly
   Runtime/      Townscape.Runtime      Unity: bootstrap, rendering, lighting, controls, UI
   Editor/       Townscape.Editor       Unity editor: project setup, menus, inspectors
-Assets/Townscape/Tests/EditMode/       NUnit tests for State and Generation
+Assets/Townscape/Tests/EditMode/       NUnit tests for State, Generation and Simulation
 Assets/Scenes/Town.unity               holds a single TownscapeBootstrap
 tools/                                 checks and previews that run without Unity
 ```
 
-`State` and `Generation` have `noEngineReferences: true`, so they cannot touch `UnityEngine`. That
+`State`, `Generation` and `Simulation` have `noEngineReferences: true`, so they cannot touch `UnityEngine`. That
 keeps the interesting logic fast to test and lets it run outside Unity: in plain `dotnet test`, and in
 the offline preview renderer. `Runtime` is a thin layer that turns their output into GameObjects and
 drives Unity's lighting.
@@ -33,6 +34,7 @@ order.
 | Target hour, preset, auto-cycle on/off, cycle speed | The hour currently shown while blending |
 | Rain intensity, lightning frequency, wind strength | Particle rates, gusts, the flash brightness |
 | Weather profile | Lightning and thunder timing |
+| | Which windows and lamps are lit, the beacons' flash |
 
 Pushing per-frame values through reducers would create garbage for the garbage collector every frame
 (stutters) and adds nothing, because nobody asked for those changes. So, for example,
@@ -61,8 +63,9 @@ data.
 | `IProp` | lamp post, K6 phone box, pillar box, bench, bus stop, Belisha beacon, memorial, gravestone, tree (four species), flower clump | anything placed |
 | `ITownscapeInput` | Input System, legacy Input Manager | gamepad |
 
-Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes), `GenerationSettings` and
-`VillageShops` (each shop's name, paint, lettering and display).
+Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes), `NightLights` (glow
+colours and light brightness), `GenerationSettings` and `VillageShops` (each shop's name, paint,
+lettering and display).
 These are plain code today and are meant to become ScriptableObject assets once there is a UI to tune them.
 
 ## Generation pipeline
@@ -127,8 +130,8 @@ every cottage and junction.
 
 Generators also leave **anchors** (`TownAnchor`) for later systems:
 - chimney pots, for smoke
-- windows and shop windows, for lighting them at night
-- door lamps and street lamps
+- windows, fanlights and shop windows
+- the inn's lanterns and the street lamps
 - Belisha beacons, which flash
 - the phone box's lit sign
 
@@ -142,8 +145,8 @@ the front, as Unity expects.
 `TownscapeBootstrap` is the composition root and the only object saved in the scene. It has
 `[ExecuteAlways]`:
 
-- **Edit mode:** generates the town and a sun into `HideFlags.DontSave` objects, so the Scene view
-  shows the town but nothing generated is ever written into the scene file.
+- **Edit mode:** generates the town, a sun and the town's lights into `HideFlags.DontSave` objects, so
+  the Scene view shows the town but nothing generated is ever written into the scene file.
 - **Play mode:** also creates the camera, the post-processing volume, fog and environment, keyboard
   shortcuts and the help overlay.
 
@@ -158,6 +161,39 @@ custom shader (wetness, ripples) in one place.
 sets ambient light, fog, the background colour, post exposure, and a generated sky gradient that
 feeds reflections (so the water reflects a storm sky).
 
+## Lighting after dark
+
+The rules live in the engine-free `Simulation` assembly, so they are unit tested and the preview
+renderer uses them too. `TownLights` (Runtime) only applies them to Unity.
+
+- **Darkness.** Each lighting keyframe has a `Darkness` value from 0 (broad day) to 1 (night). It
+  blends with the rest of the keyframe, so lamps and windows follow presets, the hour keys and the
+  auto-cycle without knowing about any of them.
+- **`LightSchedule`** decides *when*, as a level from 0 to 1:
+  - Home windows come in eight groups. Each group lights at its own darkness, so windows come on
+    one by one at dusk, and goes to bed at its own time between 10pm and 1am. Some are lit early
+    on a winter morning, and one group is on through a gloomy day.
+  - Group 7 is the television: a flickering blue-white.
+  - Street lamps each switch on at a slightly different darkness and stutter as they come on.
+  - Shops are lit during opening hours and dimly after closing. The inn stays lit until 11.30pm.
+  - Belisha beacons flash about once a second.
+- **`NightLights`** decides *how*: the glow colour of each emissive material, and a `LightSpec`
+  (colour, range, intensity) for each kind of anchor that casts real light.
+- **Window groups.** Generation gives every home window one of eight glass materials, `Window0` to
+  `Window7`, picked at random. A whole group lights together, so the village lights up window by
+  window while `TownLights` only updates eight materials a frame and needs no object per window.
+- **`TownLights`** puts an unshadowed point light at every street lamp, shop window, inn lantern,
+  beacon and the phone box (Forward+ copes with many small lights), and each frame sets the
+  emission of every glowing material. Lights fade rather than snap, except the beacons, and are
+  disabled when they are off.
+
+Units: `NightLights` colours are linear and its intensities are in Unity's units. Unity treats light
+colours as sRGB, so `TownLights` converts them, and emission is written as a raw linear vector
+because `Material.SetColor` would treat it as sRGB too. three.js divides diffuse light by π and
+Unity doesn't, so the preview multiplies light intensities by π. Both use ACES tone mapping, which
+bleaches bright glows towards white, so glow colours are set more saturated than they should look:
+the street lamps' glass comes out a creamy warm white and the beacons amber-orange.
+
 ## Editor
 
 - `TownscapeProjectSetup` runs on editor load and is idempotent. It creates and assigns the URP
@@ -170,9 +206,9 @@ feeds reflections (so the water reflects a storm sky).
 
 | Tool | What it does |
 |---|---|
-| `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State and Generation) under .NET 8 |
+| `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State, Generation and Simulation) under .NET 8 |
 | `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs |
-| `tools/preview` | Runs the real generator, exports glTF and renders PNGs with three.js in headless Chromium |
+| `tools/preview` | Runs the real generator, exports glTF and the night lights, and renders PNGs with three.js in headless Chromium |
 | `python3 tools/generate_meta.py` | Creates `.meta` files with GUIDs derived from the path, so references can be written by hand |
 
 The compile check uses an older Unity's reference assemblies, so code behind newer version checks
@@ -182,5 +218,5 @@ compiles through its `#else` branch. The editor remains the final word.
 
 - New files under `Assets/` need a `.meta`: run `python3 tools/generate_meta.py`. Move a file's
   `.meta` along with it.
-- Keep generation engine-free. If it needs `UnityEngine`, it belongs in Runtime.
+- Keep generation and simulation engine-free. If it needs `UnityEngine`, it belongs in Runtime.
 - Prefer a new strategy over a new branch in an existing generator.

@@ -16,6 +16,7 @@
   <ItemGroup>
     <Compile Include="../../../Assets/Townscape/Scripts/State/**/*.cs" />
     <Compile Include="../../../Assets/Townscape/Scripts/Generation/**/*.cs" />
+    <Compile Include="../../../Assets/Townscape/Scripts/Simulation/**/*.cs" />
     <Compile Include="../../../Assets/Townscape/Tests/EditMode/**/*.cs" />
   </ItemGroup>
   <ItemGroup>

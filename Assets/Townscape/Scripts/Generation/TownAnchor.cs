@@ -24,6 +24,9 @@ namespace Townscape.Generation
 
         /// <summary>A sign that is lit from inside, like the TELEPHONE sign on a phone box.</summary>
         LitSign,
+
+        /// <summary>The glazed fanlight over a front door.</summary>
+        Fanlight,
     }
 
     /// <summary>
