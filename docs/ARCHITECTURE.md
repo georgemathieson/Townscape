@@ -53,10 +53,14 @@ data.
 | `IGroundFeature` | road, river, footpath, structure footprint | building plots, yards |
 | `ISurfaceRegion` | flat, terrain-following, open ground, river bed and bank | puddles |
 | `IRoadMarking` | centre line, double yellows, give way, zebra crossing | bus stop, "SLOW" |
-| `IStructureGenerator` | `BridgeGenerator` (humpback bridge) | terraces, cottages, street furniture |
+| `IStructureGenerator` | `BridgeGenerator`, `BuildingGenerator` | street furniture, trees |
+| `IBuildingStyle` | terraced unit, detached house (cottages, the mill, a detached shop), church | chapel, barn |
+| `IGroundFloorStyle` | traditional shopfront, inn, house front | bay-windowed shop |
+| `IShopDisplay` | books, coffee, computers, newsagent, bakery, chippy, florist, gallery, generic shelves | anything new a shop needs |
 | `ITownscapeInput` | Input System, legacy Input Manager | gamepad |
 
-Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes) and `GenerationSettings`.
+Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes), `GenerationSettings` and
+`VillageShops` (each shop's name, paint, lettering and display).
 These are plain code today and are meant to become ScriptableObject assets once there is a UI to tune them.
 
 ## Generation pipeline
@@ -81,6 +85,34 @@ submesh per `SurfaceMaterial`):
    that would land off the road (over the bridge, on a pavement) is dropped.
 6. **Structures:** every `IStructureGenerator` adds its meshes. The bridge footprint leaves a hole in
    the ground that the bridge deck fills, meeting the road at road level.
+
+### Buildings
+
+Buildings are **planned before the ground is generated**:
+
+1. `BuildingPlanner` turns the layout's `TerraceSpec`s and `DetachedBuildingSpec`s into footprints.
+   Terraced units are split along the road by width weights. Their side walls follow the road's
+   normals, so units are slightly wedge-shaped on curves and neighbours share walls exactly.
+   `TerraceDesigner` picks each unit's look: wall finish, floors, windows, dormer, door colour.
+2. Each footprint becomes a `PlotFeature`: flat flagstones at pavement height with a 0.6 m apron,
+   so hummocks never poke through a floor.
+3. `BuildingGenerator` builds each plan with its `IBuildingStyle`, one mesh per terrace or building.
+
+Styles are assembled from small parts in `Buildings/Parts`:
+- `WallFrame`: wall-space coordinates, where x runs along the wall, y is height and z is out of the wall.
+- `WallBuilder`: walls with recessed openings.
+- `Glazing`: sash and casement windows, doors and fanlights.
+- `GableRoof`: slate roofs on any four-sided footprint.
+- `Chimney` and `Dormer`.
+- `PixelFont`: shop signs built as geometry, so no font assets are needed and Unity and the preview
+  look the same.
+
+Shop windows use transparent glass in front of a shallow display box that an `IShopDisplay` dresses.
+
+Generators also leave **anchors** (`TownAnchor`) for later systems:
+- chimney pots, for smoke
+- windows and shop windows, for lighting them at night
+- door lamps
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 

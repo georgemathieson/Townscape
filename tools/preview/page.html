@@ -33,6 +33,13 @@ const views = {
   valley:   { position: [25, 28, -95], target: [-30, 10, 220], fov: 55 },
   lake:     { position: [-10, 35, -70], target: [120, 0, -400], fov: 55 },
   map:      { ortho: 106 },
+  highstreet: { position: [40, 1.7, -4], target: [14, 3.5, 2], fov: 60 },
+  shops:    { position: [26, 2.2, -1.5], target: [26, 2.4, 8], fov: 60 },
+  shopsSouth: { position: [24, 2.2, 0.5], target: [24, 2.4, -8], fov: 60 },
+  village:  { position: [-40, 30, -55], target: [10, 0, 10], fov: 50 },
+  church:   { position: [55, 10, 50], target: [82, 8, 72], fov: 55 },
+  rooftops: { position: [0, 22, -30], target: [30, 6, 6], fov: 55 },
+  mill:     { position: [-4, 5, -50], target: [-19, 4, -70], fov: 55 },
 };
 
 const unity = ([x, y, z]) => new THREE.Vector3(x, y, -z);

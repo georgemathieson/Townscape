@@ -88,9 +88,12 @@ before work started; later changes should be recorded here too.
 ## Milestones
 
 1. **Foundation:** URP project setup, state store, generated ground, river, roads, markings and the
-   bridge; basic time-of-day lighting; free-fly camera. *(this pull request)*
-2. **Buildings:** terraces with shops and flats, detached houses and shops, roofs and chimneys;
-   street furniture, trees, grass and flowers.
+   bridge; basic time-of-day lighting; free-fly camera. *(done)*
+2. **Buildings and streets**, in two parts:
+   - **2a Buildings:** terraces with shops and flats, detached houses and shops, roofs, chimneys and
+     dormers, the church and the old mill.
+   - **2b Street furniture and greenery:** lamps, phone and post boxes, benches, beacons, railings,
+     trees, grass, flowers and dry-stone walls.
 3. **Lighting:** full time-of-day treatment, lit windows, street lamps and light sources.
 4. **Storm:** rain, splashes, lightning, thunder timing, wet surfaces, puddles, mist and wind.
 5. **Finish:** control panel UI, audio hooks and polish.

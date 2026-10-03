@@ -43,6 +43,7 @@ namespace Townscape.Generation.Ground
         public const int StructureFootprint = 80;
         public const int Road = 60;
         public const int Pavement = 50;
+        public const int Plot = 45;
         public const int Path = 40;
     }
 

@@ -128,6 +128,29 @@ namespace Townscape.Generation.Geometry
             AddTriangleFacing(c3, c0, apex, -right, material);
         }
 
+        /// <summary>
+        /// Adds an upright prism (a low poly cylinder) standing on <paramref name="baseCentre"/>,
+        /// with its top capped. <paramref name="sides"/> of 6–8 reads as round at a distance.
+        /// </summary>
+        public void AddPrism(Vector3 baseCentre, float radius, float height, int sides, SurfaceMaterial material, bool capBottom = false, float rotation = 0f)
+        {
+            var top = baseCentre + (Vector3.UnitY * height);
+            for (var i = 0; i < sides; i++)
+            {
+                var a0 = rotation + (MathF.PI * 2f * i / sides);
+                var a1 = rotation + (MathF.PI * 2f * (i + 1) / sides);
+                var d0 = new Vector3(MathF.Cos(a0), 0f, MathF.Sin(a0)) * radius;
+                var d1 = new Vector3(MathF.Cos(a1), 0f, MathF.Sin(a1)) * radius;
+                var outward = (d0 + d1) * 0.5f;
+                AddQuadFacing(baseCentre + d0, baseCentre + d1, top + d1, top + d0, outward, material);
+                AddTriangleFacing(top, top + d0, top + d1, Vector3.UnitY, material);
+                if (capBottom)
+                {
+                    AddTriangleFacing(baseCentre, baseCentre + d0, baseCentre + d1, -Vector3.UnitY, material);
+                }
+            }
+        }
+
         public MeshData Build(string name)
         {
             var submeshes = new List<SubmeshData>();

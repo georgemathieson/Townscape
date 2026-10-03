@@ -52,8 +52,9 @@ int MaterialFor(SurfaceMaterial material)
     }
 
     var appearance = SurfacePalette.Get(material);
+    var blend = appearance.IsTransparent ? ",\"alphaMode\":\"BLEND\"" : string.Empty;
     materials.Add(
-        $"{{\"name\":\"{material}\",\"pbrMetallicRoughness\":{{\"baseColorFactor\":[{F(ToLinear(appearance.R))},{F(ToLinear(appearance.G))},{F(ToLinear(appearance.B))},1],\"metallicFactor\":0,\"roughnessFactor\":{F(1f - appearance.Smoothness)}}}}}");
+        $"{{\"name\":\"{material}\",\"pbrMetallicRoughness\":{{\"baseColorFactor\":[{F(ToLinear(appearance.R))},{F(ToLinear(appearance.G))},{F(ToLinear(appearance.B))},{F(appearance.Alpha)}],\"metallicFactor\":0,\"roughnessFactor\":{F(1f - appearance.Smoothness)}}}{blend}}}");
     materialIndex[material] = materials.Count - 1;
     return materials.Count - 1;
 }

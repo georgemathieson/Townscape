@@ -12,6 +12,9 @@ namespace Townscape.Generation.Ground
         Pavement,
         Path,
 
+        /// <summary>Flagged apron under and around a building.</summary>
+        Yard,
+
         /// <summary>Left empty because a structure (the bridge) provides its own surface.</summary>
         Hole,
     }

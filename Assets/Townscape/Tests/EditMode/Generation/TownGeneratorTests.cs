@@ -23,6 +23,7 @@ namespace Townscape.Tests.Generation
                 MeshCategory.Water,
                 MeshCategory.Markings,
                 MeshCategory.Structure,
+                MeshCategory.Building,
             }));
         }
 
