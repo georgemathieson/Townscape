@@ -5,6 +5,7 @@
         "Townscape.State",
         "Townscape.Generation",
         "Townscape.Simulation",
+        "Townscape.CoffeeShop",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.InputSystem"

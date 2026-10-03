@@ -7,6 +7,7 @@ namespace Townscape.Runtime.Controls
     /// Scene-view style fly camera: hold the right mouse button to look, WASD to move, Q/E for
     /// down/up, Shift to go faster and the scroll wheel to change speed. It stays inside the map and
     /// above the ground and water, but does not collide with structures, so you can fly under the bridge.
+    /// <see cref="FlyTo"/> glides it somewhere on its own; moving or looking takes back control.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class FreeFlyCamera : MonoBehaviour
@@ -18,6 +19,7 @@ namespace Townscape.Runtime.Controls
         [SerializeField] private Vector3 boundsMin = new Vector3(-170f, -50f, -170f);
         [SerializeField] private Vector3 boundsMax = new Vector3(170f, 140f, 170f);
         [SerializeField] private float clearance = 0.6f;
+        [SerializeField] private float glideSeconds = 1.6f;
 
         private ITownscapeInput _input;
         private Func<Vector2, float> _floorHeight;
@@ -25,6 +27,12 @@ namespace Townscape.Runtime.Controls
         private float _yaw;
         private float _pitch;
         private float _speedScale = 1f;
+        private bool _gliding;
+        private float _glideTime;
+        private Vector3 _glideFrom;
+        private Vector3 _glideTo;
+        private Quaternion _glideFromRotation;
+        private Quaternion _glideToRotation;
 
         /// <param name="floorHeight">Lowest walkable height at a ground-plane position (x, z): the ground or the water surface.</param>
         public void Initialize(ITownscapeInput input, Func<Vector2, float> floorHeight)
@@ -36,6 +44,18 @@ namespace Townscape.Runtime.Controls
             _pitch = euler.x > 180f ? euler.x - 360f : euler.x;
         }
 
+        /// <summary>Glides to <paramref name="position"/>, ending up looking at <paramref name="lookAt"/>.</summary>
+        public void FlyTo(Vector3 position, Vector3 lookAt)
+        {
+            _gliding = true;
+            _glideTime = 0f;
+            _glideFrom = transform.position;
+            _glideTo = position;
+            _glideFromRotation = transform.rotation;
+            _glideToRotation = Quaternion.LookRotation(lookAt - position, Vector3.up);
+            _velocity = Vector3.zero;
+        }
+
         private void Update()
         {
             if (_input == null)
@@ -43,8 +63,44 @@ namespace Townscape.Runtime.Controls
                 return;
             }
 
+            if (_gliding)
+            {
+                Glide(Time.unscaledDeltaTime);
+                return;
+            }
+
             Look();
             Move(Time.unscaledDeltaTime);
+        }
+
+        private void Glide(float deltaTime)
+        {
+            // Moving or looking takes back control from wherever the glide has got to.
+            if (_input.LookHeld || _input.Move.sqrMagnitude > 0.01f)
+            {
+                EndGlide();
+                return;
+            }
+
+            _glideTime += deltaTime;
+            var t = Mathf.Clamp01(_glideTime / Mathf.Max(0.01f, glideSeconds));
+            var eased = t * t * (3f - (2f * t));
+            transform.SetPositionAndRotation(
+                Vector3.Lerp(_glideFrom, _glideTo, eased),
+                Quaternion.Slerp(_glideFromRotation, _glideToRotation, eased));
+
+            if (t >= 1f)
+            {
+                EndGlide();
+            }
+        }
+
+        private void EndGlide()
+        {
+            _gliding = false;
+            var euler = transform.rotation.eulerAngles;
+            _yaw = euler.y;
+            _pitch = euler.x > 180f ? euler.x - 360f : euler.x;
         }
 
         private void OnDisable()

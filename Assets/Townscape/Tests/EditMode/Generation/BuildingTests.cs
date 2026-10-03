@@ -19,6 +19,22 @@ namespace Townscape.Tests.Generation
         private static IReadOnlyList<BuildingPlan> Plans => GeneratedVillage.Town.Context.Buildings;
 
         [Test]
+        public void FellsideCoffee_IsOnTheHighStreet_WithRoomInFrontToStand()
+        {
+            var shop = ShopLocator.Find(Plans, VillageShops.FellsideCoffee);
+
+            Assert.That(shop, Is.Not.Null);
+            var front = (shop.Footprint.FrontLeft + shop.Footprint.FrontRight) * 0.5f;
+            foreach (var distance in new[] { 2f, 5f, 8.5f })
+            {
+                var spot = front + (shop.Footprint.Outward * distance);
+                Assert.That(Plans.Any(plan => plan.Footprint.Contains(spot)), Is.False, $"{distance} m out from the shop is inside a building");
+            }
+
+            Assert.That(ShopLocator.Find(Plans, new ShopDefinition("NOWHERE", Townscape.Generation.Geometry.SurfaceMaterial.PaintTeal, null)), Is.Null);
+        }
+
+        [Test]
         public void Buildings_KeepOffRoadsRiverAndPaths()
         {
             // Classify against the ground as it would be without any building plots.
