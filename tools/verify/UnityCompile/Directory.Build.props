@@ -1,0 +1,21 @@
+<Project>
+  <!--
+    Compile-only check of the Unity scripts outside Unity: one project per assembly definition,
+    built against Unity's managed reference assemblies (an older Unity, from NuGet) plus
+    signature-only stubs for the URP and Input System types we use (Stubs/). It catches typos and
+    API misuse early but does not replace opening the project in the editor: code behind newer
+    version checks compiles through its #else branch, and the stubs only mirror what we call.
+      dotnet build tools/verify/UnityCompile/Editor.csproj
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS1591;NU1701;CS0618</NoWarn>
+    <ScriptsRoot>$(MSBuildThisFileDirectory)../../../Assets/Townscape/Scripts/</ScriptsRoot>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin/$(MSBuildProjectName)/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

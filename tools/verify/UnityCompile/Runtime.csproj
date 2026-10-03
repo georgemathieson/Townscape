@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Townscape.Runtime</AssemblyName>
+    <UsesUnity>true</UsesUnity>
+    <DefineConstants>$(DefineConstants);ENABLE_INPUT_SYSTEM;ENABLE_LEGACY_INPUT_MANAGER</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(ScriptsRoot)Runtime/**/*.cs" />
+    <ProjectReference Include="State.csproj" />
+    <ProjectReference Include="Generation.csproj" />
+    <ProjectReference Include="Stubs.csproj" />
+  </ItemGroup>
+</Project>

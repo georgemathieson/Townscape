@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Townscape.Editor</AssemblyName>
+    <UsesUnity>true</UsesUnity>
+    <UsesUnityEditor>true</UsesUnityEditor>
+    <DefineConstants>$(DefineConstants);UNITY_EDITOR</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(ScriptsRoot)Editor/**/*.cs" />
+    <ProjectReference Include="State.csproj" />
+    <ProjectReference Include="Generation.csproj" />
+    <ProjectReference Include="Runtime.csproj" />
+    <ProjectReference Include="Stubs.csproj" />
+  </ItemGroup>
+</Project>

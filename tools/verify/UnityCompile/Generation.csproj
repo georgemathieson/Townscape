@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Townscape.Generation</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(ScriptsRoot)Generation/**/*.cs" />
+  </ItemGroup>
+</Project>

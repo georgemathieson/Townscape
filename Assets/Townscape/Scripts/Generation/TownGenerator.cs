@@ -1,0 +1,137 @@
+using System.Collections.Generic;
+using Townscape.Generation.Geometry;
+using Townscape.Generation.Ground;
+using Townscape.Generation.Layout;
+using Townscape.Generation.Markings;
+using Townscape.Generation.Structures;
+using Townscape.Generation.Terrain;
+
+namespace Townscape.Generation
+{
+    public enum MeshCategory
+    {
+        Ground,
+        Fells,
+        Water,
+        Markings,
+        Structure,
+    }
+
+    public sealed class GeneratedMesh
+    {
+        public GeneratedMesh(MeshData mesh, MeshCategory category)
+        {
+            Mesh = mesh;
+            Category = category;
+        }
+
+        public MeshData Mesh { get; }
+
+        public MeshCategory Category { get; }
+    }
+
+    /// <summary>Everything generation produced, plus the ground model for runtime queries.</summary>
+    public sealed class GeneratedTown
+    {
+        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, GroundMeshStats groundStats)
+        {
+            Context = context;
+            Meshes = meshes;
+            GroundStats = groundStats;
+        }
+
+        public TownContext Context { get; }
+
+        public IReadOnlyList<GeneratedMesh> Meshes { get; }
+
+        public GroundMeshStats GroundStats { get; }
+    }
+
+    /// <summary>
+    /// Turns a <see cref="TownLayout"/> into meshes. Pure C# with no Unity dependency, so it runs
+    /// the same in the editor, in a player build, in unit tests and in the offline preview tool.
+    /// </summary>
+    public sealed class TownGenerator
+    {
+        private readonly IReadOnlyList<IStructureGenerator> _structures;
+
+        public TownGenerator(IReadOnlyList<IStructureGenerator> structures = null)
+        {
+            _structures = structures ?? new IStructureGenerator[] { new BridgeGenerator() };
+        }
+
+        public static TownContext CreateContext(TownLayout layout, GenerationSettings settings)
+        {
+            var terrain = new BaseTerrain(layout, settings);
+            var ground = new GroundModel(terrain, CreateFeatures(layout));
+            return new TownContext(layout, settings, terrain, ground);
+        }
+
+        public static IReadOnlyList<IGroundFeature> CreateFeatures(TownLayout layout)
+        {
+            var features = new List<IGroundFeature>();
+            features.Add(new RiverFeature(layout.River, layout.WaterLevel));
+            foreach (var bridge in layout.Bridges)
+            {
+                features.Add(new FootprintFeature(bridge.Centre, bridge.Direction, bridge.HalfLength, bridge.FootprintHalfWidth));
+            }
+
+            foreach (var road in layout.Roads)
+            {
+                features.Add(new RoadFeature(road));
+            }
+
+            foreach (var path in layout.Paths)
+            {
+                features.Add(new PathFeature(path));
+            }
+
+            return features;
+        }
+
+        public GeneratedTown Generate(TownLayout layout, GenerationSettings settings = null)
+        {
+            settings ??= GenerationSettings.Default;
+            var context = CreateContext(layout, settings);
+            var meshes = new List<GeneratedMesh>();
+
+            var groundGenerator = new GroundMeshGenerator(context.Ground, settings);
+            foreach (var mesh in groundGenerator.Generate())
+            {
+                meshes.Add(new GeneratedMesh(mesh, MeshCategory.Ground));
+            }
+
+            foreach (var mesh in new FellsGenerator(context.Terrain, layout, settings).Generate())
+            {
+                meshes.Add(new GeneratedMesh(mesh, MeshCategory.Fells));
+            }
+
+            meshes.Add(new GeneratedMesh(WaterPlaneGenerator.Generate(settings.WaterHalfExtent, layout.WaterLevel), MeshCategory.Water));
+
+            var markings = new MeshBuilder();
+            var canvas = new MarkingCanvas(markings, context.Ground);
+            foreach (var road in layout.Roads)
+            {
+                foreach (var marking in road.Markings)
+                {
+                    marking.Paint(road, canvas);
+                }
+            }
+
+            if (!markings.IsEmpty)
+            {
+                meshes.Add(new GeneratedMesh(markings.Build("Road Markings"), MeshCategory.Markings));
+            }
+
+            foreach (var structure in _structures)
+            {
+                foreach (var mesh in structure.Generate(context))
+                {
+                    meshes.Add(new GeneratedMesh(mesh, MeshCategory.Structure));
+                }
+            }
+
+            return new GeneratedTown(context, meshes, groundGenerator.Stats);
+        }
+    }
+}

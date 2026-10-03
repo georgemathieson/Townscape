@@ -1,0 +1,22 @@
+{
+    "name": "Townscape.Editor",
+    "rootNamespace": "Townscape.Editor",
+    "references": [
+        "Townscape.State",
+        "Townscape.Generation",
+        "Townscape.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

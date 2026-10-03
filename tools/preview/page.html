@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Townscape preview</title>
+  <style>html, body { margin: 0; background: #000; }</style>
+  <script type="importmap">
+    { "imports": {
+        "three": "/node_modules/three/build/three.module.js",
+        "three/addons/": "/node_modules/three/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// Approximations of the Unity lighting presets. Unity is the source of truth; these only exist
+// so geometry can be judged in roughly the right mood.
+const presets = {
+  day:   { fog: 0x9aa3ad, density: 0.006, sky: 0xb8c2cc, ground: 0x4a463e, hemi: 1.6, sun: 0xe8eaf0, sunIntensity: 1.6, elevation: 38, azimuth: 160, exposure: 1.0 },
+  dusk:  { fog: 0x3c4155, density: 0.0065, sky: 0x6a6f8a, ground: 0x2a2520, hemi: 1.1, sun: 0xffa868, sunIntensity: 1.8, elevation: 9,  azimuth: 255, exposure: 1.1 },
+  night: { fog: 0x12161f, density: 0.011, sky: 0x2a3550, ground: 0x0c0c10, hemi: 0.7, sun: 0x8aa0d0, sunIntensity: 0.45, elevation: 35, azimuth: 120, exposure: 1.3 },
+};
+
+const views = {
+  overview: { position: [-62, 42, -70], target: [5, 0, 5], fov: 50 },
+  bridge:   { position: [-21, 4.5, -23], target: [0, 0.6, 0], fov: 50 },
+  street:   { position: [-62, 1.8, -3], target: [0, 1.4, 0], fov: 60 },
+  junction: { position: [30, 12, -22], target: [48, 0, 6], fov: 55 },
+  river:    { position: [-6, 3, -42], target: [0, -0.5, 0], fov: 55 },
+  valley:   { position: [25, 28, -95], target: [-30, 10, 220], fov: 55 },
+  lake:     { position: [-10, 35, -70], target: [120, 0, -400], fov: 55 },
+  map:      { ortho: 106 },
+};
+
+const unity = ([x, y, z]) => new THREE.Vector3(x, y, -z);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(1600, 900);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const hemi = new THREE.HemisphereLight();
+scene.add(hemi);
+const sun = new THREE.DirectionalLight();
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -130, right: 130, top: 130, bottom: -130, near: 1, far: 800 });
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.05;
+scene.add(sun);
+scene.add(sun.target);
+
+const gltf = await new GLTFLoader().loadAsync('/out/town.gltf');
+gltf.scene.traverse((object) => {
+  if (!object.isMesh) return;
+  const category = object.parent?.userData?.category ?? object.userData?.category;
+  object.castShadow = category !== 'Water' && category !== 'Markings';
+  object.receiveShadow = true;
+});
+scene.add(gltf.scene);
+
+// A simple gradient sky as the environment, so smooth surfaces such as water reflect something
+// (Unity gets the same from a generated reflection cubemap).
+const pmrem = new THREE.PMREMGenerator(renderer);
+const environments = {};
+function environmentFor(preset) {
+  const key = `${preset.sky}-${preset.fog}-${preset.ground}`;
+  if (environments[key]) return environments[key];
+  const envScene = new THREE.Scene();
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(10, 32, 16),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: {
+        top: { value: new THREE.Color(preset.sky) },
+        horizon: { value: new THREE.Color(preset.fog) },
+        bottom: { value: new THREE.Color(preset.ground) },
+      },
+      vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 horizon; uniform vec3 bottom; varying vec3 vDir; void main() { float y = vDir.y; vec3 c = y > 0.0 ? mix(horizon, top, pow(y, 0.6)) : mix(horizon, bottom, pow(-y, 0.4)); gl_FragColor = vec4(c, 1.0); }',
+    }));
+  envScene.add(sky);
+  environments[key] = pmrem.fromScene(envScene).texture;
+  return environments[key];
+}
+
+window.renderView = (viewName, presetName) => {
+  const preset = presets[presetName];
+  scene.environment = environmentFor(preset);
+  scene.environmentIntensity = 0.6;
+  const view = views[viewName];
+  scene.background = new THREE.Color(preset.fog);
+  scene.fog = viewName === 'map' ? null : new THREE.FogExp2(preset.fog, preset.density);
+  hemi.color.set(preset.sky);
+  hemi.groundColor.set(preset.ground);
+  hemi.intensity = preset.hemi;
+  sun.color.set(preset.sun);
+  sun.intensity = preset.sunIntensity;
+  renderer.toneMappingExposure = preset.exposure;
+
+  const el = THREE.MathUtils.degToRad(preset.elevation);
+  const az = THREE.MathUtils.degToRad(preset.azimuth);
+  // Azimuth measured clockwise from north (Unity +z), so the light comes from that compass bearing.
+  const fromSun = unity([Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)]);
+  sun.position.copy(fromSun.multiplyScalar(300));
+  sun.target.position.set(0, 0, 0);
+
+  let camera;
+  if (view.ortho) {
+    const aspect = 1600 / 900;
+    camera = new THREE.OrthographicCamera(-view.ortho * aspect, view.ortho * aspect, view.ortho, -view.ortho, 1, 1000);
+    camera.position.set(0, 400, 0);
+    camera.up.set(0, 0, -1);
+    camera.lookAt(0, 0, 0);
+  } else {
+    camera = new THREE.PerspectiveCamera(view.fov, 1600 / 900, 0.1, 3000);
+    camera.position.copy(unity(view.position));
+    camera.lookAt(unity(view.target));
+  }
+
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL('image/png');
+};
+window.previewReady = true;
+</script>
+</body>
+</html>

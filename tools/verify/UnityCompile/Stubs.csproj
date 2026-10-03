@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Townscape.PackageStubs</AssemblyName>
+    <UsesUnity>true</UsesUnity>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Stubs/*.cs" />
+  </ItemGroup>
+</Project>
