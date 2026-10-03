@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Plays many games of Fellside Coffee with simple strategies, using the real game code, and
+    prints what the balance numbers add up to. Run it with dotnet run after changing
+    DefaultBalance; Program.cs has the command line and its options.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Townscape/Scripts/State/**/*.cs" />
+    <Compile Include="../../Assets/Townscape/Scripts/CoffeeShop/**/*.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

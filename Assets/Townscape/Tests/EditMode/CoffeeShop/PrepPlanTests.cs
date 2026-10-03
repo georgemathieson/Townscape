@@ -16,7 +16,11 @@ namespace Townscape.Tests.CoffeeShop
             Assert.That(plan.Ingredient(DefaultBalance.CoffeeBeans).Needed, Is.EqualTo(30));
             Assert.That(plan.Ingredient(DefaultBalance.Milk).Needed, Is.EqualTo(30));
             Assert.That(plan.Ingredient(DefaultBalance.TeaLeaves).Needed, Is.EqualTo(20));
-            Assert.That(plan.StockCostPence, Is.EqualTo((30 * 28) + (30 * 22) + (20 * 9) + (10 * 70)));
+            Assert.That(plan.StockCostPence, Is.EqualTo(
+                (30 * PortionCost(DefaultBalance.CoffeeBeans))
+                + (30 * MilkCost(DefaultBalance.DairyMilk))
+                + (20 * PortionCost(DefaultBalance.TeaLeaves))
+                + (10 * Balance.Item(DefaultBalance.Croissant).UnitCostPence)));
         }
 
         [Test]
@@ -44,7 +48,7 @@ namespace Townscape.Tests.CoffeeShop
 
             Assert.That(coffee.InPantry, Is.EqualTo(12));
             Assert.That(coffee.ToBuy, Is.EqualTo(18));
-            Assert.That(coffee.CostPence, Is.EqualTo(18 * 28));
+            Assert.That(coffee.CostPence, Is.EqualTo(18 * PortionCost(DefaultBalance.CoffeeBeans)));
         }
 
         [Test]
@@ -55,8 +59,9 @@ namespace Townscape.Tests.CoffeeShop
             var dairy = PrepPlan.For(Balance, state with { MilkId = DefaultBalance.DairyMilk });
             var oat = PrepPlan.For(Balance, state with { MilkId = DefaultBalance.OatMilk });
 
-            Assert.That(dairy.Ingredient(DefaultBalance.Milk).CostPence, Is.EqualTo(220));
-            Assert.That(oat.Ingredient(DefaultBalance.Milk).CostPence, Is.EqualTo(380));
+            Assert.That(dairy.Ingredient(DefaultBalance.Milk).CostPence, Is.EqualTo(10 * MilkCost(DefaultBalance.DairyMilk)));
+            Assert.That(oat.Ingredient(DefaultBalance.Milk).CostPence, Is.EqualTo(10 * MilkCost(DefaultBalance.OatMilk)));
+            Assert.That(MilkCost(DefaultBalance.OatMilk), Is.GreaterThan(MilkCost(DefaultBalance.DairyMilk)), "the alternative costs more");
         }
 
         [Test]
@@ -110,7 +115,8 @@ namespace Townscape.Tests.CoffeeShop
             Assert.That(PrepPlan.For(Balance, boughtToday).DisplayCapacity, Is.EqualTo(26));
             Assert.That(PrepPlan.For(Balance, boughtToday).Line(DefaultBalance.Croissant).Count, Is.EqualTo(26));
             Assert.That(PrepPlan.For(Balance, notYet).DisplayCapacity, Is.EqualTo(12));
-            Assert.That(PrepPlan.For(Balance, boughtToday).FixedCostPence, Is.EqualTo(7500 + 300), "the case costs to run");
+            Assert.That(PrepPlan.For(Balance, boughtToday).FixedCostPence,
+                Is.EqualTo(Rent + Balance.Upgrade(DefaultBalance.BiggerDisplay).RunningCostPence), "the case costs to run");
         }
 
         [Test]

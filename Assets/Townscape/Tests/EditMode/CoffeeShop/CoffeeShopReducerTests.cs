@@ -135,17 +135,17 @@ namespace Townscape.Tests.CoffeeShop
         [Test]
         public void Upgrades_CantBeBoughtBeyondCashAboveTheReserve()
         {
-            var store = CreateStore(NewGame() with { CashPence = 30000 });
+            var store = CreateStore(NewGame() with { CashPence = CaseCost + 5000 });
 
-            store.Dispatch(new SetReserve(10000));
+            store.Dispatch(new SetReserve(5001));
             store.Dispatch(new BuyUpgrade(DefaultBalance.BiggerDisplay));
-            Assert.That(store.State.Upgrades.Count, Is.Zero, "£300 less a £100 reserve leaves £200, short of £240");
+            Assert.That(store.State.Upgrades.Count, Is.Zero, "a penny short once the reserve is kept back");
             Assert.That(CoffeeShopReducer.CanBuy(Balance, store.State, DefaultBalance.BiggerDisplay), Is.False);
 
-            store.Dispatch(new SetReserve(6000));
+            store.Dispatch(new SetReserve(5000));
             store.Dispatch(new BuyUpgrade(DefaultBalance.BiggerDisplay));
             Assert.That(store.State.Upgrades.ContainsKey(DefaultBalance.BiggerDisplay), Is.True);
-            Assert.That(store.State.CashPence, Is.EqualTo(6000));
+            Assert.That(store.State.CashPence, Is.EqualTo(5000));
         }
 
         [Test]
@@ -156,7 +156,7 @@ namespace Townscape.Tests.CoffeeShop
             store.Dispatch(new BuyUpgrade(DefaultBalance.BiggerDisplay));
             store.Dispatch(new BuyUpgrade(DefaultBalance.BiggerDisplay));
 
-            Assert.That(store.State.CashPence, Is.EqualTo(100000 - 24000));
+            Assert.That(store.State.CashPence, Is.EqualTo(100000 - CaseCost));
         }
 
         [Test]
@@ -216,7 +216,8 @@ namespace Townscape.Tests.CoffeeShop
 
             store.Dispatch(new OpenForTheDay());
 
-            Assert.That(store.State.CashPence, Is.EqualTo(-7500));
+            Assert.That(Rent, Is.GreaterThan(Balance.OverdraftPence), "a day's rent is more than the overdraft");
+            Assert.That(store.State.CashPence, Is.EqualTo(-Rent));
             Assert.That(store.State.Phase, Is.EqualTo(ShopPhase.ClosedDown));
 
             var closed = store.State;
@@ -229,12 +230,12 @@ namespace Townscape.Tests.CoffeeShop
         [Test]
         public void AReserve_LetsTheShopSurviveABadDay()
         {
-            // The same empty day, with £30 kept back.
-            var store = CreateStore(NewGame().WithMenu() with { CashPence = 3000 });
+            // The same empty day, with a day's rent kept back.
+            var store = CreateStore(NewGame().WithMenu() with { CashPence = Rent });
 
             store.Dispatch(new OpenForTheDay());
 
-            Assert.That(store.State.CashPence, Is.EqualTo(-4500));
+            Assert.That(store.State.CashPence, Is.Zero);
             Assert.That(store.State.Phase, Is.EqualTo(ShopPhase.Review));
         }
 

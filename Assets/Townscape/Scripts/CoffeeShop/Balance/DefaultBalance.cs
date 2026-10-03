@@ -33,6 +33,7 @@ namespace Townscape.CoffeeShop
             FridgeCapacity = 60,
             SuppliesPerDrinkPence = 14,
             PaymentSeconds = 15,
+            DailyFootfallSpread = 0.3,
             BudgetSpread = 0.25,
             PatienceSpread = 0.3,
             HistoryDays = 14,
@@ -59,7 +60,7 @@ namespace Townscape.CoffeeShop
                 },
                 new ItemDef
                 {
-                    Id = Croissant, Name = "Croissant", Kind = ItemKind.Pastry, PricePence = 280, UnitCostPence = 70,
+                    Id = Croissant, Name = "Croissant", Kind = ItemKind.Pastry, PricePence = 280, UnitCostPence = 100,
                     ServeSeconds = 12, DairyFree = false,
                 },
             },
@@ -99,12 +100,12 @@ namespace Townscape.CoffeeShop
             {
                 new SiteDef
                 {
-                    Id = HighStreet, Name = "High Street", DailyCostPence = 7500,
+                    Id = HighStreet, Name = "High Street", DailyCostPence = 9500,
                     Slots = new[]
                     {
                         new SlotDef
                         {
-                            Name = "Morning rush", DurationSeconds = 3600, Footfall = 26, Baristas = 1,
+                            Name = "Morning rush", DurationSeconds = 2700, Footfall = 26, Baristas = 1,
                             SegmentMix = new[] { new Weighted(Commuters, 0.7), new Weighted(Locals, 0.3) },
                         },
                         new SlotDef
@@ -125,7 +126,7 @@ namespace Townscape.CoffeeShop
                 new UpgradeDef
                 {
                     Id = BiggerDisplay, Name = "Bigger display case", Kind = UpgradeKind.Capacity,
-                    CostPence = 24000, RunningCostPence = 300,
+                    CostPence = 18000, RunningCostPence = 300,
                     Effects = new[] { new UpgradeEffect(UpgradeStat.DisplayCapacity, 14) },
                     Summary = "Room for 14 more pastries on the counter.",
                     TradeOff = "Costs £3 a day to keep chilled, and a fuller case means more to throw away on a quiet day.",

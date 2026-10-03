@@ -32,6 +32,17 @@ namespace Townscape.Tests.CoffeeShop
         }
 
         [Test]
+        public void SomeDays_AreBusierThanOthers()
+        {
+            var counts = Enumerable.Range(1, 60).Select(day => TradingDay.CustomersFor(Balance, Stocked() with { Day = day }).Count).ToList();
+            var usual = Forecast.For(Balance, Balance.Site(DefaultBalance.HighStreet)).Customers;
+
+            Assert.That(counts.Average(), Is.EqualTo(usual).Within(usual * 0.05));
+            Assert.That(counts.Min(), Is.LessThan(usual * 0.8));
+            Assert.That(counts.Max(), Is.GreaterThan(usual * 1.2));
+        }
+
+        [Test]
         public void Customers_ArriveInOrder_FromTheRightSegments()
         {
             var customers = TradingDay.CustomersFor(Balance, Stocked());
@@ -50,9 +61,9 @@ namespace Townscape.Tests.CoffeeShop
 
             Assert.That(result.Item(DefaultBalance.Latte).Sold, Is.EqualTo(1));
             Assert.That(result.Item(DefaultBalance.Croissant).Sold, Is.EqualTo(1));
-            Assert.That(result.RevenuePence, Is.EqualTo(340 + 280));
+            Assert.That(result.RevenuePence, Is.EqualTo(Price(DefaultBalance.Latte) + Price(DefaultBalance.Croissant)));
             Assert.That(result.Served, Is.EqualTo(1));
-            Assert.That(result.SuppliesPence, Is.EqualTo(14), "one drink's cup");
+            Assert.That(result.SuppliesPence, Is.EqualTo(Balance.SuppliesPerDrinkPence), "one drink's cup");
         }
 
         [Test]
@@ -140,7 +151,7 @@ namespace Townscape.Tests.CoffeeShop
 
             Assert.That(result.Item(DefaultBalance.Croissant).Wasted, Is.EqualTo(7));
             Assert.That(result.MilkPouredAway, Is.EqualTo(9));
-            Assert.That(result.WastePence, Is.EqualTo((7 * 70) + (9 * 22)));
+            Assert.That(result.WastePence, Is.EqualTo((7 * Balance.Item(DefaultBalance.Croissant).UnitCostPence) + (9 * MilkCost(DefaultBalance.DairyMilk))));
             Assert.That(result.PantryAfter.Get(DefaultBalance.CoffeeBeans), Is.EqualTo(9));
             Assert.That(result.PantryAfter.Get(DefaultBalance.TeaLeaves), Is.EqualTo(4));
             Assert.That(result.PantryAfter.ContainsKey(DefaultBalance.Milk), Is.False);
@@ -170,7 +181,7 @@ namespace Townscape.Tests.CoffeeShop
 
             Assert.That(result.RevenuePence, Is.EqualTo(result.Items.Sum(i => i.Sold * Balance.Item(i.ItemId).PricePence)));
             Assert.That(result.StockPence, Is.EqualTo(PrepPlan.For(Balance, Stocked()).StockCostPence));
-            Assert.That(result.SiteCostPence, Is.EqualTo(7500));
+            Assert.That(result.SiteCostPence, Is.EqualTo(Rent));
             Assert.That(result.CostsPence, Is.EqualTo(result.StockPence + result.SuppliesPence + result.SiteCostPence + result.RunningCostPence));
             Assert.That(result.ProfitPence, Is.EqualTo(result.RevenuePence - result.CostsPence));
             Assert.That(result.CashAfterPence, Is.EqualTo(Stocked().CashPence + result.ProfitPence));
@@ -209,7 +220,7 @@ namespace Townscape.Tests.CoffeeShop
             Assert.That(impact.Sold, Is.EqualTo(result.Sold - without.Sold));
             Assert.That(result.Item(DefaultBalance.Croissant).Stocked, Is.EqualTo(26));
             Assert.That(without.Item(DefaultBalance.Croissant).Stocked, Is.EqualTo(12));
-            Assert.That(result.RunningCostPence, Is.EqualTo(300));
+            Assert.That(result.RunningCostPence, Is.EqualTo(Balance.Upgrade(DefaultBalance.BiggerDisplay).RunningCostPence));
         }
     }
 }

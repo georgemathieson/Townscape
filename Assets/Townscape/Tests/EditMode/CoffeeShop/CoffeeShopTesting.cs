@@ -9,6 +9,16 @@ namespace Townscape.Tests.CoffeeShop
     {
         public static readonly CoffeeShopBalance Balance = DefaultBalance.Create();
 
+        public static int Rent => Balance.Site(DefaultBalance.HighStreet).DailyCostPence;
+
+        public static int CaseCost => Balance.Upgrade(DefaultBalance.BiggerDisplay).CostPence;
+
+        public static int Price(string itemId) => Balance.Item(itemId).PricePence;
+
+        public static int PortionCost(string ingredientId) => Balance.Ingredient(ingredientId).CostPerPortionPence;
+
+        public static int MilkCost(string milkId) => Balance.Milk(milkId).CostPerPortionPence;
+
         public static CoffeeShopState NewGame(int seed = 1) => CoffeeShopState.NewGame(Balance, seed);
 
         public static CoffeeShopState WithPlan(this CoffeeShopState state, params (string Item, int Count)[] plan) =>

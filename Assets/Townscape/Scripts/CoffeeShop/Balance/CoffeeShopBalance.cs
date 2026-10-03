@@ -28,6 +28,12 @@ namespace Townscape.CoffeeShop
         /// <summary>Seconds at the till for each customer who buys something, on top of making their order.</summary>
         public int PaymentSeconds { get; init; }
 
+        /// <summary>
+        /// How much busier or quieter a day can be than usual, either way (0.3 is ±30%). Rolled once
+        /// a day and kept from the player, so they stock without knowing exactly who'll come.
+        /// </summary>
+        public double DailyFootfallSpread { get; init; }
+
         /// <summary>How far one customer's budget can differ from their segment's, either way (0.25 is ±25%).</summary>
         public double BudgetSpread { get; init; }
 

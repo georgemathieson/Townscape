@@ -11,12 +11,13 @@ namespace Townscape.CoffeeShop
         public static IReadOnlyList<Customer> Roll(CoffeeShopBalance balance, SiteDef site, ulong seed)
         {
             var random = new SeededRandom(seed);
+            var busyness = random.Between(1.0 - balance.DailyFootfallSpread, 1.0 + balance.DailyFootfallSpread);
             var customers = new List<Customer>();
             var slotStart = 0.0;
             for (var slotIndex = 0; slotIndex < site.Slots.Count; slotIndex++)
             {
                 var slot = site.Slots[slotIndex];
-                var count = random.Count(slot.Footfall);
+                var count = random.Count(slot.Footfall * busyness);
                 for (var i = 0; i < count; i++)
                 {
                     customers.Add(RollOne(balance, slot, slotIndex, slotStart, random));
