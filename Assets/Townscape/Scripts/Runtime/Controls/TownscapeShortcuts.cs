@@ -12,14 +12,14 @@ namespace Townscape.Runtime.Controls
         private Store<TownState> _store;
         private ITownscapeInput _input;
         private TimeOfDayLighting _lighting;
-        private HelpOverlay _help;
+        private ControlPanel _panel;
 
-        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, HelpOverlay help)
+        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel)
         {
             _store = store;
             _input = input;
             _lighting = lighting;
-            _help = help;
+            _panel = panel;
         }
 
         private void Update()
@@ -73,9 +73,15 @@ namespace Townscape.Runtime.Controls
                 _store.Dispatch(new RequestLightningStrike());
             }
 
-            if (_input.WasPressed(Shortcut.ToggleHelp) && _help != null)
+            if (_input.WasPressed(Shortcut.ToggleMute))
             {
-                _help.Visible = !_help.Visible;
+                _store.Dispatch(new SetMuted(!_store.State.Audio.Muted));
+            }
+
+            // Showing the panel is how it looks on screen, not a setting, so it isn't in the store.
+            if (_input.WasPressed(Shortcut.ToggleHelp) && _panel != null)
+            {
+                _panel.Visible = !_panel.Visible;
             }
         }
 

@@ -6,7 +6,7 @@
 Assets/Townscape/Scripts/
   State/        Townscape.State        engine-free: Redux-style store, actions, reducers
   Generation/   Townscape.Generation   engine-free: layout, terrain, ground, structures, markings
-  Simulation/   Townscape.Simulation   engine-free: lights after dark, and the storm (weather, wind, lightning, rain)
+  Simulation/   Townscape.Simulation   engine-free: lights after dark, the storm, and its sounds
   Runtime/      Townscape.Runtime      Unity: bootstrap, rendering, lighting, controls, UI
   Editor/       Townscape.Editor       Unity editor: project setup, menus, inspectors
 Assets/Townscape/Shaders/              the one hand-written shader: the fog-free lightning bolt
@@ -36,6 +36,12 @@ order.
 | Rain intensity, lightning frequency, wind strength | Particle rates, gusts, the flash brightness |
 | Weather profile | Lightning and thunder timing, how wet things are |
 | Requests for a lightning strike (a count that only goes up) | Which windows and lamps are lit, the beacons' flash |
+| Volume and mute | How loud the rain, wind and river are right now |
+
+The store is also what gets saved: `SavedSettings` writes the user's choices as a line of text and
+reads it back forgivingly (anything missing or damaged falls back to the default), and
+`SettingsMemory` keeps it in `PlayerPrefs` a second after the last change. Things that are only about
+how the screen looks, such as whether the panel is showing, are not in the store.
 
 Pushing per-frame values through reducers would create garbage for the garbage collector every frame
 (stutters) and adds nothing, because nobody asked for those changes. So, for example,
@@ -154,15 +160,15 @@ the front, as Unity expects.
 
 - **Edit mode:** generates the town, a sun and the town's lights into `HideFlags.DontSave` objects, so
   the Scene view shows the town but nothing generated is ever written into the scene file.
-- **Play mode:** also creates the camera, the post-processing volume, fog and environment, keyboard
-  shortcuts and the help overlay.
+- **Play mode:** also creates the camera, the post-processing volume, fog and environment, the
+  storm, sound, the control panel and keyboard shortcuts, and loads the saved settings.
 
 It creates every object and hands each one its dependencies through an `Initialize` method. There
 are no singletons and no `FindObjectOfType`, which also keeps the project safe with domain reload
 disabled.
 
-`MaterialLibrary` creates one URP Lit material per `SurfaceMaterial`. Later milestones swap in a
-custom shader (wetness, ripples) in one place.
+`MaterialLibrary` creates one URP Lit material per `SurfaceMaterial`, and systems change them while
+running through it (glow, wetness, ripples).
 
 `TimeOfDayLighting` drives a single directional light: the sun by day, the moon by night. It also
 sets ambient light, fog, the background colour, post exposure, and a generated sky gradient that
@@ -236,11 +242,27 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   out once per 2.5 m patch (gusts roll across the land as waves, so neighbours move together), and
   each vertex scales it by its own bend.
 
+## Controls and sound
+
+- **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
+  (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
+  Like `TownscapeShortcuts`, it only dispatches actions. The time slider dispatches
+  `SetTargetHour(hour, Scrub: true)`, which sets a very short blend so the clock follows the hand.
+- **`TownAudio`** plays rain and wind loops, the river from the nearest point on its course, and
+  thunder from a pool of voices placed towards each strike when `StormSystem.ThunderArrived` fires.
+  Volumes come from `AudioMix`. Any clip slot left empty on the bootstrap is filled by
+  `ProceduralSounds`, which synthesises rain, wind, the river and thunder from filtered noise:
+  seamless loops, and close thunder that cracks while distant thunder only rumbles.
+
 ## Editor
 
 - `TownscapeProjectSetup` runs on editor load and is idempotent. It creates and assigns the URP
   pipeline asset (`Assets/Townscape/Settings/`, Forward+, MSAA, soft shadows), switches to linear
   colour and adds the scene to the build.
+- `ShaderVariantKeeper` (part of the setup) saves one small material per shader and keyword
+  combination the town switches on at runtime in `Assets/Townscape/Resources/Shader Variants/`. All
+  the town's materials are made in code, so without these a player build would leave out
+  transparent glass, glow, ripples, the weather particles and the bolt shader.
 - The **Townscape** menu has Open Town Scene, Rebuild Town, Set Up Project and Create Town Scene (which
   rebuilds the scene from code if it is ever lost).
 

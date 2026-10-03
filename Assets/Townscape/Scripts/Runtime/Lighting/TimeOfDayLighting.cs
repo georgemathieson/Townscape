@@ -14,11 +14,6 @@ namespace Townscape.Runtime.Lighting
     [DisallowMultipleComponent]
     public sealed class TimeOfDayLighting : MonoBehaviour
     {
-        [SerializeField]
-        [Min(0.1f)]
-        [Tooltip("Seconds taken to blend to a newly chosen time.")]
-        private float transitionSeconds = 4f;
-
         private IDisposable _subscription;
         private LightingProfile _profile;
         private Light _light;
@@ -30,6 +25,7 @@ namespace Townscape.Runtime.Lighting
         private float _transitionFrom;
         private float _transitionDelta;
         private float _transitionElapsed;
+        private float _transitionSeconds = TimeOfDayState.DefaultBlendSeconds;
         private bool _transitioning;
 
         /// <summary>The hour currently shown, which may lag the requested hour while blending.</summary>
@@ -85,6 +81,7 @@ namespace Townscape.Runtime.Lighting
 
             _transitionFrom = CurrentHour;
             _transitionDelta = TimeMath.ShortestDelta(CurrentHour, state.TargetHour);
+            _transitionSeconds = Mathf.Max(0.01f, state.BlendSeconds);
             _transitionElapsed = 0f;
             _transitioning = Mathf.Abs(_transitionDelta) > 1e-4f;
         }
@@ -104,7 +101,7 @@ namespace Townscape.Runtime.Lighting
             else if (_transitioning)
             {
                 _transitionElapsed += deltaTime;
-                var t = Mathf.Clamp01(_transitionElapsed / transitionSeconds);
+                var t = Mathf.Clamp01(_transitionElapsed / _transitionSeconds);
                 CurrentHour = TimeMath.WrapHour(_transitionFrom + (_transitionDelta * Mathf.SmoothStep(0f, 1f, t)));
                 _transitioning = t < 1f;
             }

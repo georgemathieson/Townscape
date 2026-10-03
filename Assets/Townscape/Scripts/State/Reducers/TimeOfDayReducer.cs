@@ -8,10 +8,16 @@ namespace Townscape.State
             switch (action)
             {
                 case SelectTimePreset select:
-                    next = state with { TargetHour = TimePresets.HourOf(select.Preset), Preset = select.Preset, AutoCycle = false };
+                    next = state with { TargetHour = TimePresets.HourOf(select.Preset), Preset = select.Preset, AutoCycle = false, BlendSeconds = TimeOfDayState.DefaultBlendSeconds };
                     break;
                 case SetTargetHour setHour:
-                    next = state with { TargetHour = TimeMath.WrapHour(setHour.Hour), Preset = null, AutoCycle = false };
+                    next = state with
+                    {
+                        TargetHour = TimeMath.WrapHour(setHour.Hour),
+                        Preset = null,
+                        AutoCycle = false,
+                        BlendSeconds = setHour.Scrub ? TimeOfDayState.ScrubBlendSeconds : TimeOfDayState.DefaultBlendSeconds,
+                    };
                     break;
                 case SetAutoCycle autoCycle:
                     next = state with { TargetHour = TimeMath.WrapHour(autoCycle.FromHour), Preset = null, AutoCycle = autoCycle.Enabled };
