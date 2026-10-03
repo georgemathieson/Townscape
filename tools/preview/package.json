@@ -1,0 +1,13 @@
+{
+  "name": "townscape-preview",
+  "private": true,
+  "description": "Offline preview renders of the generated town (three.js in headless Chromium).",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.56.1",
+    "three": "0.170.0"
+  }
+}

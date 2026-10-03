@@ -1,0 +1,13 @@
+<Project>
+  <ItemGroup Condition="'$(UsesUnity)' == 'true'">
+    <PackageReference Include="Unity3D.SDK" Version="2021.1.14.1" GeneratePathProperty="true" ExcludeAssets="all" />
+    <Reference Include="UnityEngine">
+      <HintPath>$(PkgUnity3D_SDK)/lib/UnityEngine.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(UsesUnityEditor)' == 'true'">
+    <Reference Include="UnityEditor">
+      <HintPath>$(PkgUnity3D_SDK)/lib/UnityEditor.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

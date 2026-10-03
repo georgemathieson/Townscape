@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Runs the real town generator outside Unity and writes the meshes as glTF, so the geometry
+    can be previewed (see ../render.mjs) without opening the editor. See ../README.md for usage.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../Assets/Townscape/Scripts/Generation/**/*.cs" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>

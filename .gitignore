@@ -107,3 +107,11 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Townscape tooling (outside Unity). Unity's generated *.csproj files live at the repo root,
+# so the hand-written tool projects under tools/ are kept.
+!/tools/**/*.csproj
+/tools/**/bin/
+/tools/**/obj/
+/tools/preview/node_modules/
+/tools/preview/out/
