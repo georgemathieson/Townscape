@@ -131,4 +131,5 @@ json.Append($"\"meshes\":[{string.Join(",", meshes)}],");
 json.Append($"\"nodes\":[{string.Join(",", nodes)}],");
 json.Append($"\"scenes\":[{{\"nodes\":[{string.Join(",", nodeIndices)}]}}],\"scene\":0}}");
 File.WriteAllText(Path.Combine(output, "town.gltf"), json.ToString());
+LightsExport.Write(town, Path.Combine(output, "lights.json"));
 Console.WriteLine($"Wrote {Path.Combine(output, "town.gltf")} ({binary.Length / 1024} KiB of geometry)");

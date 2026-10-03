@@ -27,6 +27,7 @@ namespace Townscape.Runtime.Rendering
         private static readonly int SrcBlendAlphaId = Shader.PropertyToID("_SrcBlendAlpha");
         private static readonly int DstBlendAlphaId = Shader.PropertyToID("_DstBlendAlpha");
         private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         private readonly Dictionary<SurfaceMaterial, Material> _materials = new Dictionary<SurfaceMaterial, Material>();
         private readonly Shader _shader;
@@ -50,6 +51,29 @@ namespace Townscape.Runtime.Rendering
             }
 
             return material;
+        }
+
+        /// <summary>Turns on emission for a material so <see cref="SetEmission"/> can make it glow.</summary>
+        public void EnableEmission(SurfaceMaterial surface)
+        {
+            var material = Get(surface);
+            material.EnableKeyword("_EMISSION");
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            SetColorIfPresent(material, EmissionColorId, Color.black);
+        }
+
+        /// <summary>
+        /// Sets a material's glow as a linear HDR colour. Values above 1 bloom. Written as a raw
+        /// vector because <c>SetColor</c> treats colours as sRGB in a linear project, which would
+        /// brighten HDR values far beyond what was asked for.
+        /// </summary>
+        public void SetEmission(SurfaceMaterial surface, Color linearEmission)
+        {
+            var material = Get(surface);
+            if (material.HasProperty(EmissionColorId))
+            {
+                material.SetVector(EmissionColorId, new Vector4(linearEmission.r, linearEmission.g, linearEmission.b, 1f));
+            }
         }
 
         public void Dispose()

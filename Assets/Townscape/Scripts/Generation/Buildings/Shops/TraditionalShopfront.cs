@@ -89,14 +89,14 @@ namespace Townscape.Generation.Buildings.Shops
 
             wall.Quad(builder, left, f, right, f + 1.0f, back, paint);
             wall.Block(builder, left + 0.1f, f + 0.12f, right - 0.1f, f + 0.88f, back, back + 0.02f, paint);
-            wall.Quad(builder, left, f + 1.0f, right, f + DoorHeight, back, SurfaceMaterial.WindowGlass);
+            wall.Quad(builder, left, f + 1.0f, right, f + DoorHeight, back, SurfaceMaterial.WindowShop);
             wall.Block(builder, left, f + 1.0f, right, f + 1.06f, back, back + 0.03f, paint);
             wall.Block(builder, left, f + DoorHeight - 0.06f, right, f + DoorHeight, back, back + 0.03f, paint);
             wall.Block(builder, left, f + 1.06f, left + 0.07f, f + DoorHeight - 0.06f, back, back + 0.03f, paint);
             wall.Block(builder, right - 0.07f, f + 1.06f, right, f + DoorHeight - 0.06f, back, back + 0.03f, paint);
 
             // Transom light over the lobby.
-            wall.Quad(builder, left, f + DoorHeight, right, f + OpeningTop, front, SurfaceMaterial.WindowGlass);
+            wall.Quad(builder, left, f + DoorHeight, right, f + OpeningTop, front, SurfaceMaterial.WindowShop);
             wall.Block(builder, left, f + DoorHeight, right, f + DoorHeight + 0.07f, front, front + 0.04f, paint);
         }
 

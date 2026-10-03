@@ -8,6 +8,7 @@
     <Compile Include="$(ScriptsRoot)Runtime/**/*.cs" />
     <ProjectReference Include="State.csproj" />
     <ProjectReference Include="Generation.csproj" />
+    <ProjectReference Include="Simulation.csproj" />
     <ProjectReference Include="Stubs.csproj" />
   </ItemGroup>
 </Project>

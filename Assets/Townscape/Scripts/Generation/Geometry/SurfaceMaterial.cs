@@ -70,5 +70,19 @@ namespace Townscape.Generation.Geometry
         LeafAutumn,
         PineGreen,
         GrassTuft,
+
+        // Glass that lights up after dark. Home windows are split into groups (keep Window0 to
+        // Window7 consecutive) so they come on one by one.
+        Window0,
+        Window1,
+        Window2,
+        Window3,
+        Window4,
+        Window5,
+        Window6,
+        Window7,
+        WindowShop,
+        InnWindow,
+        SignGlass,
     }
 }

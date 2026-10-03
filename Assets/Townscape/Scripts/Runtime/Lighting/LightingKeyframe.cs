@@ -38,6 +38,10 @@ namespace Townscape.Runtime.Lighting
         [Tooltip("Post exposure in EV, to keep night readable.")]
         public float Exposure;
 
+        [Range(0f, 1f)]
+        [Tooltip("How dark it feels, 0 for broad day to 1 for night. Drives street lamps and lit windows.")]
+        public float Darkness;
+
         public static LightingKeyframe Lerp(in LightingKeyframe a, in LightingKeyframe b, float t)
         {
             return new LightingKeyframe
@@ -55,6 +59,7 @@ namespace Townscape.Runtime.Lighting
                 FogDensity = Mathf.Lerp(a.FogDensity, b.FogDensity, t),
                 SkyColour = Color.Lerp(a.SkyColour, b.SkyColour, t),
                 Exposure = Mathf.Lerp(a.Exposure, b.Exposure, t),
+                Darkness = Mathf.Lerp(a.Darkness, b.Darkness, t),
             };
         }
     }

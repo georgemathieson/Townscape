@@ -2,7 +2,8 @@
 
 A cosy, small, low poly Lake District village in a never-ending thunderstorm, built in Unity 6 (URP)
 with C#. Everything you see is generated from code: the ground, roads and markings, the river and
-the stone humpback bridge, and the fells around the village.
+the stone humpback bridge, the terraces and shops, street furniture and trees, the fells around the
+village, and the lamps and windows that light it after dark.
 
 - [Requirements](docs/REQUIREMENTS.md): what we're building, and the milestone plan
 - [Architecture](docs/ARCHITECTURE.md): how the code is organised and why

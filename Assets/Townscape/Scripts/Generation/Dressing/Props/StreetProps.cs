@@ -84,7 +84,7 @@ namespace Townscape.Generation.Dressing.Props
             var b = f.Builder;
             var width = wall.Width;
             wall.Quad(b, 0f, y + 0.1f, width, y + 0.55f, 0f, SurfaceMaterial.PaintRed);
-            wall.Quad(b, 0f, y + 0.55f, width, y + 2.05f, -0.02f, SurfaceMaterial.WindowGlass);
+            wall.Quad(b, 0f, y + 0.55f, width, y + 2.05f, -0.02f, SurfaceMaterial.SignGlass);
             wall.Quad(b, 0f, y + 2.05f, width, y + 2.2f, 0f, SurfaceMaterial.PaintRed);
 
             // Glazing bars: three columns, eight rows of small panes.
@@ -101,7 +101,7 @@ namespace Townscape.Generation.Dressing.Props
             }
 
             // Back-lit sign.
-            wall.Quad(b, 0f, y + 2.2f, width, y + 2.43f, 0.005f, SurfaceMaterial.LampGlass);
+            wall.Quad(b, 0f, y + 2.2f, width, y + 2.43f, 0.005f, SurfaceMaterial.SignGlass);
             PixelFont.Write(b, wall, "TELEPHONE", width * 0.5f, y + 2.315f, 0.02f, width - 0.08f, 0.01f, SurfaceMaterial.PaintBlack);
         }
 

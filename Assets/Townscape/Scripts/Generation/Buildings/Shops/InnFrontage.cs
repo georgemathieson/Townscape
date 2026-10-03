@@ -18,7 +18,10 @@ namespace Townscape.Generation.Buildings.Shops
             var builder = floor.Builder;
             var f = floor.Floor;
             var width = wall.Width;
-            var windows = new WindowStyle(SurfaceMaterial.PaintBlack, GlazingPattern.SixOverSix, SurfaceMaterial.Stone, SurfaceMaterial.PaintBlack);
+            var windows = new WindowStyle(SurfaceMaterial.PaintBlack, GlazingPattern.SixOverSix, SurfaceMaterial.Stone, SurfaceMaterial.PaintBlack)
+            {
+                Glass = SurfaceMaterial.InnWindow,
+            };
 
             var door = new Opening((width * 0.5f) - 0.55f, f, (width * 0.5f) + 0.55f, f + 2.3f, 0.2f);
             var left = new Opening(0.55f, f + 0.75f, (width * 0.5f) - 1.15f, f + 2.15f, 0.16f);
@@ -40,7 +43,7 @@ namespace Townscape.Generation.Buildings.Shops
             foreach (var x in new[] { door.X0 - 0.4f, door.X1 + 0.4f })
             {
                 wall.Block(builder, x - 0.02f, f + 2.05f, x + 0.02f, f + 2.09f, 0f, 0.22f, SurfaceMaterial.PaintBlack);
-                wall.Block(builder, x - 0.09f, f + 1.8f, x + 0.09f, f + 2.05f, 0.13f, 0.31f, SurfaceMaterial.ShopGlass);
+                wall.Block(builder, x - 0.09f, f + 1.8f, x + 0.09f, f + 2.05f, 0.13f, 0.31f, SurfaceMaterial.LampGlass);
                 wall.Block(builder, x - 0.11f, f + 2.05f, x + 0.11f, f + 2.1f, 0.11f, 0.33f, SurfaceMaterial.PaintBlack);
                 floor.Context.Anchor(AnchorKind.DoorLamp, wall.Point(x, f + 1.92f, 0.22f), wall.Out, 0.2f);
             }
