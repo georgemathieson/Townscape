@@ -92,6 +92,14 @@ namespace Townscape.CoffeeShop
 
         public bool IsMilky(ItemDef item) => item.Recipe.Any(part => Ingredient(part.IngredientId).IsMilk);
 
+        /// <summary>
+        /// What a drink is mostly made of: its first ingredient that isn't milk (coffee for a latte).
+        /// The paper lists each drink under that ingredient's supplier.
+        /// </summary>
+        public IngredientDef MainIngredient(ItemDef drink) =>
+            drink.Recipe.Select(part => Ingredient(part.IngredientId)).FirstOrDefault(i => !i.IsMilk)
+            ?? Ingredient(drink.Recipe[0].IngredientId);
+
         /// <summary>Everything that refers to something missing, or can't be right. Empty when the balance is sound.</summary>
         public IReadOnlyList<string> Validate()
         {

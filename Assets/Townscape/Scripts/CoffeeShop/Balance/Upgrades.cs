@@ -44,5 +44,8 @@ namespace Townscape.CoffeeShop
 
         /// <summary>What it costs you beyond the price, for the player.</summary>
         public string TradeOff { get; init; }
+
+        /// <summary>Who is selling it, for its advert in the classifieds.</summary>
+        public string Seller { get; init; }
     }
 }

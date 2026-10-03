@@ -67,6 +67,9 @@ namespace Townscape.CoffeeShop
 
         public PlanLine Line(string itemId) => Lines.FirstOrDefault(l => l.ItemId == itemId);
 
+        /// <summary>The order for one ingredient, or null if the menu doesn't need it and there's none left over.</summary>
+        public IngredientLine Ingredient(string ingredientId) => Ingredients.FirstOrDefault(i => i.IngredientId == ingredientId);
+
         public static PrepPlan For(CoffeeShopBalance balance, CoffeeShopState state)
         {
             var displayCapacity = Capacity(balance, state, UpgradeStat.DisplayCapacity, balance.DisplayCapacity);

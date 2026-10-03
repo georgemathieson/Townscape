@@ -54,7 +54,5 @@ namespace Townscape.Tests.CoffeeShop
             };
 
         public static ItemOutcome Item(this DayResult result, string id) => result.Items.First(i => i.ItemId == id);
-
-        public static IngredientLine Ingredient(this PrepPlan plan, string id) => plan.Ingredients.FirstOrDefault(i => i.IngredientId == id);
     }
 }

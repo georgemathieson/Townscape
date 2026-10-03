@@ -45,7 +45,13 @@ namespace Townscape.CoffeeShop
         /// with a dairy-free milk.
         /// </summary>
         public bool DairyFree { get; init; }
+
+        /// <summary>For pastries: who bakes them. Drinks' ingredients have their own suppliers.</summary>
+        public SupplierDef Supplier { get; init; }
     }
+
+    /// <summary>Who sells something to the shop, as they advertise in the paper's classifieds.</summary>
+    public sealed record SupplierDef(string Name, string Advert);
 
     /// <summary>A number of one item: how many to bake, or servings to stock for.</summary>
     public sealed record ItemCount(string ItemId, int Count);
@@ -68,6 +74,9 @@ namespace Townscape.CoffeeShop
 
         /// <summary>The one ingredient whose kind the player chooses: dairy or an alternative.</summary>
         public bool IsMilk { get; init; }
+
+        /// <summary>Who sells it. Milk's supplier depends on the chosen <see cref="MilkOption"/>.</summary>
+        public SupplierDef Supplier { get; init; }
     }
 
     /// <summary>The milk the shop stocks for every milky drink: one choice, not one per drink.</summary>
@@ -86,5 +95,7 @@ namespace Townscape.CoffeeShop
         /// Dairy suits everyone; some people won't take oat milk in their latte.
         /// </summary>
         public double Appeal { get; init; } = 1.0;
+
+        public SupplierDef Supplier { get; init; }
     }
 }

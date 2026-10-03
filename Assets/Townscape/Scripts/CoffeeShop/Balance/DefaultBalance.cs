@@ -62,18 +62,35 @@ namespace Townscape.CoffeeShop
                 {
                     Id = Croissant, Name = "Croissant", Kind = ItemKind.Pastry, PricePence = 280, UnitCostPence = 100,
                     ServeSeconds = 12, DairyFree = false,
+                    Supplier = new SupplierDef("Beckside Bakery", "Croissants baked before dawn and on your counter by seven."),
                 },
             },
             Ingredients = new[]
             {
-                new IngredientDef { Id = CoffeeBeans, Name = "Coffee", CostPerPortionPence = 28 },
-                new IngredientDef { Id = TeaLeaves, Name = "Tea", CostPerPortionPence = 9 },
+                new IngredientDef
+                {
+                    Id = CoffeeBeans, Name = "Coffee", CostPerPortionPence = 28,
+                    Supplier = new SupplierDef("Old Mill Roasters", "Espresso beans roasted at the old mill by the beck."),
+                },
+                new IngredientDef
+                {
+                    Id = TeaLeaves, Name = "Tea", CostPerPortionPence = 9,
+                    Supplier = new SupplierDef("Tarn Tea Company", "Loose-leaf breakfast tea, strong enough to stand a spoon in."),
+                },
                 new IngredientDef { Id = Milk, Name = "Milk", SpoilsOvernight = true, IsMilk = true },
             },
             MilkOptions = new[]
             {
-                new MilkOption { Id = DairyMilk, Name = "Dairy milk", CostPerPortionPence = 22, DairyFree = false, Appeal = 1.0 },
-                new MilkOption { Id = OatMilk, Name = "Oat milk", CostPerPortionPence = 38, DairyFree = true, Appeal = 0.88 },
+                new MilkOption
+                {
+                    Id = DairyMilk, Name = "Dairy milk", CostPerPortionPence = 22, DairyFree = false, Appeal = 1.0,
+                    Supplier = new SupplierDef("Low Fell Dairy", "Whole milk from the valley's own herd, delivered daily."),
+                },
+                new MilkOption
+                {
+                    Id = OatMilk, Name = "Oat milk", CostPerPortionPence = 38, DairyFree = true, Appeal = 0.88,
+                    Supplier = new SupplierDef("Oat & Fell", "Creamy oat milk that foams like the real thing. Dairy-free."),
+                },
             },
             Segments = new[]
             {
@@ -130,6 +147,7 @@ namespace Townscape.CoffeeShop
                     Effects = new[] { new UpgradeEffect(UpgradeStat.DisplayCapacity, 14) },
                     Summary = "Room for 14 more pastries on the counter.",
                     TradeOff = "Costs £3 a day to keep chilled, and a fuller case means more to throw away on a quiet day.",
+                    Seller = "Kirkgate Shopfitters",
                 },
             },
         };
