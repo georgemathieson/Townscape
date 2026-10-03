@@ -24,6 +24,8 @@ namespace Townscape.Tests.Generation
                 MeshCategory.Markings,
                 MeshCategory.Structure,
                 MeshCategory.Building,
+                MeshCategory.Furniture,
+                MeshCategory.Vegetation,
             }));
         }
 

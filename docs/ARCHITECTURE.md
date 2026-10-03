@@ -57,6 +57,8 @@ data.
 | `IBuildingStyle` | terraced unit, detached house (cottages, the mill, a detached shop), church | chapel, barn |
 | `IGroundFloorStyle` | traditional shopfront, inn, house front | bay-windowed shop |
 | `IShopDisplay` | books, coffee, computers, newsagent, bakery, chippy, florist, gallery, generic shelves | anything new a shop needs |
+| `IDressingRule` | street lamps, Belisha beacons, river railings, placed props, dry-stone walls, churchyard, trees, ground cover, flower beds | hedges, parked cars |
+| `IProp` | lamp post, K6 phone box, pillar box, bench, bus stop, Belisha beacon, memorial, gravestone, tree (four species), flower clump | anything placed |
 | `ITownscapeInput` | Input System, legacy Input Manager | gamepad |
 
 Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes), `GenerationSettings` and
@@ -109,10 +111,26 @@ Styles are assembled from small parts in `Buildings/Parts`:
 
 Shop windows use transparent glass in front of a shallow display box that an `IShopDisplay` dresses.
 
+### Dressing
+
+After the buildings, the layout's `IDressingRule`s run in order through `DressingGenerator`. Rules
+place `IProp`s (each built in its own `PropFrame`: x right, y up, z towards its front) or draw
+long features directly (railings, dry-stone walls). The `DressingContext` gives them:
+- ground height and region queries that also cover the fells beyond the core
+- an occupancy map, so trees keep clear of lamps, benches, walls and each other
+- mesh builders chunked by area: 50 m in the village and 200 m on the fells, split into Furniture
+  and Vegetation so vegetation can sway in the wind later
+
+Rules lean on the ground model, so placement stays sensible without hand-tuning. For example,
+dry-stone walls break wherever they would cross a road, path or yard, which leaves gateways at
+every cottage and junction.
+
 Generators also leave **anchors** (`TownAnchor`) for later systems:
 - chimney pots, for smoke
 - windows and shop windows, for lighting them at night
-- door lamps
+- door lamps and street lamps
+- Belisha beacons, which flash
+- the phone box's lit sign
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 

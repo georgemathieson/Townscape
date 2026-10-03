@@ -43,6 +43,9 @@ namespace Townscape.Generation.Buildings.Styles
         public float RightNeighbourRidge { get; set; }
 
         public int Pots { get; set; } = 3;
+
+        /// <summary>Flower boxes under the first-floor windows.</summary>
+        public bool WindowBoxes { get; set; }
     }
 
     /// <summary>
@@ -117,9 +120,13 @@ namespace Townscape.Generation.Buildings.Styles
             }
 
             WallBuilder.Build(context.Builder, front, upperBase, design.Eaves, openings, design.Wall);
-            foreach (var opening in openings)
+            for (var i = 0; i < openings.Count; i++)
             {
-                Glazing.FillWindow(context, front, opening, design.Windows);
+                Glazing.FillWindow(context, front, openings[i], design.Windows);
+                if (design.WindowBoxes && i < columns)
+                {
+                    WindowBox.Build(context, front, openings[i].X0, openings[i].X1, openings[i].Y0, design.DoorPaint);
+                }
             }
         }
 

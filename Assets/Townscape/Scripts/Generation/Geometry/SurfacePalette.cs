@@ -85,6 +85,18 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.PaintOrange] = new SurfaceAppearance(0.93f, 0.48f, 0.12f, 0.50f),
                 [SurfaceMaterial.PaintPurple] = new SurfaceAppearance(0.40f, 0.24f, 0.50f, 0.50f),
                 [SurfaceMaterial.Bread] = new SurfaceAppearance(0.76f, 0.54f, 0.30f, 0.20f),
+
+                [SurfaceMaterial.Iron] = new SurfaceAppearance(0.09f, 0.10f, 0.10f, 0.55f),
+                [SurfaceMaterial.LampGlass] = new SurfaceAppearance(0.95f, 0.86f, 0.62f, 0.85f),
+                [SurfaceMaterial.Beacon] = new SurfaceAppearance(0.98f, 0.55f, 0.12f, 0.70f),
+                [SurfaceMaterial.Bark] = new SurfaceAppearance(0.30f, 0.24f, 0.18f, 0.10f),
+                [SurfaceMaterial.BirchBark] = new SurfaceAppearance(0.82f, 0.80f, 0.74f, 0.15f),
+                [SurfaceMaterial.LeafGreen] = new SurfaceAppearance(0.27f, 0.42f, 0.20f, 0.15f),
+                [SurfaceMaterial.LeafDark] = new SurfaceAppearance(0.17f, 0.31f, 0.16f, 0.15f),
+                [SurfaceMaterial.LeafLight] = new SurfaceAppearance(0.45f, 0.55f, 0.24f, 0.15f),
+                [SurfaceMaterial.LeafAutumn] = new SurfaceAppearance(0.62f, 0.42f, 0.16f, 0.15f),
+                [SurfaceMaterial.PineGreen] = new SurfaceAppearance(0.13f, 0.25f, 0.18f, 0.12f),
+                [SurfaceMaterial.GrassTuft] = new SurfaceAppearance(0.40f, 0.52f, 0.26f, 0.15f),
             };
 
         public static SurfaceAppearance Get(SurfaceMaterial material) =>

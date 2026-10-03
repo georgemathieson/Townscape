@@ -45,6 +45,7 @@ namespace Townscape.Generation.Buildings.Planning
                 Pots = 2 + random.Next(3),
                 GroundFloor = shop != null ? (shop.Frontage ?? TraditionalShopfront.Instance) : new HouseFrontage(random.NextDouble() < 0.5),
             };
+            design.WindowBoxes = random.NextDouble() < (shop != null ? 0.25 : 0.45);
 
             var pitch = (37f + (6f * (float)random.NextDouble())) * MathF.PI / 180f;
             design.Eaves = BuildingLevels.Floor + design.GroundFloorHeight + (design.UpperFloors * design.UpperFloorHeight);

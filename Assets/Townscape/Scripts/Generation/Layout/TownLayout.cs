@@ -224,6 +224,9 @@ namespace Townscape.Generation.Layout
 
         /// <summary>Free-standing buildings: cottages, detached shops, the church, the mill.</summary>
         public IReadOnlyList<DetachedBuildingSpec> Detached { get; init; } = System.Array.Empty<DetachedBuildingSpec>();
+
+        /// <summary>Rules that dress the town after the buildings: street furniture, walls, trees and flowers.</summary>
+        public IReadOnlyList<Dressing.IDressingRule> Dressing { get; init; } = System.Array.Empty<Dressing.IDressingRule>();
     }
 
     /// <summary>Strategy for producing a town layout. Swap it to generate a different town.</summary>

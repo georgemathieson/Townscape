@@ -33,6 +33,9 @@ namespace Townscape.Generation.Buildings.Styles
         public string Sign { get; init; }
 
         public int Pots { get; init; } = 2;
+
+        /// <summary>Flower boxes under the ground-floor windows.</summary>
+        public bool WindowBoxes { get; init; }
     }
 
     /// <summary>
@@ -148,6 +151,10 @@ namespace Townscape.Generation.Buildings.Styles
                 else
                 {
                     Glazing.FillWindow(context, front, opening, design.Windows);
+                    if (design.WindowBoxes && opening.Y0 < upperBase)
+                    {
+                        WindowBox.Build(context, front, opening.X0, opening.X1, opening.Y0, design.DoorPaint);
+                    }
                 }
             }
 
