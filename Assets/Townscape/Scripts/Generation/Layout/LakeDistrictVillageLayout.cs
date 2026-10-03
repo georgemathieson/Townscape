@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Numerics;
 using Townscape.Generation.Buildings.Parts;
 using Townscape.Generation.Buildings.Styles;
+using Townscape.Generation.Dressing;
+using Townscape.Generation.Dressing.Props;
+using Townscape.Generation.Dressing.Rules;
 using Townscape.Generation.Geometry;
 using Townscape.Generation.Maths;
 using Townscape.Generation.Markings;
@@ -67,6 +70,7 @@ namespace Townscape.Generation.Layout
                 new PathSpec("Riverside Walk (south)", Polyline.Smooth(new[] { new Vector2(-10.5f, -6.5f), new Vector2(-10f, -30f), new Vector2(-8.5f, -55f), new Vector2(-4.5f, -78f), new Vector2(2f, -100f), new Vector2(8f, -112f) }), 2f),
                 new PathSpec("Mill Footpath", new Polyline(new Vector2(-17f, -60f), new Vector2(-7.3f, -62f)), 1.6f),
                 new PathSpec("Church Path", new Polyline(new Vector2(69.5f, 70f), new Vector2(75.2f, 70f)), 1.6f),
+                new PathSpec("Green Walk", Polyline.Smooth(new[] { new Vector2(-62.5f, 38f), new Vector2(-30f, 40.5f), new Vector2(-9f, 36f) }), 1.8f),
             };
 
             return new TownLayout(
@@ -82,6 +86,65 @@ namespace Townscape.Generation.Layout
             {
                 Terraces = Terraces(roads[0]),
                 Detached = Detached(roads[1], roads[2], roads[3]),
+                Dressing = Dressing(roads[0], roads[1], roads[2], roads[3], river),
+            };
+        }
+
+        /// <summary>Street furniture, walls and greenery, applied in order after the buildings.</summary>
+        private static IReadOnlyList<IDressingRule> Dressing(RoadSpec high, RoadSpec fellRoad, RoadSpec millLane, RoadSpec churchLane, RiverSpec river)
+        {
+            var greenCentre = new Vector2(-30f, 46f);
+            Vector2 OnHighStreet(float x, float offset) => high.PointAt(high.AlongNearest(new Vector2(x, 0f)), offset);
+            Vector2 TowardsRoad(float x, float offset) => OnHighStreet(x, 0f) - OnHighStreet(x, offset);
+
+            var walls = new List<Polyline>();
+            walls.AddRange(DryStoneWallsRule.AlongRoad(fellRoad, 8f, fellRoad.Centre.Length, 1.3f));
+            walls.AddRange(DryStoneWallsRule.AlongRoad(churchLane, 8f, churchLane.Centre.Length, 1.3f));
+            walls.AddRange(DryStoneWallsRule.AlongRoad(millLane, 8f, millLane.Centre.Length, 1.3f));
+            walls.Add(new Polyline(new Vector2(76f, 61f), new Vector2(99f, 61f), new Vector2(99f, 83f), new Vector2(76.5f, 83f)));
+            walls.Add(new Polyline(new Vector2(58f, 34f), new Vector2(78f, 35f), new Vector2(98f, 36f)));
+            walls.Add(new Polyline(new Vector2(-98f, 20f), new Vector2(-82f, 22f), new Vector2(-66f, 22f)));
+            walls.Add(new Polyline(new Vector2(-98f, -30f), new Vector2(-60f, -32f), new Vector2(-48f, -42f)));
+            walls.Add(new Polyline(new Vector2(20f, -30f), new Vector2(60f, -28f), new Vector2(98f, -26f)));
+
+            var props = new List<PlacedProp>
+            {
+                new PlacedProp(new PhoneBox(), new Vector2(-12.5f, 9f), new Vector2(0f, -1f)),
+                new PlacedProp(new Bench(), new Vector2(-8.6f, 11f), new Vector2(1f, 0f)),
+                new PlacedProp(new PillarBox(), OnHighStreet(44.5f, -(high.HalfWidth + 0.45f)), TowardsRoad(44.5f, -(high.HalfWidth + 0.45f))),
+                new PlacedProp(new BusStop(), OnHighStreet(-78f, -(high.HalfWidth + 0.35f)), TowardsRoad(-78f, -(high.HalfWidth + 0.35f))),
+                new PlacedProp(new Bench(), OnHighStreet(-76f, -(high.HalfWidth + 1.65f)), TowardsRoad(-76f, -(high.HalfWidth + 1.65f))),
+
+                // Riverside benches looking over the water.
+                new PlacedProp(new Bench(), new Vector2(7.6f, 35f), new Vector2(-1f, 0f)),
+                new PlacedProp(new Bench(), new Vector2(3f, 75f), new Vector2(-1f, 0f)),
+                new PlacedProp(new Bench(), new Vector2(-7.3f, -40f), new Vector2(1f, 0f)),
+                new PlacedProp(new Bench(), new Vector2(-0.3f, -85f), new Vector2(1f, 0f)),
+
+                // The village green and the church.
+                new PlacedProp(new Memorial(), greenCentre, new Vector2(0f, -1f)),
+                new PlacedProp(new Bench(), new Vector2(-35f, 42.6f), new Vector2(0.5f, 1f)),
+                new PlacedProp(new Bench(), new Vector2(-25f, 42.6f), new Vector2(-0.5f, 1f)),
+                new PlacedProp(new Tree(TreeKind.Broadleaf, 1.2f), new Vector2(-41f, 53f), Vector2.UnitY, DressingLayer.Vegetation),
+                new PlacedProp(new Tree(TreeKind.Broadleaf, 1.1f), new Vector2(-19f, 54f), Vector2.UnitY, DressingLayer.Vegetation),
+                new PlacedProp(new Tree(TreeKind.Birch), new Vector2(-16f, 31f), Vector2.UnitY, DressingLayer.Vegetation),
+                new PlacedProp(new Bench(), new Vector2(72.5f, 67.8f), new Vector2(0f, 1f)),
+            };
+
+            return new IDressingRule[]
+            {
+                new StreetLampsRule(high, 17f, bothSides: true, baskets: true),
+                new StreetLampsRule(fellRoad, 24f, bothSides: false, baskets: false),
+                new StreetLampsRule(churchLane, 24f, bothSides: false, baskets: false),
+                new StreetLampsRule(millLane, 24f, bothSides: false, baskets: false),
+                new BelishaBeaconsRule(high),
+                new RiverRailingsRule(river),
+                new PlacedPropsRule(props),
+                new FlowerBedRule(greenCentre, 1.8f, 2.6f),
+                new ChurchyardRule(new Vector2(76f, 61f), new Vector2(99f, 83f), new Vector2(1f, 0f)),
+                new DryStoneWallsRule(walls),
+                new TreesRule(new[] { new OpenSpace(new Vector2(-30f, 44f), 9f), new OpenSpace(new Vector2(87f, 72f), 12f) }),
+                new GroundCoverRule(),
             };
         }
 

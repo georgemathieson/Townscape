@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Townscape.Generation.Buildings;
 using Townscape.Generation.Buildings.Planning;
+using Townscape.Generation.Dressing;
 using Townscape.Generation.Geometry;
 using Townscape.Generation.Ground;
 using Townscape.Generation.Layout;
@@ -18,6 +19,8 @@ namespace Townscape.Generation
         Markings,
         Structure,
         Building,
+        Furniture,
+        Vegetation,
     }
 
     public sealed class GeneratedMesh
@@ -64,7 +67,7 @@ namespace Townscape.Generation
 
         public TownGenerator(IReadOnlyList<IStructureGenerator> structures = null)
         {
-            _structures = structures ?? new IStructureGenerator[] { new BridgeGenerator(), new BuildingGenerator() };
+            _structures = structures ?? new IStructureGenerator[] { new BridgeGenerator(), new BuildingGenerator(), new DressingGenerator() };
         }
 
         /// <summary>Apron of flagstones left round each building.</summary>

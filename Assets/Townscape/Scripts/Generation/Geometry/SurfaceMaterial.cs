@@ -57,5 +57,18 @@ namespace Townscape.Generation.Geometry
         PaintOrange,
         PaintPurple,
         Bread,
+
+        // Street furniture and greenery
+        Iron,
+        LampGlass,
+        Beacon,
+        Bark,
+        BirchBark,
+        LeafGreen,
+        LeafDark,
+        LeafLight,
+        LeafAutumn,
+        PineGreen,
+        GrassTuft,
     }
 }

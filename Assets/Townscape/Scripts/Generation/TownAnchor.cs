@@ -15,6 +15,15 @@ namespace Townscape.Generation
 
         /// <summary>A lamp over a door or a pub sign.</summary>
         DoorLamp,
+
+        /// <summary>The lantern of a street lamp.</summary>
+        StreetLamp,
+
+        /// <summary>The orange globe of a Belisha beacon at a zebra crossing.</summary>
+        Beacon,
+
+        /// <summary>A sign that is lit from inside, like the TELEPHONE sign on a phone box.</summary>
+        LitSign,
     }
 
     /// <summary>

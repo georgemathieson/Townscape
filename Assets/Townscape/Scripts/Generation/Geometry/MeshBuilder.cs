@@ -151,6 +151,74 @@ namespace Townscape.Generation.Geometry
             }
         }
 
+        /// <summary>A cone (a many-sided pyramid) standing on <paramref name="baseCentre"/>, for conifers and caps.</summary>
+        public void AddCone(Vector3 baseCentre, float radius, float height, int sides, SurfaceMaterial material, bool capBase = false, float rotation = 0f)
+        {
+            var apex = baseCentre + (Vector3.UnitY * height);
+            for (var i = 0; i < sides; i++)
+            {
+                var a0 = rotation + (MathF.PI * 2f * i / sides);
+                var a1 = rotation + (MathF.PI * 2f * (i + 1) / sides);
+                var p0 = baseCentre + (new Vector3(MathF.Cos(a0), 0f, MathF.Sin(a0)) * radius);
+                var p1 = baseCentre + (new Vector3(MathF.Cos(a1), 0f, MathF.Sin(a1)) * radius);
+                AddTriangleFacing(p0, p1, apex, ((p0 + p1) * 0.5f) - baseCentre + (Vector3.UnitY * radius * 0.5f), material);
+                if (capBase)
+                {
+                    AddTriangleFacing(baseCentre, p0, p1, -Vector3.UnitY, material);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A faceted ball: an icosahedron whose corners are pushed in or out by up to
+        /// <paramref name="jitter"/> of the radius, for tree crowns, bushes and globes.
+        /// </summary>
+        public void AddBlob(Vector3 centre, Vector3 radii, SurfaceMaterial material, Random random = null, float jitter = 0f)
+        {
+            var corners = new Vector3[IcosahedronCorners.Length];
+            for (var i = 0; i < corners.Length; i++)
+            {
+                var scale = 1f + (random == null ? 0f : (((float)random.NextDouble() * 2f) - 1f) * jitter);
+                corners[i] = centre + (IcosahedronCorners[i] * radii * scale);
+            }
+
+            for (var i = 0; i < IcosahedronFaces.Length; i += 3)
+            {
+                var a = corners[IcosahedronFaces[i]];
+                var b = corners[IcosahedronFaces[i + 1]];
+                var c = corners[IcosahedronFaces[i + 2]];
+                AddTriangleFacing(a, b, c, ((a + b + c) / 3f) - centre, material);
+            }
+        }
+
+        private static readonly Vector3[] IcosahedronCorners = CreateIcosahedronCorners();
+
+        private static readonly int[] IcosahedronFaces =
+        {
+            0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11,
+            1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+            3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9,
+            4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1,
+        };
+
+        private static Vector3[] CreateIcosahedronCorners()
+        {
+            var t = (1f + MathF.Sqrt(5f)) / 2f;
+            var corners = new[]
+            {
+                new Vector3(-1f, t, 0f), new Vector3(1f, t, 0f), new Vector3(-1f, -t, 0f), new Vector3(1f, -t, 0f),
+                new Vector3(0f, -1f, t), new Vector3(0f, 1f, t), new Vector3(0f, -1f, -t), new Vector3(0f, 1f, -t),
+                new Vector3(t, 0f, -1f), new Vector3(t, 0f, 1f), new Vector3(-t, 0f, -1f), new Vector3(-t, 0f, 1f),
+            };
+
+            for (var i = 0; i < corners.Length; i++)
+            {
+                corners[i] = Vector3.Normalize(corners[i]);
+            }
+
+            return corners;
+        }
+
         public MeshData Build(string name)
         {
             var submeshes = new List<SubmeshData>();
