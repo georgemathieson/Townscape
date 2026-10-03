@@ -26,6 +26,8 @@ namespace Townscape.Runtime.Weather
             _textures = textures;
         }
 
+        public string Name => "Water";
+
         public void Tick(in WeatherFrame frame)
         {
             var rain = frame.Conditions.Rain;

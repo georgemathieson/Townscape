@@ -248,6 +248,11 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. The time slider dispatches
   `SetTargetHour(hour, Scrub: true)`, which sets a very short blend so the clock follows the hand.
+- **`PerformanceOverlay`** sits in the top-right corner, apart from the panel so it stays up when
+  the panel is hidden. It shows the frame rate and the slowest recent frame (`FrameTimes`), and in
+  its detailed view the GPU time where the platform reports it, how long the town took to build,
+  each storm effect's and the lights' cost per frame (timed and smoothed by `StormSystem` and
+  `TownLights`), and the render counters from Unity's `ProfilerRecorder`.
 - **`TownAudio`** plays rain and wind loops, the river from the nearest point on its course, and
   thunder from a pool of voices placed towards each strike when `StormSystem.ThunderArrived` fires.
   Volumes come from `AudioMix`. Any clip slot left empty on the bootstrap is filled by

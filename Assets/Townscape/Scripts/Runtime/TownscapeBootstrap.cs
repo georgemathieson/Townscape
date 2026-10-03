@@ -72,6 +72,9 @@ namespace Townscape.Runtime
 
         public TownLights Lights { get; private set; }
 
+        /// <summary>How long the last build took, shown in the performance readout.</summary>
+        public float BuildMilliseconds { get; private set; }
+
         /// <summary>The storm, in play mode only. Audio listens to its thunder.</summary>
         public StormSystem Storm { get; private set; }
 
@@ -148,6 +151,7 @@ namespace Townscape.Runtime
                 BuildPlayModeSystems(hideFlags);
             }
 
+            BuildMilliseconds = stopwatch.ElapsedMilliseconds;
             Debug.Log($"[Townscape] Built the town in {stopwatch.ElapsedMilliseconds} ms ({(playing ? "play mode" : "edit-mode preview")}).");
         }
 
@@ -173,7 +177,9 @@ namespace Townscape.Runtime
             var controls = TownMeshSpawner.CreateChild("Controls", _root.transform, hideFlags);
             var panel = controls.AddComponent<ControlPanel>();
             panel.Initialize(Store, Lighting, Storm);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel);
+            var performance = controls.AddComponent<PerformanceOverlay>();
+            performance.Initialize(Storm, Lights, () => BuildMilliseconds);
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance);
             if (rememberSettings)
             {
                 controls.AddComponent<SettingsMemory>().Initialize(Store);

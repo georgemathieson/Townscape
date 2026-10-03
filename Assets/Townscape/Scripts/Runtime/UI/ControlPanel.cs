@@ -26,7 +26,8 @@ namespace Townscape.Runtime.UI
             "<b>Shift</b> faster   <b>Scroll</b> speed\n" +
             "<b>1–4</b> dawn, day, dusk, night   <b>[ ]</b> an hour\n" +
             "<b>T</b> run the clock   <b>R L G</b> rain, lightning, wind\n" +
-            "<b>B</b> strike   <b>M</b> mute   <b>H</b> hide this panel";
+            "<b>B</b> strike   <b>M</b> mute   <b>F</b> frame rate\n" +
+            "<b>H</b> hide this panel";
 
         private Store<TownState> _store;
         private TimeOfDayLighting _lighting;

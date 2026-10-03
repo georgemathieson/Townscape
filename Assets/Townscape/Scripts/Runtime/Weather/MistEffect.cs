@@ -28,6 +28,8 @@ namespace Townscape.Runtime.Weather
             _mist.Play();
         }
 
+        public string Name => "Mist";
+
         public void Tick(in WeatherFrame frame)
         {
             var mist = frame.Conditions.Mist;

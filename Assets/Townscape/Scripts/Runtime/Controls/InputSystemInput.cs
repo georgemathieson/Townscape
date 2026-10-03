@@ -56,6 +56,7 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.CycleWind: return keyboard.gKey.wasPressedThisFrame;
                 case Shortcut.StrikeLightning: return keyboard.bKey.wasPressedThisFrame;
                 case Shortcut.ToggleMute: return keyboard.mKey.wasPressedThisFrame;
+                case Shortcut.CyclePerformance: return keyboard.fKey.wasPressedThisFrame;
                 default: return false;
             }
         }

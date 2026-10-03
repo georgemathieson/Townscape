@@ -59,6 +59,8 @@ namespace Townscape.Runtime.Weather
             _smoke.Play();
         }
 
+        public string Name => "Smoke";
+
         public void Tick(in WeatherFrame frame)
         {
             if (frame.Time >= _nextRefresh)

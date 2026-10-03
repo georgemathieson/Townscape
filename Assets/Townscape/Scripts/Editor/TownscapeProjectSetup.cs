@@ -57,6 +57,7 @@ namespace Townscape.Editor
             var createdPipeline = EnsureRenderPipeline(changes);
             EnsureLinearColour(changes);
             EnsureSceneInBuild(changes);
+            EnsureFrameTimingStats(changes);
             ShaderVariantKeeper.Ensure(changes);
 
             if (changes.Count > 0)
@@ -213,6 +214,18 @@ namespace Townscape.Editor
 
             PlayerSettings.colorSpace = ColorSpace.Linear;
             changes.Add("switched to linear colour space");
+        }
+
+        // Lets the performance readout show GPU time, on platforms that report it.
+        private static void EnsureFrameTimingStats(List<string> changes)
+        {
+            if (PlayerSettings.enableFrameTimingStats)
+            {
+                return;
+            }
+
+            PlayerSettings.enableFrameTimingStats = true;
+            changes.Add("turned on frame timing stats");
         }
 
         private static void EnsureSceneInBuild(List<string> changes)

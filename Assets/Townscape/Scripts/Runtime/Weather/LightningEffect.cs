@@ -57,6 +57,8 @@ namespace Townscape.Runtime.Weather
             }
         }
 
+        public string Name => "Lightning";
+
         public void Tick(in WeatherFrame frame)
         {
             foreach (var strike in frame.NewStrikes)
