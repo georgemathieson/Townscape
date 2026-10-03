@@ -101,8 +101,30 @@ before work started; later changes should be recorded here too.
    keyboard controls for rain, lightning and wind until the control panel arrives. *(done)*
 5. **Finish:** control panel UI, audio hooks and polish. Includes a player build that keeps the
    shaders and variants the runtime materials use (transparent glass, emission, normal maps, URP
-   particles and the lightning bolt shader), and remembering settings between sessions.
-   *(this pull request)*
+   particles and the lightning bolt shader), and remembering settings between sessions. *(done)*
+6. **Fellside Coffee, minimum playable slice:** a coffee shop management game in the village's coffee
+   shop. One site, two customer segments, three menu items (a latte with a milk choice, a pot of tea,
+   croissants), prep, a simulated day, a review, profit carried between days, a cash reserve, and one
+   upgrade that changes a decision (a bigger display case). Saved as JSON. *(this pull request)*
+
+## Fellside Coffee
+
+- **Two loops.** Daily: prep and stock, trade for the day, review. Progression: profit buys upgrades,
+  which change the daily loop. Every decision is a trade-off under uncertainty: limited capacity,
+  unknown demand, perishable stock. Upgrades unlock decisions, not just bigger numbers.
+- **Stock by behaviour.** Ready-to-sell items (pastries) are perishable, one per customer and wasted if
+  unsold. Drinks are made from ingredients worked out from the menu, with one milk choice (dairy or an
+  alternative). Cups, lids and ice are topped up automatically. Unmakeable items are flagged.
+- **Customers** come from segments with their own tastes, budgets and dietary needs, in a mix that
+  changes with the time of day and the site. A queue and a serving rate mean busy periods lose
+  customers. Demand is random but seeded, so a day always replays the same.
+- **Review:** sold, wasted and missed (with reasons), money, how each segment was served, and what
+  each upgrade earned compared with the same day without it.
+- **Upgrades** have a price, an effect and at least one trade-off (upkeep, space or opportunity). They
+  can't spend the reserve, and work from the next day traded.
+- **Instant results, fixed prices, Unity only.** Game logic is engine-free and tested; every balance
+  number is data. Saved as JSON in the persistent data folder.
+- **Out of scope:** multiplayer, real payments, art or animation polish, narrative.
 
 ## Ideas for later
 
@@ -111,3 +133,6 @@ before work started; later changes should be recorded here too.
 - People and traffic: a few walkers with umbrellas, a bus that stops at the bus stop.
 - A pelican crossing with lights on another road.
 - A first-person walking camera alongside the free-fly one.
+- Fellside Coffee beyond the slice: more upgrades (a faster machine, cold drinks, seating and music, a
+  second milk, a pop-up at another site), syrups, more segments, regulars who remember their usual
+  order, and footfall that follows the town's weather. See [COFFEE_SHOP.md](COFFEE_SHOP.md).

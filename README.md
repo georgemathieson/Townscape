@@ -83,6 +83,18 @@ puts them back. Everything also has a key:
 | M | Mute or unmute |
 | F | Frame rate readout: off, frame rate, or a breakdown of where the time goes |
 | H | Hide or show the panel |
+| C | Open or close Fellside Coffee |
+
+## Fellside Coffee
+
+There's a small management game in the village's coffee shop. Press **C** (or **Run the coffee
+shop** on the panel) and the camera glides to Fellside Coffee on the high street. Each day, stock the
+shop (the menu, how many croissants to bake, servings of each drink, and dairy or oat milk), open
+for the day, and look at what sold, what was wasted and what customers couldn't get. Spend the
+profit on upgrades, and keep some cash back for bad days. The game saves itself to
+`fellside-coffee.json` in Unity's persistent data folder (**Townscape > Fellside Coffee > Show Save
+File** finds it). See [docs/COFFEE_SHOP.md](docs/COFFEE_SHOP.md) for how it works and how to tune
+it.
 
 ## Sounds
 
@@ -99,5 +111,8 @@ it was.
   without Unity with `dotnet test tools/verify/CoreTests`.
 - **Compile check without Unity:** `dotnet build tools/verify/UnityCompile/Editor.csproj`.
 - **Preview renders without Unity:** see [tools/preview](tools/preview/README.md).
+- **Coffee shop balance:** `dotnet run -c Release --project tools/coffee-sim` plays many games and
+  shows what the numbers in `DefaultBalance` add up to.
 - **New files under `Assets/`** need a `.meta`: run `python3 tools/generate_meta.py`.
-- The **Townscape** menu has Open Town Scene, Rebuild Town, Set Up Project and Create Town Scene.
+- The **Townscape** menu has Open Town Scene, Rebuild Town, Set Up Project and Create Town Scene, and
+  shows or deletes the Fellside Coffee save.
