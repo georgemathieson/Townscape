@@ -67,6 +67,8 @@ namespace Townscape.Runtime.Weather
             _splashes.Play();
         }
 
+        public string Name => "Rain";
+
         public void Tick(in WeatherFrame frame)
         {
             var rain = frame.Conditions.Rain;

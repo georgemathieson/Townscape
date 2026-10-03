@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Townscape.Generation;
 using Townscape.Runtime.Rendering;
 using Townscape.Simulation;
+using Townscape.Simulation.Diagnostics;
 using UnityEngine;
 
 namespace Townscape.Runtime.Lighting
@@ -17,10 +19,14 @@ namespace Townscape.Runtime.Lighting
         private const float FadePerSecond = 2.5f;
 
         private readonly List<AnchoredLight> _lights = new List<AnchoredLight>();
+        private readonly SmoothedTiming _timing = new SmoothedTiming();
         private MaterialLibrary _materials;
         private TimeOfDayLighting _time;
 
         public int LightCount => _lights.Count;
+
+        /// <summary>How long updating the lights and glowing materials takes a frame, smoothed.</summary>
+        public float UpdateMilliseconds => _timing.Milliseconds;
 
         public void Initialize(GeneratedTown town, MaterialLibrary materials, TimeOfDayLighting time, HideFlags hideFlags)
         {
@@ -62,7 +68,9 @@ namespace Townscape.Runtime.Lighting
         {
             if (_time != null)
             {
+                var started = Stopwatch.GetTimestamp();
                 Apply(immediate: !Application.isPlaying);
+                _timing.Add((float)((Stopwatch.GetTimestamp() - started) * 1000.0 / Stopwatch.Frequency));
             }
         }
 

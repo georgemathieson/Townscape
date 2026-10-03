@@ -34,6 +34,8 @@ namespace Townscape.Runtime.Weather
             }
         }
 
+        public string Name => "Wind sway";
+
         public void Tick(in WeatherFrame frame)
         {
             var camera = frame.CameraPosition;

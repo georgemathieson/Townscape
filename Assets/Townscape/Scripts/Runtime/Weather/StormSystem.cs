@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Townscape.Generation;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Rendering;
+using Townscape.Simulation.Diagnostics;
 using Townscape.Simulation.Weather;
 using Townscape.State;
 using UnityEngine;
@@ -23,6 +25,7 @@ namespace Townscape.Runtime.Weather
     public sealed class StormSystem : MonoBehaviour
     {
         private readonly List<IWeatherEffect> _effects = new List<IWeatherEffect>();
+        private readonly List<SmoothedTiming> _timings = new List<SmoothedTiming>();
         private readonly List<Strike> _newStrikes = new List<Strike>();
         private readonly List<Thunder> _thunder = new List<Thunder>();
         private readonly LightningStorm _storm = new LightningStorm();
@@ -51,6 +54,22 @@ namespace Townscape.Runtime.Weather
 
         public string ProfileName => _profile.Name;
 
+        /// <summary>How long each effect takes a frame, smoothed, slowest first: for the performance readout.</summary>
+        public IEnumerable<(string Name, float Milliseconds)> Timings
+        {
+            get
+            {
+                var timings = new List<(string Name, float Milliseconds)>();
+                for (var i = 0; i < _effects.Count; i++)
+                {
+                    timings.Add((_effects[i].Name, _timings[i].Milliseconds));
+                }
+
+                timings.Sort((a, b) => b.Milliseconds.CompareTo(a.Milliseconds));
+                return timings;
+            }
+        }
+
         public void Initialize(Store<TownState> store, GeneratedTown town, MaterialLibrary materials, TimeOfDayLighting lighting, Transform camera, IReadOnlyList<SpawnedMesh> spawned, HideFlags hideFlags)
         {
             _lighting = lighting;
@@ -75,6 +94,10 @@ namespace Townscape.Runtime.Weather
             _effects.Add(new MistEffect(transform, hideFlags, _textures, GroundHeight));
             _effects.Add(new ChimneySmokeEffect(transform, hideFlags, _textures, town.Anchors));
             _effects.Add(new WindSwayEffect(spawned));
+            foreach (var _ in _effects)
+            {
+                _timings.Add(new SmoothedTiming());
+            }
 
             _subscription = store.Subscribe(state => state.Weather, OnWeatherChanged);
 
@@ -137,9 +160,11 @@ namespace Townscape.Runtime.Weather
             var key = _lighting.Current;
             var ambient = key.AmbientEquator + (key.LightColour * (key.LightIntensity * 0.2f)) + (WeatherLighting.FlashColour * (flash * 1.2f));
             var frame = new WeatherFrame(Conditions, time, deltaTime, _lighting.CurrentHour, Wetness, flash, ambient, _camera, _newStrikes);
-            foreach (var effect in _effects)
+            for (var i = 0; i < _effects.Count; i++)
             {
-                effect.Tick(frame);
+                var started = Stopwatch.GetTimestamp();
+                _effects[i].Tick(frame);
+                _timings[i].Add((float)((Stopwatch.GetTimestamp() - started) * 1000.0 / Stopwatch.Frequency));
             }
 
             foreach (var strike in _newStrikes)

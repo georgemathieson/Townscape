@@ -51,6 +51,7 @@ puts them back. Everything also has a key:
 | G | More wind (cycles back to calm) |
 | B | A lightning strike now |
 | M | Mute or unmute |
+| F | Frame rate readout: off, frame rate, or a breakdown of where the time goes |
 | H | Hide or show the panel |
 
 ## Sounds

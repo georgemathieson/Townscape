@@ -67,6 +67,9 @@ namespace Townscape.Runtime.Weather
     /// </summary>
     public interface IWeatherEffect : IDisposable
     {
+        /// <summary>What the effect is, as shown in the performance readout.</summary>
+        string Name { get; }
+
         void Tick(in WeatherFrame frame);
     }
 }

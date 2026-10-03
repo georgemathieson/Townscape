@@ -13,13 +13,15 @@ namespace Townscape.Runtime.Controls
         private ITownscapeInput _input;
         private TimeOfDayLighting _lighting;
         private ControlPanel _panel;
+        private PerformanceOverlay _performance;
 
-        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel)
+        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance)
         {
             _store = store;
             _input = input;
             _lighting = lighting;
             _panel = panel;
+            _performance = performance;
         }
 
         private void Update()
@@ -82,6 +84,11 @@ namespace Townscape.Runtime.Controls
             if (_input.WasPressed(Shortcut.ToggleHelp) && _panel != null)
             {
                 _panel.Visible = !_panel.Visible;
+            }
+
+            if (_input.WasPressed(Shortcut.CyclePerformance) && _performance != null)
+            {
+                _performance.Cycle();
             }
         }
 

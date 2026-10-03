@@ -19,6 +19,8 @@ namespace Townscape.Runtime.Weather
             _materials = materials;
         }
 
+        public string Name => "Wet surfaces";
+
         public void Tick(in WeatherFrame frame)
         {
             if (System.Math.Abs(frame.Wetness - _applied) >= MinChange)
