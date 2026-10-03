@@ -81,6 +81,10 @@ scene.add(sun);
 scene.add(sun.target);
 
 const gltf = await new GLTFLoader().loadAsync('/out/town.gltf');
+// Views worked out from the town by the exporter, such as the Fellside Coffee game's camera.
+const exportedViews = await fetch('/out/views.json');
+if (exportedViews.ok) Object.assign(views, await exportedViews.json());
+
 const lighting = await (await fetch('/out/lights.json')).json();
 const materials = {};
 gltf.scene.traverse((object) => {

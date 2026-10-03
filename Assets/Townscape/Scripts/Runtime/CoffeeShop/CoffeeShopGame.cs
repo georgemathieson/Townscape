@@ -1,6 +1,7 @@
 using System;
 using Townscape.CoffeeShop;
 using Townscape.Generation.Buildings;
+using Townscape.Generation.Buildings.Planning;
 using Townscape.Runtime.Controls;
 using Townscape.State;
 using UnityEngine;
@@ -17,10 +18,6 @@ namespace Townscape.Runtime.CoffeeShop
     public sealed class CoffeeShopGame : MonoBehaviour
     {
         private const float SaveDelay = 1f;
-        private const float ViewDistance = 8.5f;
-        private const float ViewSideways = 2.5f;
-        private const float EyeHeight = 2.1f;
-        private const float SignHeight = 2.6f;
 
         private FreeFlyCamera _camera;
         private Footprint _shop;
@@ -81,7 +78,8 @@ namespace Townscape.Runtime.CoffeeShop
             IsOpen = true;
             if (_camera != null && _shop != null)
             {
-                _camera.FlyTo(ViewPoint(out var lookAt), lookAt);
+                var view = ShopLocator.ViewOf(_shop, flat => _groundHeight != null ? _groundHeight(new Vector2(flat.X, flat.Y)) : 0f);
+                _camera.FlyTo(ToUnity(view.Eye), ToUnity(view.LookAt));
             }
         }
 
@@ -133,20 +131,6 @@ namespace Townscape.Runtime.CoffeeShop
             _dirty = false;
         }
 
-        // Across the street from the shop, a little to one side, looking at the sign.
-        private Vector3 ViewPoint(out Vector3 lookAt)
-        {
-            var front = ToUnity((_shop.FrontLeft + _shop.FrontRight) * 0.5f);
-            var outward = ToUnity(_shop.Outward);
-            var along = ToUnity(System.Numerics.Vector2.Normalize(_shop.FrontRight - _shop.FrontLeft));
-            var eye = front + (outward * ViewDistance) + (along * ViewSideways);
-
-            lookAt = new Vector3(front.x, Ground(front) + SignHeight, front.z);
-            return new Vector3(eye.x, Ground(eye) + EyeHeight, eye.z);
-        }
-
-        private float Ground(Vector3 position) => _groundHeight != null ? _groundHeight(new Vector2(position.x, position.z)) : 0f;
-
-        private static Vector3 ToUnity(System.Numerics.Vector2 v) => new Vector3(v.X, 0f, v.Y);
+        private static Vector3 ToUnity(System.Numerics.Vector3 v) => new Vector3(v.X, v.Y, v.Z);
     }
 }

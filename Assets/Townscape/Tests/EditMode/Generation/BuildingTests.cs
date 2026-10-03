@@ -35,6 +35,21 @@ namespace Townscape.Tests.Generation
         }
 
         [Test]
+        public void TheViewOfFellsideCoffee_StandsInTheStreet_LookingAtTheShop()
+        {
+            var shop = ShopLocator.Find(Plans, VillageShops.FellsideCoffee).Footprint;
+            var ground = GeneratedVillage.Town.Context.Ground;
+
+            var view = ShopLocator.ViewOf(shop, ground.HeightAt);
+
+            var eye = new Vector2(view.Eye.X, view.Eye.Z);
+            Assert.That(Plans.Any(plan => plan.Footprint.Contains(eye)), Is.False, "the camera stands outside every building");
+            Assert.That(view.Eye.Y - ground.HeightAt(eye), Is.EqualTo(ShopLocator.EyeHeight).Within(1e-4f));
+            var toShop = new Vector2(view.LookAt.X, view.LookAt.Z) - eye;
+            Assert.That(Vector2.Dot(Vector2.Normalize(toShop), shop.Outward), Is.LessThan(-0.9f), "looking back at the shopfront");
+        }
+
+        [Test]
         public void Buildings_KeepOffRoadsRiverAndPaths()
         {
             // Classify against the ground as it would be without any building plots.

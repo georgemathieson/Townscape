@@ -150,4 +150,5 @@ json.Append($"\"scenes\":[{{\"nodes\":[{string.Join(",", nodeIndices)}]}}],\"sce
 File.WriteAllText(Path.Combine(output, "town.gltf"), json.ToString());
 LightsExport.Write(town, Path.Combine(output, "lights.json"));
 StormExport.Write(town, Path.Combine(output, "storm.json"));
+ViewsExport.Write(town, Path.Combine(output, "views.json"));
 Console.WriteLine($"Wrote {Path.Combine(output, "town.gltf")} ({binary.Length / 1024} KiB of geometry)");
