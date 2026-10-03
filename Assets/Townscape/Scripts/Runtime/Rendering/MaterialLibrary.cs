@@ -162,7 +162,7 @@ namespace Townscape.Runtime.Rendering
         /// Switches a URP Lit material to alpha-blended transparency. Setting properties from code
         /// skips the material inspector's own setup, so the keywords and blend states are set here.
         /// </summary>
-        private static void MakeTransparent(Material material)
+        public static void MakeTransparent(Material material)
         {
             SetFloatIfPresent(material, SurfaceId, 1f);
             SetFloatIfPresent(material, BlendId, 0f);

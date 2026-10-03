@@ -74,7 +74,9 @@ before work started; later changes should be recorded here too.
 ## Audio
 
 - Audio system with slots for a rain loop, thunder (delayed by distance) and the river. The sound
-  files themselves are added later (for example free sounds from freesound.org).
+  files themselves are added later (for example free sounds from freesound.org). Until then, the
+  sounds are synthesised in code.
+- Volume and mute controls.
 
 ## Code
 
@@ -96,7 +98,16 @@ before work started; later changes should be recorded here too.
      trees, grass, flowers and dry-stone walls. *(done)*
 3. **Lighting:** full time-of-day treatment, lit windows, street lamps and light sources. *(done)*
 4. **Storm:** rain, splashes, lightning, thunder timing, wet surfaces, puddles, mist and wind, with
-   keyboard controls for rain, lightning and wind until the control panel arrives. *(this pull request)*
+   keyboard controls for rain, lightning and wind until the control panel arrives. *(done)*
 5. **Finish:** control panel UI, audio hooks and polish. Includes a player build that keeps the
    shaders and variants the runtime materials use (transparent glass, emission, normal maps, URP
-   particles and the lightning bolt shader).
+   particles and the lightning bolt shader), and remembering settings between sessions.
+   *(this pull request)*
+
+## Ideas for later
+
+- More weather profiles: clear skies, fog, snow (a new `IWeatherProfile` each).
+- Wind sway on the GPU (a vertex shader) if the CPU version shows up in the profiler.
+- People and traffic: a few walkers with umbrellas, a bus that stops at the bus stop.
+- A pelican crossing with lights on another road.
+- A first-person walking camera alongside the free-fly one.

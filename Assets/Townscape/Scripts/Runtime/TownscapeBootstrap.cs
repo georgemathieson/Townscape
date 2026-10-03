@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Townscape.Generation;
 using Townscape.Generation.Layout;
+using Townscape.Runtime.Audio;
 using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Rendering;
@@ -11,6 +13,7 @@ using Townscape.State;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace Townscape.Runtime
 {
@@ -37,17 +40,29 @@ namespace Townscape.Runtime
         private bool previewInEditMode = true;
 
         [SerializeField]
+        [Tooltip("Start each session with the time, weather and sound it was left at. Turn off to always start at the initial time preset.")]
+        private bool rememberSettings = true;
+
+        [SerializeField]
         [Tooltip("Log every store action to the console.")]
         private bool logActions = true;
 
         [SerializeField] private Vector3 cameraStartPosition = new Vector3(-30f, 7f, -30f);
         [SerializeField] private Vector3 cameraStartLookAt = new Vector3(0f, 1f, 0f);
 
+        [Header("Sounds (optional)")]
+        [SerializeField]
+        [Tooltip("Recordings to use instead of the sounds made in code. Leave any slot empty to keep the generated sound.")]
+        private TownAudioClips sounds = new TownAudioClips();
+
         private readonly List<Object> _owned = new List<Object>();
         private GameObject _root;
         private MaterialLibrary _materials;
         private IReadOnlyList<SpawnedMesh> _spawned;
         private bool _builtForPlayMode;
+        private Type _lastLoggedType;
+        private float _lastLoggedAt;
+        private IAction _unlogged;
 
         public Store<TownState> Store { get; private set; }
 
@@ -88,6 +103,11 @@ namespace Townscape.Runtime
             {
                 Rebuild();
             }
+
+            if (_unlogged != null && Time.unscaledTime - _lastLoggedAt >= LogQuietSeconds)
+            {
+                Log(_unlogged);
+            }
         }
 
         private void Build()
@@ -101,10 +121,16 @@ namespace Townscape.Runtime
             _builtForPlayMode = playing;
             _root = TownMeshSpawner.CreateChild("Generated Town", transform, hideFlags);
 
-            Store = new Store<TownState>(TownReducer.Reduce, TownState.CreateDefault(initialTimePreset));
+            var initialState = TownState.CreateDefault(initialTimePreset);
+            if (playing && rememberSettings)
+            {
+                initialState = SettingsMemory.Load(initialState);
+            }
+
+            Store = new Store<TownState>(TownReducer.Reduce, initialState);
             if (playing && logActions)
             {
-                Store.ActionProcessed += (action, _) => Debug.Log($"[Townscape] {action}");
+                Store.ActionProcessed += (action, _) => LogAction(action);
             }
 
             Town = new TownGenerator().Generate(new LakeDistrictVillageLayout().Create());
@@ -141,10 +167,44 @@ namespace Townscape.Runtime
             Storm = TownMeshSpawner.CreateChild("Storm", _root.transform, hideFlags).AddComponent<StormSystem>();
             Storm.Initialize(Store, Town, _materials, Lighting, camera.transform, _spawned, hideFlags);
 
+            var audio = TownMeshSpawner.CreateChild("Audio", _root.transform, hideFlags).AddComponent<TownAudio>();
+            audio.Initialize(Store, Storm, Town.Context.Layout, camera.transform, sounds, hideFlags);
+
             var controls = TownMeshSpawner.CreateChild("Controls", _root.transform, hideFlags);
-            var help = controls.AddComponent<HelpOverlay>();
-            help.Initialize(Store, Lighting);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, help);
+            var panel = controls.AddComponent<ControlPanel>();
+            panel.Initialize(Store, Lighting, Storm);
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel);
+            if (rememberSettings)
+            {
+                controls.AddComponent<SettingsMemory>().Initialize(Store);
+            }
+        }
+
+        // A slider sends a stream of actions; log the first, then at most a few a second, and always the last.
+        private const float LogQuietSeconds = 0.3f;
+
+        private void LogAction(IAction action)
+        {
+            if (action.GetType() == _lastLoggedType && Time.unscaledTime - _lastLoggedAt < LogQuietSeconds)
+            {
+                _unlogged = action;
+                return;
+            }
+
+            if (_unlogged != null && _unlogged.GetType() != action.GetType())
+            {
+                Log(_unlogged);
+            }
+
+            Log(action);
+        }
+
+        private void Log(IAction action)
+        {
+            Debug.Log($"[Townscape] {action}");
+            _lastLoggedType = action.GetType();
+            _lastLoggedAt = Time.unscaledTime;
+            _unlogged = null;
         }
 
         private Light CreateSunAndMoon(HideFlags hideFlags)

@@ -12,7 +12,8 @@ namespace Townscape.Editor
 {
     /// <summary>
     /// One-time project configuration that would otherwise be manual clicking: creates and assigns
-    /// the URP pipeline asset, switches to linear colour and adds the town scene to the build.
+    /// the URP pipeline asset, switches to linear colour, adds the town scene to the build and
+    /// keeps the shaders the town makes at runtime in player builds.
     /// Runs automatically when the editor loads and is safe to run again (Townscape > Set Up Project).
     /// </summary>
     [InitializeOnLoad]
@@ -56,6 +57,7 @@ namespace Townscape.Editor
             var createdPipeline = EnsureRenderPipeline(changes);
             EnsureLinearColour(changes);
             EnsureSceneInBuild(changes);
+            ShaderVariantKeeper.Ensure(changes);
 
             if (changes.Count > 0)
             {
@@ -251,7 +253,7 @@ namespace Townscape.Editor
             }
         }
 
-        private static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path))
             {

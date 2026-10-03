@@ -79,11 +79,12 @@ namespace Townscape.Simulation.Weather
     /// <summary>Thunder arriving at the listener.</summary>
     public readonly struct Thunder
     {
-        public Thunder(int strikeId, float time, float distance)
+        public Thunder(int strikeId, float time, float distance, Vector2 position = default)
         {
             StrikeId = strikeId;
             Time = time;
             Distance = distance;
+            Position = position;
         }
 
         public int StrikeId { get; }
@@ -91,6 +92,9 @@ namespace Townscape.Simulation.Weather
         public float Time { get; }
 
         public float Distance { get; }
+
+        /// <summary>Where the strike was (x east, y north), so the sound can come from that direction.</summary>
+        public Vector2 Position { get; }
 
         /// <summary>From 0 to 1: close strikes are loud.</summary>
         public float Loudness => 1f / (1f + (Distance / 450f));
@@ -151,7 +155,7 @@ namespace Townscape.Simulation.Weather
                 var strike = _awaitingThunder[i];
                 if (strike.ThunderTime <= time)
                 {
-                    thunder.Add(new Thunder(strike.Id, strike.ThunderTime, strike.Distance));
+                    thunder.Add(new Thunder(strike.Id, strike.ThunderTime, strike.Distance, strike.Position));
                     _awaitingThunder.RemoveAt(i);
                 }
             }

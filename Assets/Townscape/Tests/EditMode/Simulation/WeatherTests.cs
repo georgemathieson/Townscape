@@ -428,3 +428,19 @@ namespace Townscape.Tests.Simulation
         }
     }
 }
+
+namespace Townscape.Tests.Simulation
+{
+    public sealed class WindDirectionTests
+    {
+        [TestCase(1f, 1f, "SW")]
+        [TestCase(0f, 1f, "S")]
+        [TestCase(-1f, 0f, "E")]
+        [TestCase(0f, -1f, "N")]
+        [TestCase(0f, 0f, "calm")]
+        public void Winds_AreNamedAfterWhereTheyComeFrom(float x, float y, string expected)
+        {
+            Assert.That(WindDirection.From(new Vector2(x, y)), Is.EqualTo(expected));
+        }
+    }
+}

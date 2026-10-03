@@ -3,8 +3,8 @@
 A cosy, small, low poly Lake District village in a never-ending thunderstorm, built in Unity 6 (URP)
 with C#. Everything you see is generated from code: the ground, roads and markings, the river and
 the stone humpback bridge, the terraces and shops, street furniture and trees, the fells around the
-village, the lamps and windows that light it after dark, and the storm: rain, lightning, wind and
-mist.
+village, the lamps and windows that light it after dark, the storm (rain, lightning, wind and
+mist), and even its sounds.
 
 - [Requirements](docs/REQUIREMENTS.md): what we're building, and the milestone plan
 - [Architecture](docs/ARCHITECTURE.md): how the code is organised and why
@@ -23,10 +23,18 @@ mist.
 5. Press **Play**.
 
 After the first open, Unity writes its own settings files (`ProjectSettings/*.asset`,
-`Packages/packages-lock.json` and `Assets/Townscape/Settings/`). Commit them so everyone gets the
-same setup.
+`Packages/packages-lock.json`, `Assets/Townscape/Settings/` and `Assets/Townscape/Resources/`, which
+keeps the shaders the town needs in player builds). Commit them so everyone gets the same setup.
+
+To make a standalone app, use **File > Build Profiles** with the town scene (already in the build
+list) for macOS or Windows.
 
 ## Controls
+
+The panel in the top-left corner has everything: the time of day (presets, a time slider, and a
+clock you can run at any speed), the storm (rain, lightning and wind sliders, and a button for a
+lightning strike) and the volume. Your settings are remembered between sessions; **Reset all**
+puts them back. Everything also has a key:
 
 | Input | Action |
 |---|---|
@@ -42,7 +50,17 @@ same setup.
 | L | More lightning (cycles back to none) |
 | G | More wind (cycles back to calm) |
 | B | A lightning strike now |
-| H | Show or hide the help |
+| M | Mute or unmute |
+| H | Hide or show the panel |
+
+## Sounds
+
+Rain, wind, the river and thunder are synthesised in code, so the village is never silent. To use
+real recordings instead (for example from [freesound.org](https://freesound.org)), select the
+**Townscape** object in the scene and drop clips into **Sounds**: seamless loops for rain, wind and
+the river, and any number of close cracks and distant rumbles for thunder. Empty slots keep the
+generated sound. Thunder plays from the direction of each strike, and arrives late the further away
+it was.
 
 ## Working on it
 
