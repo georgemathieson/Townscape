@@ -69,6 +69,16 @@ namespace Townscape.Simulation
         private static readonly Rgb ScreenBlue = new Rgb(0.45f, 0.72f, 1.0f);
         private static readonly Rgb Television = new Rgb(0.55f, 0.7f, 1.0f);
 
+        // The canopy over the pumps is lit a cool, clean white, unlike everything else in the village.
+        private static readonly Rgb CanopyWhite = new Rgb(0.88f, 0.94f, 1.0f);
+
+        // String-light bulbs: red, green, orange, yellow, blue. Nearly pure and not too bright, because ACES
+        // tone mapping turns a bright colour with a little of the other channels in it into a pastel.
+        private static readonly Rgb[] Bulbs =
+        {
+            new Rgb(1.0f, 0.01f, 0.01f), new Rgb(0.02f, 1.0f, 0.08f), new Rgb(1.0f, 0.25f, 0.0f), new Rgb(1.0f, 0.72f, 0.02f), new Rgb(0.04f, 0.16f, 1.0f),
+        };
+
         private static readonly Rgb[] HomeWarmth =
         {
             new Rgb(1.0f, 0.5f, 0.17f), new Rgb(1.0f, 0.44f, 0.13f), new Rgb(1.0f, 0.58f, 0.26f), new Rgb(0.95f, 0.48f, 0.2f),
@@ -80,6 +90,8 @@ namespace Townscape.Simulation
             SurfaceMaterial.Interior, SurfaceMaterial.WindowShop, SurfaceMaterial.InnWindow,
             SurfaceMaterial.Window0, SurfaceMaterial.Window1, SurfaceMaterial.Window2, SurfaceMaterial.Window3,
             SurfaceMaterial.Window4, SurfaceMaterial.Window5, SurfaceMaterial.Window6, SurfaceMaterial.Window7,
+            SurfaceMaterial.CanopyLight, SurfaceMaterial.BulbRed, SurfaceMaterial.BulbGreen, SurfaceMaterial.BulbOrange,
+            SurfaceMaterial.BulbYellow, SurfaceMaterial.BulbBlue,
         };
 
         /// <summary>Materials whose emission changes with the time of day.</summary>
@@ -105,6 +117,14 @@ namespace Townscape.Simulation
                     return ShopWarm * (0.8f * LightSchedule.Shop(hour) * (0.25f + (0.75f * darkness)));
                 case SurfaceMaterial.InnWindow:
                     return InnWarm * (1.4f * LightSchedule.Inn(hour) * (0.35f + (0.65f * darkness)));
+                case SurfaceMaterial.CanopyLight:
+                    return CanopyWhite * (2.4f * LightSchedule.Canopy(darkness));
+            }
+
+            var bulb = BulbColour(material);
+            if (bulb >= 0)
+            {
+                return Bulbs[bulb] * (0.9f * LightSchedule.StringLights(bulb, darkness, time));
             }
 
             var group = WindowGroup(material);
@@ -142,6 +162,9 @@ namespace Townscape.Simulation
                 case AnchorKind.LitSign:
                     spec = new LightSpec(SignWhite, 3.6f, 4f, 0f);
                     return true;
+                case AnchorKind.CanopyLight:
+                    spec = new LightSpec(CanopyWhite, 9f, 7f, 0f);
+                    return true;
                 default:
                     spec = default;
                     return false;
@@ -163,9 +186,18 @@ namespace Townscape.Simulation
                     return LightSchedule.BeaconPulse(time) * (0.3f + (0.7f * darkness));
                 case AnchorKind.LitSign:
                     return SmoothStepDarkness(darkness);
+                case AnchorKind.CanopyLight:
+                    return SmoothStepDarkness(darkness);
                 default:
                     return 0f;
             }
+        }
+
+        /// <summary>Which string-light colour a material is (red, green, orange, yellow, blue), or -1.</summary>
+        public static int BulbColour(SurfaceMaterial material)
+        {
+            var offset = material - SurfaceMaterial.BulbRed;
+            return offset >= 0 && offset < 5 ? offset : -1;
         }
 
         /// <summary>Which home window group a material is, or -1.</summary>

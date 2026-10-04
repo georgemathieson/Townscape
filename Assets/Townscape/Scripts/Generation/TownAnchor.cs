@@ -27,6 +27,9 @@ namespace Townscape.Generation
 
         /// <summary>The glazed fanlight over a front door.</summary>
         Fanlight,
+
+        /// <summary>A light in the ceiling of a petrol station canopy, shining down on the pumps.</summary>
+        CanopyLight,
     }
 
     /// <summary>
