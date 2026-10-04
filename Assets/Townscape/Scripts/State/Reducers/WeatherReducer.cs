@@ -13,6 +13,9 @@ namespace Townscape.State
                 case SetRainIntensity rain:
                     next = state with { RainIntensity = TimeMath.Clamp01(rain.Intensity) };
                     break;
+                case SetSnowIntensity snow:
+                    next = state with { SnowIntensity = TimeMath.Clamp01(snow.Intensity) };
+                    break;
                 case SetLightningFrequency lightning:
                     next = state with { LightningFrequency = TimeMath.Clamp01(lightning.Frequency) };
                     break;

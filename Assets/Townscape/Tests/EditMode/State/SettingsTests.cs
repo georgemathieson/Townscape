@@ -97,6 +97,7 @@ namespace Townscape.Tests.State
             {
                 new SetTargetHour(14.5f), new SetCycleSpeed(5f), new SetRainIntensity(0.3f),
                 new SetLightningFrequency(0.9f), new SetWindStrength(0.6f), new SetVolume(0.4f), new SetMuted(true),
+                new SetWeatherKind(WeatherKind.Snow), new SetSnowIntensity(0.35f),
             })
             {
                 state = TownReducer.Reduce(state, action);
@@ -133,11 +134,22 @@ namespace Townscape.Tests.State
         }
 
         [Test]
+        public void SavesFromBeforeTheSnow_StillLoad()
+        {
+            var read = SavedSettings.Read("version=1;weather=Storm;rain=0.3;lightning=0.2;wind=0.6", Defaults);
+
+            Assert.That(read.Weather.Kind, Is.EqualTo(WeatherKind.Storm));
+            Assert.That(read.Weather.RainIntensity, Is.EqualTo(0.3f));
+            Assert.That(read.Weather.SnowIntensity, Is.EqualTo(Defaults.Weather.SnowIntensity));
+        }
+
+        [Test]
         public void OutOfRangeValues_AreClamped()
         {
-            var read = SavedSettings.Read("rain=7;wind=-2;volume=NaN;hour=26;speed=9999", Defaults);
+            var read = SavedSettings.Read("rain=7;snow=4;wind=-2;volume=NaN;hour=26;speed=9999", Defaults);
 
             Assert.That(read.Weather.RainIntensity, Is.EqualTo(1f));
+            Assert.That(read.Weather.SnowIntensity, Is.EqualTo(1f));
             Assert.That(read.Weather.WindStrength, Is.EqualTo(0f));
             Assert.That(read.Audio.Volume, Is.EqualTo(Defaults.Audio.Volume));
             Assert.That(read.TimeOfDay.TargetHour, Is.EqualTo(2f).Within(1e-4f));
