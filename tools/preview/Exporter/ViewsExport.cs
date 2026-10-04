@@ -57,12 +57,14 @@ internal static class ViewsExport
             Inside("kettleStore", 2.4f, f[0] + 1.6f, 5.4f, 5.5f, f[0] + 0.9f, 9.0f);
             Inside("kettleHall", 0.8f, f[0] + 1.6f, 0.45f, 0.8f, f[0] + 2.7f, 4.5f);
             Inside("kettleLanding", 1.9f, f[1] + 1.6f, 6.6f, 1.9f, f[2] + 0.8f, 1.6f);
-            Inside("kettleLiving", 6.4f, f[1] + 1.6f, 4.5f, 3.2f, f[1] + 0.9f, 0.6f);
+            Inside("kettleLiving", 6.6f, f[1] + 1.6f, 0.6f, 3.4f, f[1] + 0.9f, 4.6f);
             Inside("kettleKitchen", 3.0f, f[1] + 1.6f, 5.4f, 5.4f, f[1] + 0.9f, 9.2f);
             Inside("kettleBedroom", 3.0f, f[2] + 1.6f, 0.7f, 5.2f, f[2] + 0.6f, 4.6f);
             Inside("kettleBathroom", 3.2f, f[2] + 1.6f, 5.3f, 5.6f, f[2] + 0.6f, 9.0f);
             Inside("kettleAttic", 2.2f, f[3] + 1.6f, 6.3f, 3.6f, f[3] + 1.3f, 1.2f);
             Inside("kettleSnug", 2.4f, f[3] + 1.6f, 2.6f, 5.4f, f[3] + 0.9f, 7.6f);
+            Inside("kettleRoofWindows", 4.3f, f[3] + 1.5f, 5.4f, 4.3f, f[3] + 1.7f, 8.4f);
+            views.Add(View("kettleBack", space.At(space.Width * 0.5f, f[3] + 4f, space.Depth + 9f), space.At(space.Width * 0.5f, f[3] + 1.2f, space.Depth * 0.7f), 50f));
         }
 
         File.WriteAllText(path, "{" + string.Join(",", views) + "}\n");
