@@ -37,6 +37,12 @@ namespace Townscape.Generation.Buildings.Shops
         /// <summary>Overrides the upstairs window frames (an inn has black frames).</summary>
         public SurfaceMaterial? WindowFrames { get; init; }
 
+        /// <summary>
+        /// You can go inside: the shop and the flat above are built with rooms, stairs and
+        /// furniture, their doors open, and their windows are clear glass.
+        /// </summary>
+        public bool Enterable { get; init; }
+
         /// <summary>How the ground floor is laid out. Null means a traditional shopfront.</summary>
         public IGroundFloorStyle Frontage { get; init; }
     }
