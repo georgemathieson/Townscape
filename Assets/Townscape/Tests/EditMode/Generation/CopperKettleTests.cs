@@ -222,6 +222,101 @@ namespace Townscape.Tests.Generation
         }
 
         [Test]
+        public void TheBackWindows_LineUpInsideAndOut()
+        {
+            // The Copper Kettle is a little wedge-shaped, its back wider than its front: the glass
+            // must still sit straight behind each hole in the inside of the back wall.
+            var (mesh, _, _) = BuildAlone();
+            var space = new UnitSpace(Kettle.Footprint);
+            var floors = CafeAndFlat.Floors(Design);
+            var glass = mesh.Submeshes.Where(s => s.Material == SurfaceMaterial.ClearGlass).SelectMany(s => s.Indices).Select(i => space.Local(mesh.Positions[i]))
+                .Where(p => p.Z > space.Depth - 0.25f).ToList();
+
+            for (var i = 0; i < floors.Length - 1; i++)
+            {
+                var hole = CafeAndFlat.BackWindow(space, floors[i], ground: i == 0);
+                var pane = glass.Where(p => p.Y > hole.Bottom - 0.01f && p.Y < hole.Top + 0.01f).ToList();
+                Assert.That(pane, Is.Not.Empty, $"floor {i}");
+                Assert.That(pane.Min(p => p.X), Is.EqualTo(hole.From).Within(0.01f), $"floor {i}");
+                Assert.That(pane.Max(p => p.X), Is.EqualTo(hole.To).Within(0.01f), $"floor {i}");
+            }
+        }
+
+        [Test]
+        public void TheAlarm_HasASensorInEveryRoom_HighUpAndLookingIn()
+        {
+            var (_, anchors, _) = BuildAlone();
+            var space = new UnitSpace(Kettle.Footprint);
+            var floors = CafeAndFlat.Floors(Design);
+            var sensors = anchors.Where(a => a.Kind == AnchorKind.AlarmSensor).Select(a => (Local: space.Local(a.Position), a.Facing)).ToList();
+
+            // The café, its storeroom and the hall; the living room and kitchen; the bedroom and bathroom; the attic.
+            var perFloor = new[] { 3, 2, 2, 1 };
+            for (var i = 0; i < floors.Length; i++)
+            {
+                var top = i + 1 < floors.Length ? floors[i + 1] : Design.Ridge;
+                Assert.That(sensors.Count(s => s.Local.Y > floors[i] && s.Local.Y < top), Is.EqualTo(perFloor[i]), $"floor {i}");
+            }
+
+            foreach (var sensor in sensors)
+            {
+                var floor = floors.Last(f => f < sensor.Local.Y);
+                Assert.That(sensor.Local.Y - floor, Is.GreaterThan(WalkMotion.BodyHeight + 0.3f), "out of reach, over your head");
+                var world = space.At(sensor.Local.X, 0f, sensor.Local.Z);
+                Assert.That(Kettle.Footprint.Contains(new Vector2(world.X, world.Z)), Is.True);
+                Assert.That(Math.Abs(sensor.Facing.Y), Is.LessThan(1e-3f), "faces level; the alarm tilts it down");
+
+                // Looking into the room, away from the walls it's on.
+                var ahead = space.Local(space.At(sensor.Local.X, sensor.Local.Y, sensor.Local.Z) + sensor.Facing);
+                Assert.That(ahead.X, Is.InRange(0.2f, space.Width - 0.2f));
+                Assert.That(ahead.Z, Is.InRange(0.2f, space.Depth - 0.2f));
+            }
+        }
+
+        [Test]
+        public void TheAlarmPanel_IsInsideTheFlatsFrontDoor_AtHandHeight()
+        {
+            var (_, anchors, doors) = BuildAlone();
+            var keypad = anchors.Single(a => a.Kind == AnchorKind.AlarmKeypad);
+            var door = doors.Single(d => d.Name == "Flat door");
+            var site = Kettle.Footprint;
+            var outward = new Vector3(site.Outward.X, 0f, site.Outward.Y);
+
+            Assert.That(Vector3.Dot(keypad.Position - door.Hinge, outward), Is.LessThan(-0.3f), "inside");
+            Assert.That(Vector3.Distance(keypad.Position, door.Hinge), Is.LessThan(2f), "by the door");
+            Assert.That(keypad.Position.Y - door.Hinge.Y, Is.InRange(1.2f, 1.7f));
+            Assert.That(keypad.Size, Is.InRange(0.1f, 0.2f), "small");
+
+            // Clear of the door as it swings.
+            var reach = new Vector2(keypad.Position.X - door.Hinge.X, keypad.Position.Z - door.Hinge.Z).Length();
+            Assert.That(reach, Is.GreaterThan(door.Width + 0.1f));
+        }
+
+        [Test]
+        public void TheBellBox_IsHighOnTheFront_BetweenTwoSecondFloorWindows()
+        {
+            var (mesh, anchors, _) = BuildAlone();
+            var bell = anchors.Single(a => a.Kind == AnchorKind.AlarmBell);
+            var front = Kettle.Footprint.FrontWall;
+            var floors = CafeAndFlat.Floors(Design);
+            var across = Vector3.Dot(bell.Position - front.Origin, front.Right);
+
+            Assert.That(Vector3.Dot(bell.Facing, front.Out), Is.GreaterThan(0.99f), "on the street side");
+            Assert.That(Vector3.Dot(bell.Position - front.Origin, front.Out), Is.InRange(0.05f, 0.15f), "on the face of the wall");
+            Assert.That(bell.Position.Y, Is.InRange(floors[2] + 1.4f, floors[3]), "up on the second floor");
+            Assert.That(bell.Size, Is.InRange(0.25f, 0.35f), "a real bell box's size");
+
+            // Between the first two windows' columns, clear of both.
+            var columnWidth = front.Width / 3f;
+            Assert.That(across, Is.InRange(columnWidth * 0.5f + 0.5f + AlarmFittings.BellBoxWidth * 0.5f, columnWidth * 1.5f - 0.5f - AlarmFittings.BellBoxWidth * 0.5f));
+
+            // White, with a blue strobe at its foot.
+            var strobe = mesh.Submeshes.Single(s => s.Material == SurfaceMaterial.AlarmStrobe).Indices.Select(i => mesh.Positions[i]).ToList();
+            Assert.That(strobe.Max(p => p.Y), Is.LessThan(bell.Position.Y + 0.05f));
+            Assert.That(strobe.Min(p => p.Y), Is.GreaterThan(bell.Position.Y - 0.05f));
+        }
+
+        [Test]
         public void TheRestOfTheVillage_IsBuiltAsBefore()
         {
             // Other shops keep their window displays and glowing windows, and have no doors to open.

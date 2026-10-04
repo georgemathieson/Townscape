@@ -9,6 +9,7 @@ using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Rendering;
+using Townscape.Runtime.Security;
 using Townscape.Runtime.UI;
 using Townscape.Runtime.Walking;
 using Townscape.Runtime.Weather;
@@ -63,6 +64,7 @@ namespace Townscape.Runtime
         private GameObject _root;
         private MaterialLibrary _materials;
         private IReadOnlyList<SpawnedMesh> _spawned;
+        private IReadOnlyList<SwingingDoor> _doors;
         private bool _builtForPlayMode;
         private Type _lastLoggedType;
         private float _lastLoggedAt;
@@ -146,7 +148,7 @@ namespace Townscape.Runtime
             Town = new TownGenerator().Generate(new LakeDistrictVillageLayout().Create());
             _materials = new MaterialLibrary();
             _spawned = TownMeshSpawner.Spawn(Town, _materials, _root.transform, hideFlags, _owned);
-            SwingingDoor.SpawnAll(Town, _materials, _root.transform, hideFlags, _owned, solid: playing);
+            _doors = SwingingDoor.SpawnAll(Town, _materials, _root.transform, hideFlags, _owned, solid: playing);
 
             var sun = CreateSunAndMoon(hideFlags);
             Lighting = TownMeshSpawner.CreateChild("Time Of Day", _root.transform, hideFlags).AddComponent<TimeOfDayLighting>();
@@ -210,7 +212,8 @@ namespace Townscape.Runtime
             walking.Initialize(camera.transform, flyCamera, input, colliders, panel, CoffeeShop, GroundHeight, waterLevel);
             panel.Walking = walking;
             controls.AddComponent<WalkingHud>().Initialize(walking);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking);
+            var alarm = AlarmSystem.Create(Town, _materials, _root.transform, hideFlags, walking, _doors);
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, alarm);
             if (rememberSettings)
             {
                 controls.AddComponent<SettingsMemory>().Initialize(Store);

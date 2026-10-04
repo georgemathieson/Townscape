@@ -1,5 +1,6 @@
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
+using Townscape.Runtime.Security;
 using Townscape.Runtime.UI;
 using Townscape.Runtime.Walking;
 using Townscape.State;
@@ -18,9 +19,11 @@ namespace Townscape.Runtime.Controls
         private PerformanceOverlay _performance;
         private CoffeeShopGame _coffee;
         private WalkingController _walking;
+        private AlarmSystem _alarm;
 
-        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null)
+        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null, AlarmSystem alarm = null)
         {
+            _alarm = alarm;
             _coffee = coffee;
             _walking = walking;
             _store = store;
@@ -33,6 +36,12 @@ namespace Townscape.Runtime.Controls
         private void Update()
         {
             if (_store == null)
+            {
+                return;
+            }
+
+            // While the alarm's keypad is up, the keys are for typing the code.
+            if (_alarm != null && _alarm.PanelOpen)
             {
                 return;
             }

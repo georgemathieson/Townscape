@@ -25,11 +25,12 @@ namespace Townscape.Runtime.Walking
         public bool IsOpen => _open;
 
         /// <summary>Creates every door in the town, hung shut. In play mode each gets a collider that swings with it.</summary>
-        public static void SpawnAll(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, ICollection<Object> owned, bool solid)
+        public static IReadOnlyList<SwingingDoor> SpawnAll(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, ICollection<Object> owned, bool solid)
         {
+            var spawned = new List<SwingingDoor>();
             if (town.Doors.Count == 0)
             {
-                return;
+                return spawned;
             }
 
             var group = TownMeshSpawner.CreateChild("Doors", parent, hideFlags).transform;
@@ -58,8 +59,12 @@ namespace Townscape.Runtime.Walking
                     hinge.AddComponent<Rigidbody>().isKinematic = true;
                 }
 
-                hinge.AddComponent<SwingingDoor>().Initialize(door);
+                var swinging = hinge.AddComponent<SwingingDoor>();
+                swinging.Initialize(door);
+                spawned.Add(swinging);
             }
+
+            return spawned;
         }
 
         public void Interact() => _open = !_open;

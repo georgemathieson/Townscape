@@ -96,11 +96,10 @@ namespace Townscape.Generation.Buildings.Interiors
             var high = low - (RoofWindowLength / MathF.Sqrt((depth * depth) + (rise * rise)));
             var half = RoofWindowWidth * 0.5f;
             var mid = Snug(w);
-            return new[]
-            {
-                new RoofOpening((mid - 1f - half) / w, (mid - 1f + half) / w, high, low),
-                new RoofOpening((mid + 1f - half) / w, (mid + 1f + half) / w, high, low),
-            };
+            var space = new UnitSpace(footprint);
+            var b = (high + low) * 0.5f;
+            RoofOpening Over(float x) => new RoofOpening(space.FractionAcross(x - half, b), space.FractionAcross(x + half, b), high, low);
+            return new[] { Over(mid - 1f), Over(mid + 1f) };
         }
 
         /// <summary>
@@ -151,6 +150,7 @@ namespace Townscape.Generation.Buildings.Interiors
             UpperFloor(context, space, design, f[2], wallTop[2], firstFloor: false);
             Banisters(space, builder, flights, f);
             Attic(context, space, design, roof, f[3], dormer, roofWindows);
+            Alarm(context, space, footprint, f, wallTop);
         }
 
         // ---- Ground floor -------------------------------------------------------------------
@@ -198,8 +198,8 @@ namespace Townscape.Generation.Buildings.Interiors
             WindowBoard(space, builder, BackWindow(space, floor, ground: true), back, -1f);
 
             // The storeroom's back door, shut, and a light in each space.
-            var backDoorX = w * 0.3f;
-            space.Box(builder, backDoorX - 0.45f, floor, back - 0.04f, backDoorX + 0.45f, floor + 2.1f, back, design.DoorPaint);
+            var backDoor = BackDoor(space, floor);
+            space.Box(builder, backDoor.From, backDoor.Bottom, back - 0.04f, backDoor.To, backDoor.Top, back, design.DoorPaint);
             Light(context, space, (CafeLeft + right) * 0.5f, top, 3.6f, AnchorKind.ShopWindow);
             Light(context, space, (CafeLeft + right) * 0.5f, top, (StoreWall + back) * 0.5f, AnchorKind.RoomLight);
             Light(context, space, (Side + HallWall) * 0.5f, top, 0.8f, AnchorKind.RoomLight);
@@ -542,8 +542,9 @@ namespace Townscape.Generation.Buildings.Interiors
             {
                 // The dormer's inside faces sit 3 cm in from its outside; the hole matches them.
                 var span = dormer.Value;
-                var x0 = (span.A0 * w) + 0.03f;
-                var x1 = (span.A1 * w) - 0.03f;
+                var spanB = (span.FrontB + span.BackB) * 0.5f;
+                var x0 = space.AcrossAt(span.A0, spanB) + 0.03f;
+                var x1 = space.AcrossAt(span.A1, spanB) - 0.03f;
                 var d0 = kneeFront;
                 var d1 = span.BackB * depth;
                 Slope(Side, x0, d0, d1, true);
@@ -562,7 +563,7 @@ namespace Townscape.Generation.Buildings.Interiors
             }
 
             // The back slope, cut round the roof windows, with their reveals up to the slates.
-            var windows = (roofWindows ?? Array.Empty<RoofOpening>()).Select(h => (X0: h.A0 * w, X1: h.A1 * w, D0: h.B0 * depth, D1: h.B1 * depth)).OrderBy(h => h.X0).ToList();
+            var windows = (roofWindows ?? Array.Empty<RoofOpening>()).Select(h => (X0: space.AcrossAt(h.A0, h.CentreB), X1: space.AcrossAt(h.A1, h.CentreB), D0: h.B0 * depth, D1: h.B1 * depth)).OrderBy(h => h.X0).ToList();
             if (windows.Count == 0)
             {
                 Slope(Side, right, ridgeD, kneeBack, false);
@@ -613,7 +614,7 @@ namespace Townscape.Generation.Buildings.Interiors
             // A study in the dormer: desk, chair, lamp, books and a laptop.
             if (dormer.HasValue)
             {
-                var deskX = (dormer.Value.A0 + dormer.Value.A1) * 0.5f * w;
+                var deskX = space.AcrossAt((dormer.Value.A0 + dormer.Value.A1) * 0.5f, dormer.Value.FrontB);
                 var deskD = kneeFront + 0.32f;
                 space.Box(builder, deskX - 0.65f, floor + 0.72f, deskD - 0.3f, deskX + 0.65f, floor + 0.76f, deskD + 0.3f, SurfaceMaterial.Timber);
                 foreach (var dx in new[] { -0.6f, 0.6f })
@@ -754,6 +755,37 @@ namespace Townscape.Generation.Buildings.Interiors
             Layer(0.045f, 0.05f, d - iw, y - ih, d + iw, y - (ih * 0.5f), colours[2]);
         }
 
+        // ---- The burglar alarm ----------------------------------------------------------------
+
+        /// <summary>The control panel's place on the hall wall, back from the flat's front door, and its height.</summary>
+        public const float KeypadD = 0.72f;
+
+        public const float KeypadHeight = 1.5f;
+
+        // A sensor high in a corner of every room, looking across it (in the attic, on the gable,
+        // under the chimney breast); the panel on the hall wall just inside the flat's front door;
+        // and the bell box out on the front, high up between the second floor's first two windows.
+        private static void Alarm(BuildContext context, UnitSpace space, Footprint footprint, float[] f, float[] top)
+        {
+            var right = space.Width - Side;
+            var back = space.Depth - FrontFace;
+            AlarmFittings.CornerSensor(context, space, CafeLeft, top[0], StoreWall, 1f, -1f);
+            AlarmFittings.CornerSensor(context, space, right, top[0], back, -1f, -1f);
+            AlarmFittings.CornerSensor(context, space, HallWall, top[0], FrontFace, -1f, 1f);
+            foreach (var ceiling in new[] { top[1], top[2] })
+            {
+                AlarmFittings.CornerSensor(context, space, right, ceiling, FrontFace, -1f, 1f);
+                AlarmFittings.CornerSensor(context, space, right, ceiling, back, -1f, -1f);
+            }
+
+            AlarmFittings.WallSensor(context, space, Side, f[3] + 2.4f, space.Depth * 0.5f, 1f, 0f);
+            AlarmFittings.Keypad(context, space, HallWall, -1f, KeypadD, f[0] + KeypadHeight);
+
+            var front = footprint.FrontWall;
+            var windowTop = f[2] + 0.8f + 1.3f;
+            AlarmFittings.BellBox(context, front, front.Width / 3f, windowTop - 0.02f);
+        }
+
         // ---- Stairs and floors --------------------------------------------------------------
 
         private static (float X0, float D0, float X1, float D1) Hole(StairFlight flight) => (flight.X0, flight.NearD, flight.X1, flight.FarD);
@@ -854,6 +886,9 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         /// <summary>The back window on each floor, in unit x, as <see cref="TerracedUnitStyle"/> cuts it.</summary>
+        /// <summary>The storeroom's back door, which stays shut, in unit x.</summary>
+        public static Hole BackDoor(UnitSpace space, float floor) => new Hole((space.Width * 0.3f) - 0.45f, floor, (space.Width * 0.3f) + 0.45f, floor + 2.1f);
+
         public static Hole BackWindow(UnitSpace space, float floor, bool ground)
         {
             var width = space.Width;

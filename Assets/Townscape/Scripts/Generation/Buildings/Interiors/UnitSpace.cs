@@ -36,10 +36,12 @@ namespace Townscape.Generation.Buildings.Interiors
     public readonly struct UnitSpace
     {
         private readonly WallFrame _front;
+        private readonly Footprint _footprint;
 
         public UnitSpace(Footprint footprint)
         {
             _front = footprint.FrontWall;
+            _footprint = footprint;
             Width = footprint.FrontWidth;
             Depth = footprint.Depth;
         }
@@ -55,6 +57,25 @@ namespace Townscape.Generation.Buildings.Interiors
         public Vector3 Back => -_front.Out;
 
         public Vector3 At(float x, float y, float d) => _front.Point(x, y, -d);
+
+        /// <summary>
+        /// How far across the space the footprint's (a, b) fractions fall. They don't quite match
+        /// x = a * width when the unit is wedge-shaped, as terraced units on a curve are, and its
+        /// back is wider or narrower than its front.
+        /// </summary>
+        public float AcrossAt(float a, float b)
+        {
+            var point = _footprint.At(a, b);
+            return Local(new Vector3(point.X, 0f, point.Y)).X;
+        }
+
+        /// <summary>The footprint's a fraction that falls at <paramref name="x"/> across the space, at depth fraction <paramref name="b"/>.</summary>
+        public float FractionAcross(float x, float b)
+        {
+            // Along a line of constant b the footprint is linear in a.
+            var left = AcrossAt(0f, b);
+            return (x - left) / (AcrossAt(1f, b) - left);
+        }
 
         /// <summary>Where a point in the town is in this space: (x, y, d).</summary>
         public Vector3 Local(Vector3 point)

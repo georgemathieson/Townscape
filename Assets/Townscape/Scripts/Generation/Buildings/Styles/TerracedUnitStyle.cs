@@ -192,12 +192,16 @@ namespace Townscape.Generation.Buildings.Styles
             var design = _design;
             var space = new UnitSpace(footprint);
             var floors = CafeAndFlat.Floors(design);
+
+            // The back wall's x runs from the right of the unit as seen from the street, and on a
+            // wedge-shaped unit it's longer or shorter than the front: find each opening on it
+            // straight behind where the room's x puts it.
+            float OnBack(float x) => System.Numerics.Vector3.Dot(space.At(x, 0f, space.Depth) - back.Origin, back.Right);
             var openings = new List<Opening>();
             for (var i = 0; i < floors.Length - 1; i++)
             {
-                // The back wall's x runs from the right of the unit as seen from the street.
                 var hole = CafeAndFlat.BackWindow(space, floors[i], ground: i == 0);
-                openings.Add(new Opening(back.Width - hole.To, hole.Bottom, back.Width - hole.From, hole.Top, 0.15f));
+                openings.Add(new Opening(OnBack(hole.To), hole.Bottom, OnBack(hole.From), hole.Top, 0.15f));
             }
 
             WallBuilder.Build(context.Builder, back, BuildingLevels.Base, design.Eaves, openings, design.Wall);
@@ -206,8 +210,8 @@ namespace Townscape.Generation.Buildings.Styles
                 Glazing.FillWindow(context, back, opening, clear);
             }
 
-            var floor = BuildingLevels.Floor;
-            back.Quad(context.Builder, (back.Width * 0.7f) - 0.45f, floor, (back.Width * 0.7f) + 0.45f, floor + 2.1f, 0.012f, design.DoorPaint);
+            var door = CafeAndFlat.BackDoor(space, BuildingLevels.Floor);
+            back.Quad(context.Builder, OnBack(door.To), door.Bottom, OnBack(door.From), door.Top, 0.012f, design.DoorPaint);
         }
 
         private void Stack(BuildContext context, System.Numerics.Vector2 centre, System.Numerics.Vector2 along, float neighbourRidge)

@@ -52,6 +52,12 @@ namespace Townscape.Runtime.Walking
         /// <summary>When walking last began, for the HUD's short reminder of the keys.</summary>
         public float StartedAt { get; private set; }
 
+        /// <summary>
+        /// Something on screen has the pointer, such as the alarm's keypad: the walker stands
+        /// still, the mouse is free and nothing is looked at.
+        /// </summary>
+        public bool Paused { get; set; }
+
         /// <param name="groundHeight">Height of the ground (or the river bed) at a ground-plane position (x, z).</param>
         public void Initialize(
             Transform camera,
@@ -154,6 +160,15 @@ namespace Townscape.Runtime.Walking
             if (coffeeOpen)
             {
                 Stop();
+                return;
+            }
+
+            if (Paused)
+            {
+                Focus = null;
+                _velocity = System.Numerics.Vector2.Zero;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
                 return;
             }
 
