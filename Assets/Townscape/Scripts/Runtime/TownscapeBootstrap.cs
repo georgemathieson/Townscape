@@ -10,6 +10,7 @@ using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Rendering;
 using Townscape.Runtime.UI;
+using Townscape.Runtime.Walking;
 using Townscape.Runtime.Weather;
 using Townscape.State;
 using UnityEngine;
@@ -169,7 +170,17 @@ namespace Townscape.Runtime
 
             var input = TownscapeInput.CreateDefault();
             var ground = Town.Context.Ground;
+            var terrain = Town.Context.Terrain;
+            var core = Town.Context.Settings.CoreHalfExtent;
             var waterLevel = Town.Context.Layout.WaterLevel;
+            float GroundHeight(Vector2 flat)
+            {
+                var p = new System.Numerics.Vector2(flat.x, flat.y);
+                return Mathf.Abs(flat.x) < core && Mathf.Abs(flat.y) < core ? ground.HeightAt(p) : terrain.FarHeightAt(p);
+            }
+
+            var colliders = TownMeshSpawner.CreateChild("Colliders", _root.transform, hideFlags).AddComponent<TownColliders>();
+            colliders.Initialize(_spawned, Town.Anchors, hideFlags);
             var flyCamera = camera.gameObject.AddComponent<FreeFlyCamera>();
             flyCamera.Initialize(
                 input,
@@ -194,7 +205,11 @@ namespace Townscape.Runtime
             controls.AddComponent<CoffeeShopPaper>().Initialize(CoffeeShop);
             var performance = controls.AddComponent<PerformanceOverlay>();
             performance.Initialize(Storm, Lights, () => BuildMilliseconds);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop);
+            var walking = TownMeshSpawner.CreateChild("Walker", _root.transform, hideFlags).AddComponent<WalkingController>();
+            walking.Initialize(camera.transform, flyCamera, input, colliders, panel, CoffeeShop, GroundHeight, waterLevel);
+            panel.Walking = walking;
+            controls.AddComponent<WalkingHud>().Initialize(walking);
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking);
             if (rememberSettings)
             {
                 controls.AddComponent<SettingsMemory>().Initialize(Store);

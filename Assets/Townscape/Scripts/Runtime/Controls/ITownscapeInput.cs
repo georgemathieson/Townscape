@@ -19,6 +19,14 @@ namespace Townscape.Runtime.Controls
         ToggleMute,
         CyclePerformance,
         ToggleCoffeeShop,
+        ToggleWalking,
+        Jump,
+
+        /// <summary>Open or close whatever the crosshair is on (E).</summary>
+        Interact,
+
+        /// <summary>The left mouse button: also opens and closes things while walking.</summary>
+        Click,
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.UI;
+using Townscape.Runtime.Walking;
 using Townscape.State;
 using UnityEngine;
 
@@ -16,10 +17,12 @@ namespace Townscape.Runtime.Controls
         private ControlPanel _panel;
         private PerformanceOverlay _performance;
         private CoffeeShopGame _coffee;
+        private WalkingController _walking;
 
-        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null)
+        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null)
         {
             _coffee = coffee;
+            _walking = walking;
             _store = store;
             _input = input;
             _lighting = lighting;
@@ -97,6 +100,11 @@ namespace Townscape.Runtime.Controls
             if (_input.WasPressed(Shortcut.ToggleCoffeeShop) && _coffee != null)
             {
                 _coffee.Toggle();
+            }
+
+            if (_input.WasPressed(Shortcut.ToggleWalking) && _walking != null && (_coffee == null || !_coffee.IsOpen))
+            {
+                _walking.Toggle();
             }
         }
 

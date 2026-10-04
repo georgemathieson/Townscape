@@ -25,9 +25,9 @@ namespace UnityEngine.InputSystem
     public class Keyboard
     {
         public static Keyboard current => null;
-        public ButtonControl aKey, dKey, eKey, qKey, sKey, wKey, tKey, hKey, rKey, lKey, gKey, bKey, mKey, fKey, cKey;
+        public ButtonControl aKey, dKey, eKey, qKey, sKey, wKey, tKey, hKey, rKey, lKey, gKey, bKey, mKey, fKey, cKey, vKey;
         public ButtonControl digit1Key, digit2Key, digit3Key, digit4Key;
-        public ButtonControl leftShiftKey, leftBracketKey, rightBracketKey;
+        public ButtonControl leftShiftKey, leftBracketKey, rightBracketKey, spaceKey;
     }
 
     public class Mouse
@@ -35,6 +35,6 @@ namespace UnityEngine.InputSystem
         public static Mouse current => null;
         public DeltaControl delta;
         public DeltaControl scroll;
-        public ButtonControl rightButton;
+        public ButtonControl rightButton, leftButton;
     }
 }
