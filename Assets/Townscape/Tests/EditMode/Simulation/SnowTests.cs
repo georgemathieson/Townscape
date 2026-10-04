@@ -140,7 +140,7 @@ namespace Townscape.Tests.Simulation
                 var bare = SurfacePalette.Get(material);
                 var snowy = SnowCover.Apply(material, bare, 1f);
                 Assert.That(snowy.R, Is.EqualTo(bare.R), material.ToString());
-                Assert.That(SnowCover.Affected, Does.Not.Contain(material));
+                Assert.That(SnowCover.Affected, Has.No.Member(material));
             }
         }
 
