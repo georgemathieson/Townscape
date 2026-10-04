@@ -103,7 +103,8 @@ namespace Townscape.Generation
 
             foreach (var building in buildings)
             {
-                features.Add(new PlotFeature(building.Footprint.Corners, PlotMargin));
+                var finish = building.Style is IYardFinish yard ? yard.Yard : SurfaceMaterial.Pavement;
+                features.Add(new PlotFeature(building.Footprint.Corners, PlotMargin, finish));
             }
 
             return features;

@@ -20,9 +20,10 @@ namespace Townscape.Simulation.Weather
             // Wet tarmac blurs reflections; puddles (a separate material) give sharp ones.
             Set(0.45f, 0.84f, SurfaceMaterial.Road);
             Set(0.08f, 0.8f, SurfaceMaterial.MarkingWhite, SurfaceMaterial.MarkingYellow);
-            Set(0.4f, 0.78f, SurfaceMaterial.Pavement, SurfaceMaterial.Kerb, SurfaceMaterial.Stone, SurfaceMaterial.StoneDark, SurfaceMaterial.StoneGreen);
+            Set(0.4f, 0.78f, SurfaceMaterial.Pavement, SurfaceMaterial.Kerb, SurfaceMaterial.Concrete, SurfaceMaterial.Stone, SurfaceMaterial.StoneDark, SurfaceMaterial.StoneGreen);
             Set(0.35f, 0.6f, SurfaceMaterial.Gravel, SurfaceMaterial.Shingle, SurfaceMaterial.Scree, SurfaceMaterial.RiverBed);
             Set(0.3f, 0.84f, SurfaceMaterial.Slate);
+            Set(0.25f, 0.72f, SurfaceMaterial.Pantile);
             Set(0.3f, 0.55f, SurfaceMaterial.Earth);
             Set(0.18f, 0.4f, SurfaceMaterial.RenderWhite, SurfaceMaterial.RenderCream, SurfaceMaterial.ChimneyPot);
             Set(0.25f, 0.5f, SurfaceMaterial.Timber, SurfaceMaterial.Bark, SurfaceMaterial.BirchBark);
@@ -33,7 +34,8 @@ namespace Townscape.Simulation.Weather
                 SurfaceMaterial.PaintWhite, SurfaceMaterial.PaintBlack, SurfaceMaterial.PaintDarkGreen, SurfaceMaterial.PaintNavy,
                 SurfaceMaterial.PaintOxblood, SurfaceMaterial.PaintTeal, SurfaceMaterial.PaintCream, SurfaceMaterial.PaintSage,
                 SurfaceMaterial.PaintDuckEgg, SurfaceMaterial.PaintPink, SurfaceMaterial.PaintButter, SurfaceMaterial.PaintRed,
-                SurfaceMaterial.PaintGold, SurfaceMaterial.PaintOrange, SurfaceMaterial.PaintPurple);
+                SurfaceMaterial.PaintGold, SurfaceMaterial.PaintOrange, SurfaceMaterial.PaintPurple, SurfaceMaterial.PaintBlue,
+                SurfaceMaterial.PaintGreen);
         }
 
         /// <summary>Materials that change when wet.</summary>

@@ -48,6 +48,7 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.Earth] = new SurfaceAppearance(0.32f, 0.26f, 0.19f, 0.15f),
                 [SurfaceMaterial.Shingle] = new SurfaceAppearance(0.46f, 0.43f, 0.38f, 0.25f),
                 [SurfaceMaterial.Road] = new SurfaceAppearance(0.15f, 0.15f, 0.16f, 0.45f),
+                [SurfaceMaterial.Concrete] = new SurfaceAppearance(0.58f, 0.57f, 0.53f, 0.25f),
                 [SurfaceMaterial.Pavement] = new SurfaceAppearance(0.42f, 0.41f, 0.39f, 0.35f),
                 [SurfaceMaterial.Kerb] = new SurfaceAppearance(0.52f, 0.51f, 0.48f, 0.30f),
                 [SurfaceMaterial.Gravel] = new SurfaceAppearance(0.52f, 0.47f, 0.38f, 0.15f),
@@ -62,6 +63,7 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.RenderWhite] = new SurfaceAppearance(0.86f, 0.86f, 0.82f, 0.20f),
                 [SurfaceMaterial.RenderCream] = new SurfaceAppearance(0.84f, 0.78f, 0.64f, 0.20f),
                 [SurfaceMaterial.Slate] = new SurfaceAppearance(0.21f, 0.23f, 0.26f, 0.40f),
+                [SurfaceMaterial.Pantile] = new SurfaceAppearance(0.60f, 0.29f, 0.19f, 0.25f),
                 [SurfaceMaterial.ChimneyPot] = new SurfaceAppearance(0.60f, 0.32f, 0.21f, 0.20f),
                 [SurfaceMaterial.Timber] = new SurfaceAppearance(0.32f, 0.22f, 0.14f, 0.25f),
 
@@ -86,6 +88,8 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.PaintGold] = new SurfaceAppearance(0.84f, 0.65f, 0.27f, 0.60f),
                 [SurfaceMaterial.PaintOrange] = new SurfaceAppearance(0.93f, 0.48f, 0.12f, 0.50f),
                 [SurfaceMaterial.PaintPurple] = new SurfaceAppearance(0.40f, 0.24f, 0.50f, 0.50f),
+                [SurfaceMaterial.PaintBlue] = new SurfaceAppearance(0.11f, 0.30f, 0.70f, 0.50f),
+                [SurfaceMaterial.PaintGreen] = new SurfaceAppearance(0.13f, 0.52f, 0.24f, 0.50f),
                 [SurfaceMaterial.Bread] = new SurfaceAppearance(0.76f, 0.54f, 0.30f, 0.20f),
 
                 [SurfaceMaterial.Iron] = new SurfaceAppearance(0.09f, 0.10f, 0.10f, 0.55f),
@@ -111,6 +115,12 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.WindowShop] = Glass,
                 [SurfaceMaterial.InnWindow] = Glass,
                 [SurfaceMaterial.SignGlass] = new SurfaceAppearance(0.90f, 0.88f, 0.80f, 0.80f),
+                [SurfaceMaterial.CanopyLight] = new SurfaceAppearance(0.90f, 0.92f, 0.94f, 0.60f),
+                [SurfaceMaterial.BulbRed] = new SurfaceAppearance(0.62f, 0.06f, 0.05f, 0.80f),
+                [SurfaceMaterial.BulbGreen] = new SurfaceAppearance(0.07f, 0.46f, 0.14f, 0.80f),
+                [SurfaceMaterial.BulbOrange] = new SurfaceAppearance(0.74f, 0.30f, 0.04f, 0.80f),
+                [SurfaceMaterial.BulbYellow] = new SurfaceAppearance(0.74f, 0.58f, 0.10f, 0.80f),
+                [SurfaceMaterial.BulbBlue] = new SurfaceAppearance(0.08f, 0.18f, 0.68f, 0.80f),
 
                 [SurfaceMaterial.RiverWater] = new SurfaceAppearance(0.09f, 0.15f, 0.17f, 0.92f),
                 [SurfaceMaterial.Puddle] = new SurfaceAppearance(0.14f, 0.16f, 0.18f, 0.97f, 0.85f),

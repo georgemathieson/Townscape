@@ -1,4 +1,5 @@
 using Townscape.Generation.Buildings.Parts;
+using Townscape.Generation.Geometry;
 
 namespace Townscape.Generation.Buildings
 {
@@ -6,6 +7,15 @@ namespace Townscape.Generation.Buildings
     public interface IBuildingStyle
     {
         void Build(Footprint footprint, BuildContext context);
+    }
+
+    /// <summary>
+    /// A building style that wants its plot surfaced with something other than flagstones, like a
+    /// petrol station's concrete forecourt.
+    /// </summary>
+    public interface IYardFinish
+    {
+        SurfaceMaterial Yard { get; }
     }
 
     /// <summary>Shared levels so every building sits on the ground the same way.</summary>
