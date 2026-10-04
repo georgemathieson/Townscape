@@ -30,6 +30,9 @@ namespace Townscape.Generation
 
         /// <summary>A light in the ceiling of a petrol station canopy, shining down on the pumps.</summary>
         CanopyLight,
+
+        /// <summary>The foot of a tree's trunk; <see cref="TownAnchor.Size"/> is its radius. Walkers can't pass through it.</summary>
+        TreeTrunk,
     }
 
     /// <summary>

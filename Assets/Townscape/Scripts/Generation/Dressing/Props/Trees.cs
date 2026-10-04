@@ -27,6 +27,9 @@ namespace Townscape.Generation.Dressing.Props
             SurfaceMaterial.LeafGreen, SurfaceMaterial.LeafDark, SurfaceMaterial.LeafLight, SurfaceMaterial.LeafAutumn,
         };
 
+        // Wide enough for every kind's trunk, so a walker never brushes through the bark.
+        private const float TrunkRadius = 0.3f;
+
         private readonly TreeKind _kind;
         private readonly float _scale;
 
@@ -40,6 +43,7 @@ namespace Townscape.Generation.Dressing.Props
 
         public void Build(PropFrame f)
         {
+            f.Anchors.Add(new TownAnchor(AnchorKind.TreeTrunk, f.Origin, System.Numerics.Vector3.UnitY, TrunkRadius * _scale, 0));
             switch (_kind)
             {
                 case TreeKind.Conifer:
