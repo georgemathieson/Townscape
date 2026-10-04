@@ -145,7 +145,9 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
 - `CafeAndFlat` lays out the rooms: the café (counter and till, cake cabinet, espresso machine,
   chalkboard, tables, window bar) and its storeroom on the ground floor, a hall from the flat's
   door up a dog-leg stair on the left, a living room and kitchen on the first floor, a bedroom and
-  bathroom on the second, and an attic bedroom under the roof, lit through the dormer.
+  bathroom on the second, and an attic study and snug under the roof, lit through the dormer. The
+  attic has upright knee walls where the slopes come down, and the chimney stacks on its party walls
+  are plastered in as chimney breasts.
 - Its windows are real openings with clear glass, front and back, and the dormer is built
   see-through (`Dormer.Build(seeThrough: true)`), so you can look in and out. Interior surfaces use
   their own materials (tiles, fabrics, linen) so the weather never wets or snows on them.

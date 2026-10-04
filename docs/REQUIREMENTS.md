@@ -128,7 +128,7 @@ before work started; later changes should be recorded here too.
    furniture and tree trunks, with a crosshair and E to use things. *(done)*
 10. **The Copper Kettle:** go inside the café and the flat above it through doors that open. The café
     has a counter and till, a cake cabinet, an espresso machine, tables and a storeroom; the flat has
-    a living room and kitchen, a bedroom and bathroom, and an attic bedroom under the dormer, up a
+    a living room and kitchen, a bedroom and bathroom, and an attic study and snug under the dormer, up a
     dog-leg stair. Its windows are clear glass you can see in and out of. *(this pull request)*
 
 ## Fellside Coffee

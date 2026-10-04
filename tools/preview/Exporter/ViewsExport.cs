@@ -62,6 +62,7 @@ internal static class ViewsExport
             Inside("kettleBedroom", 3.0f, f[2] + 1.6f, 0.7f, 5.2f, f[2] + 0.6f, 4.6f);
             Inside("kettleBathroom", 3.2f, f[2] + 1.6f, 5.3f, 5.6f, f[2] + 0.6f, 9.0f);
             Inside("kettleAttic", 2.2f, f[3] + 1.6f, 6.3f, 3.6f, f[3] + 1.3f, 1.2f);
+            Inside("kettleSnug", 2.4f, f[3] + 1.6f, 2.6f, 5.4f, f[3] + 0.9f, 7.6f);
         }
 
         File.WriteAllText(path, "{" + string.Join(",", views) + "}\n");

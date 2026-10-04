@@ -14,7 +14,7 @@ namespace Townscape.Generation.Buildings.Interiors
     /// narrow hall runs up the left from the flat's front door. A dog-leg stair climbs the left
     /// side: up the hall to a landing at the back of the first floor, forward to the front of the
     /// second, and back again into the attic. The first floor has a living room and a kitchen,
-    /// the second a bedroom and a bathroom, and the attic is one room under the slates, lit by
+    /// the second a bedroom and a bathroom, and the attic is a study and snug under the slates, lit by
     /// the dormer.
     /// </summary>
     /// <remarks>
@@ -98,7 +98,7 @@ namespace Townscape.Generation.Buildings.Interiors
             UpperFloor(context, space, design, f[1], wallTop[1], firstFloor: true);
             UpperFloor(context, space, design, f[2], wallTop[2], firstFloor: false);
             Banisters(space, builder, flights, f);
-            Attic(context, space, roof, f[3], dormer);
+            Attic(context, space, design, roof, f[3], dormer);
         }
 
         // ---- Ground floor -------------------------------------------------------------------
@@ -444,7 +444,7 @@ namespace Townscape.Generation.Buildings.Interiors
 
         // ---- The attic ----------------------------------------------------------------------
 
-        private static void Attic(BuildContext context, UnitSpace space, GableRoof roof, float floor, Dormer.Span? dormer)
+        private static void Attic(BuildContext context, UnitSpace space, UnitDesign design, GableRoof roof, float floor, Dormer.Span? dormer)
         {
             var builder = context.Builder;
             var w = space.Width;
@@ -454,8 +454,11 @@ namespace Townscape.Generation.Buildings.Interiors
             const float lining = 0.06f;
             float Under(float d) => roof.PlaneHeight(d / depth) - lining;
             var ridgeD = depth * 0.5f;
-            var front = FrontFace;
-            var back = depth - FrontFace;
+
+            // Knee walls stand upright where the slopes come down, level with the foot of the
+            // dormer, so the room meets the floor square instead of in a sharp corner under the eaves.
+            var kneeFront = (dormer?.FrontB ?? 0.1f) * depth;
+            var kneeBack = depth - kneeFront;
 
             // The slopes, cut round the dormer on the front.
             void Slope(float x0, float x1, float d0, float d1, bool frontSlope)
@@ -475,9 +478,8 @@ namespace Townscape.Generation.Buildings.Interiors
                 var span = dormer.Value;
                 var x0 = (span.A0 * w) + 0.03f;
                 var x1 = (span.A1 * w) - 0.03f;
-                var d0 = span.FrontB * depth;
+                var d0 = kneeFront;
                 var d1 = span.BackB * depth;
-                Slope(Side, right, front, d0, true);
                 Slope(Side, x0, d0, d1, true);
                 Slope(x1, right, d0, d1, true);
                 Slope(Side, right, d1, ridgeD, true);
@@ -491,19 +493,19 @@ namespace Townscape.Generation.Buildings.Interiors
             }
             else
             {
-                Slope(Side, right, front, ridgeD, true);
+                Slope(Side, right, kneeFront, ridgeD, true);
             }
 
-            Slope(Side, right, ridgeD, back, false);
+            Slope(Side, right, ridgeD, kneeBack, false);
 
-            // The gable ends, and a low wall where the slopes meet the floor at front and back.
+            // The gable ends, between the knee walls.
             foreach (var (x, facingRight) in new[] { (Side, true), (right, false) })
             {
                 var facing = facingRight ? space.Right : -space.Right;
                 var corners = new[]
                 {
-                    space.At(x, floor, front), space.At(x, floor, back), space.At(x, Under(back), back),
-                    space.At(x, Under(ridgeD), ridgeD), space.At(x, Under(front), front),
+                    space.At(x, floor, kneeFront), space.At(x, floor, kneeBack), space.At(x, Under(kneeBack), kneeBack),
+                    space.At(x, Under(ridgeD), ridgeD), space.At(x, Under(kneeFront), kneeFront),
                 };
                 for (var i = 1; i < corners.Length - 1; i++)
                 {
@@ -511,39 +513,150 @@ namespace Townscape.Generation.Buildings.Interiors
                 }
             }
 
-            space.WallAcross(builder, front, Side, right, floor, Under(front), true, plaster);
-            space.WallAcross(builder, back, Side, right, floor, Under(back), false, plaster);
+            space.WallAcross(builder, kneeFront, Side, right, floor, Under(kneeFront), true, plaster);
+            space.WallAcross(builder, kneeBack, Side, right, floor, Under(kneeBack), false, plaster);
+            space.Box(builder, Side, floor, kneeFront, right, floor + 0.1f, kneeFront + 0.02f, SurfaceMaterial.PaintWhite);
+            space.Box(builder, Side, floor, kneeBack - 0.02f, right, floor + 0.1f, kneeBack, SurfaceMaterial.PaintWhite);
 
-            // A bed under the back slope, a desk in the dormer, boxes in the eaves.
-            var bedD = back - 1.1f;
-            space.Box(builder, right - 2.2f, floor, bedD - 0.5f, right - 0.2f, floor + 0.3f, bedD + 0.5f, SurfaceMaterial.Timber);
-            space.Box(builder, right - 2.15f, floor + 0.3f, bedD - 0.45f, right - 0.25f, floor + 0.45f, bedD + 0.45f, SurfaceMaterial.Linen);
-            space.Box(builder, right - 1.8f, floor + 0.45f, bedD - 0.47f, right - 0.23f, floor + 0.5f, bedD + 0.47f, SurfaceMaterial.FabricRust);
-            space.Box(builder, right - 2.1f, floor + 0.45f, bedD - 0.35f, right - 1.8f, floor + 0.58f, bedD + 0.35f, SurfaceMaterial.Linen);
-
+            // A study in the dormer: desk, chair, lamp, books and a laptop.
             if (dormer.HasValue)
             {
                 var deskX = (dormer.Value.A0 + dormer.Value.A1) * 0.5f * w;
-                var deskD = dormer.Value.FrontB * depth + 1.1f;
-                space.Box(builder, deskX - 0.6f, floor + 0.72f, deskD - 0.3f, deskX + 0.6f, floor + 0.76f, deskD + 0.3f, SurfaceMaterial.Timber);
-                foreach (var dx in new[] { -0.55f, 0.55f })
+                var deskD = kneeFront + 0.32f;
+                space.Box(builder, deskX - 0.65f, floor + 0.72f, deskD - 0.3f, deskX + 0.65f, floor + 0.76f, deskD + 0.3f, SurfaceMaterial.Timber);
+                foreach (var dx in new[] { -0.6f, 0.6f })
                 {
                     space.Box(builder, deskX + dx - 0.03f, floor, deskD - 0.27f, deskX + dx + 0.03f, floor + 0.72f, deskD + 0.27f, SurfaceMaterial.Timber);
                 }
 
-                Chair(space, builder, deskX, floor, deskD + 0.6f, 0f, -1f, SurfaceMaterial.PaintSage);
-                space.Round(builder, deskX + 0.4f, floor + 0.76f, deskD - 0.1f, 0.05f, 0.3f, SurfaceMaterial.Chrome, 6);
-                builder.AddCone(space.At(deskX + 0.4f, floor + 1.0f, deskD - 0.1f), 0.12f, 0.12f, 8, SurfaceMaterial.PaintCream, capBase: true);
+                Chair(space, builder, deskX, floor, deskD + 0.62f, 0f, -1f, SurfaceMaterial.PaintSage);
+                space.Round(builder, deskX + 0.45f, floor + 0.76f, deskD - 0.12f, 0.05f, 0.3f, SurfaceMaterial.Chrome, 6);
+                builder.AddCone(space.At(deskX + 0.45f, floor + 1.0f, deskD - 0.12f), 0.12f, 0.12f, 8, SurfaceMaterial.PaintCream, capBase: true);
+                space.Box(builder, deskX - 0.2f, floor + 0.76f, deskD - 0.05f, deskX + 0.15f, floor + 0.775f, deskD + 0.2f, SurfaceMaterial.PaintBlack);
+                space.Box(builder, deskX - 0.2f, floor + 0.775f, deskD - 0.06f, deskX + 0.15f, floor + 1.0f, deskD - 0.05f, SurfaceMaterial.Screen);
+                var books = new[] { SurfaceMaterial.PaintRed, SurfaceMaterial.PaintNavy, SurfaceMaterial.PaintGold };
+                for (var i = 0; i < books.Length; i++)
+                {
+                    space.Box(builder, deskX - 0.58f, floor + 0.76f + (i * 0.04f), deskD - 0.15f + (i * 0.01f), deskX - 0.36f, floor + 0.8f + (i * 0.04f), deskD + 0.13f - (i * 0.01f), books[i]);
+                }
+
+                // Low shelves along the knee wall either side of the desk.
+                LowShelf(context, space, StripA + 0.2f, deskX - 0.8f, floor, kneeFront);
+                LowShelf(context, space, deskX + 0.8f, right - 0.1f, floor, kneeFront);
             }
 
-            for (var i = 0; i < 4; i++)
+            // A snug under the back slope: a low sofa against the knee wall, beanbags, a rug and a
+            // little table, with a plant by the window.
+            var mid = (StripA + right) * 0.5f + 0.2f;
+            space.Box(builder, mid - 1.5f, floor, ridgeD + 0.2f, mid + 1.5f, floor + 0.012f, kneeBack - 1.0f, SurfaceMaterial.FabricRust);
+            Sofa(space, builder, mid - 1.1f, mid + 1.1f, floor, kneeBack - 0.9f, kneeBack - 0.05f, SurfaceMaterial.FabricNavy);
+            space.Box(builder, mid - 0.4f, floor + 0.32f, kneeBack - 2.0f, mid + 0.4f, floor + 0.36f, kneeBack - 1.45f, SurfaceMaterial.Timber);
+            space.Box(builder, mid - 0.35f, floor, kneeBack - 1.95f, mid + 0.35f, floor + 0.32f, kneeBack - 1.5f, SurfaceMaterial.Timber);
+            space.Round(builder, mid - 0.1f, floor + 0.36f, kneeBack - 1.72f, 0.05f, 0.1f, SurfaceMaterial.Porcelain, 8);
+            space.Round(builder, mid + 1.55f, floor, ridgeD + 0.9f, 0.4f, 0.32f, SurfaceMaterial.FabricSage, 10);
+            space.Round(builder, mid + 1.55f, floor + 0.32f, ridgeD + 0.9f, 0.3f, 0.08f, SurfaceMaterial.FabricSage, 10);
+            space.Round(builder, mid - 1.4f, floor, ridgeD + 0.6f, 0.38f, 0.3f, SurfaceMaterial.FabricRust, 10);
+            space.Round(builder, mid - 1.4f, floor + 0.3f, ridgeD + 0.6f, 0.28f, 0.08f, SurfaceMaterial.FabricRust, 10);
+            space.Round(builder, right - 0.35f, floor, kneeFront + 1.6f, 0.17f, 0.3f, SurfaceMaterial.Cardboard, 8);
+            builder.AddCone(space.At(right - 0.35f, floor + 0.3f, kneeFront + 1.6f), 0.3f, 0.55f, 7, SurfaceMaterial.LeafGreen, capBase: true);
+
+            // The chimney stacks on the party walls come down into the attic: plaster them in as
+            // chimney breasts. The one on the right (a neighbour's) reaches nearly to the floor; the
+            // one on the left stops short, high over the stairwell.
+            const float breastOut = 0.7f;
+            const float breastHalf = 0.36f;
+            var leftStack = Math.Min(design.Ridge, design.LeftNeighbourRidge > 0f ? design.LeftNeighbourRidge : design.Ridge) - 0.75f;
+            if (design.ChimneyLeft)
             {
-                var x = StripA + 0.6f + (i * 0.7f);
-                space.Box(builder, x, floor, back - 1.3f, x + 0.5f, floor + 0.3f + (0.08f * (i % 3)), back - 0.8f, SurfaceMaterial.Cardboard);
+                ChimneyBreast(space, builder, 0f, Side + breastOut, ridgeD, breastHalf, Math.Max(floor, leftStack), Under);
             }
 
-            space.Box(builder, (Side + right) * 0.5f - 1.0f, floor, ridgeD - 0.7f, (Side + right) * 0.5f + 1.2f, floor + 0.012f, ridgeD + 0.9f, SurfaceMaterial.FabricNavy);
+            ChimneyBreast(space, builder, w, right - breastOut, ridgeD, breastHalf, floor, Under);
+
+            // Pictures on the gable walls, where the ceiling is high enough to hang them, and the
+            // biggest on the chimney breast.
+            Picture(space, builder, right - breastOut, false, ridgeD, floor + 1.5f, 0.6f, 0.75f, new[] { SurfaceMaterial.PaintButter, SurfaceMaterial.PaintOrange, SurfaceMaterial.PaintOxblood });
+            Picture(space, builder, right, false, ridgeD - 1.3f, floor + 1.35f, 0.55f, 0.7f, new[] { SurfaceMaterial.PaintDuckEgg, SurfaceMaterial.PaintNavy, SurfaceMaterial.PaintSage });
+            Picture(space, builder, right, false, ridgeD + 1.3f, floor + 1.35f, 0.55f, 0.7f, new[] { SurfaceMaterial.PaintCream, SurfaceMaterial.PaintTeal, SurfaceMaterial.PaintGreen });
+
+            Picture(space, builder, Side, true, ridgeD + 1.5f, floor + 1.45f, 0.7f, 0.5f, new[] { SurfaceMaterial.PaintPink, SurfaceMaterial.PaintPurple, SurfaceMaterial.PaintBlue });
+            Picture(space, builder, Side, true, kneeBack - 1.35f, floor + 1.35f, 0.45f, 0.6f, new[] { SurfaceMaterial.PaintDuckEgg, SurfaceMaterial.PaintGold, SurfaceMaterial.PaintRed });
+
             Light(context, space, (StripB + right) * 0.5f, roof.PlaneHeight(0.5f) - lining, ridgeD, AnchorKind.RoomLight);
+        }
+
+        // A chimney breast standing out from a party wall (at wallX) to faceX, from y0 up to the
+        // slope of the roof, centred at depth d.
+        private static void ChimneyBreast(UnitSpace space, MeshBuilder builder, float wallX, float faceX, float d, float half, float y0, Func<float, float> under)
+        {
+            var plaster = SurfaceMaterial.Interior;
+            var toRoom = faceX > wallX ? space.Right : -space.Right;
+            var d0 = d - half;
+            var d1 = d + half;
+            var face = new[] { space.At(faceX, y0, d0), space.At(faceX, y0, d1), space.At(faceX, under(d1), d1), space.At(faceX, under(d), d), space.At(faceX, under(d0), d0) };
+            for (var i = 1; i < face.Length - 1; i++)
+            {
+                builder.AddTriangleFacing(face[0], face[i], face[i + 1], toRoom, plaster);
+            }
+
+            builder.AddQuadFacing(space.At(wallX, y0, d0), space.At(faceX, y0, d0), space.At(faceX, under(d0), d0), space.At(wallX, under(d0), d0), -space.Back, plaster);
+            builder.AddQuadFacing(space.At(wallX, y0, d1), space.At(faceX, y0, d1), space.At(faceX, under(d1), d1), space.At(wallX, under(d1), d1), space.Back, plaster);
+            builder.AddQuadFacing(space.At(wallX, y0, d0), space.At(faceX, y0, d0), space.At(faceX, y0, d1), space.At(wallX, y0, d1), -Vector3.UnitY, plaster);
+        }
+
+        // Two shelves of books and plants against the front knee wall, from x0 to x1.
+        private static void LowShelf(BuildContext context, UnitSpace space, float x0, float x1, float floor, float wall)
+        {
+            if (x1 - x0 < 0.4f)
+            {
+                return;
+            }
+
+            var builder = context.Builder;
+            const float deep = 0.3f;
+            const float tall = 0.6f;
+            space.Box(builder, x0, floor, wall, x1, floor + 0.03f, wall + deep, SurfaceMaterial.Timber);
+            space.Box(builder, x0, floor + 0.3f, wall, x1, floor + 0.32f, wall + deep, SurfaceMaterial.Timber);
+            space.Box(builder, x0, floor + tall - 0.03f, wall, x1, floor + tall, wall + deep, SurfaceMaterial.Timber);
+            space.Box(builder, x0, floor, wall, x0 + 0.03f, floor + tall, wall + deep, SurfaceMaterial.Timber);
+            space.Box(builder, x1 - 0.03f, floor, wall, x1, floor + tall, wall + deep, SurfaceMaterial.Timber);
+            var spines = new[] { SurfaceMaterial.PaintRed, SurfaceMaterial.PaintNavy, SurfaceMaterial.PaintSage, SurfaceMaterial.PaintCream, SurfaceMaterial.PaintOxblood, SurfaceMaterial.PaintGold };
+            foreach (var y in new[] { floor + 0.03f, floor + 0.32f })
+            {
+                for (var x = x0 + 0.05f; x < x1 - 0.08f;)
+                {
+                    var thick = 0.03f + (0.03f * (float)context.Random.NextDouble());
+                    var height = 0.17f + (0.08f * (float)context.Random.NextDouble());
+                    space.Box(builder, x, y, wall + 0.04f, x + thick, y + height, wall + deep - 0.04f, spines[context.Random.Next(spines.Length)]);
+                    x += thick + 0.005f;
+                }
+            }
+
+            // A pot plant on top.
+            var px = x1 - 0.25f;
+            space.Round(builder, px, floor + tall, wall + 0.15f, 0.08f, 0.12f, SurfaceMaterial.Cardboard, 8);
+            builder.AddCone(space.At(px, floor + tall + 0.12f, wall + 0.15f), 0.13f, 0.22f, 6, SurfaceMaterial.LeafGreen, capBase: true);
+        }
+
+        // A framed picture hung on a wall running back through the building at x: a mount and a
+        // simple landscape in three colours, sky, hills and fields.
+        private static void Picture(UnitSpace space, MeshBuilder builder, float x, bool facingRight, float d, float y, float width, float height, SurfaceMaterial[] colours)
+        {
+            var o = facingRight ? 1f : -1f;
+            float X(float out_) => x + (o * out_);
+            void Layer(float out0, float out1, float d0, float y0, float d1, float y1, SurfaceMaterial material) =>
+                space.Box(builder, Math.Min(X(out0), X(out1)), y0, d0, Math.Max(X(out0), X(out1)), y1, d1, material);
+
+            var hw = width * 0.5f;
+            var hh = height * 0.5f;
+            Layer(0f, 0.03f, d - hw, y - hh, d + hw, y + hh, SurfaceMaterial.Timber);
+            Layer(0.03f, 0.035f, d - hw + 0.04f, y - hh + 0.04f, d + hw - 0.04f, y + hh - 0.04f, SurfaceMaterial.PaintWhite);
+            var iw = hw - 0.09f;
+            var ih = hh - 0.09f;
+            Layer(0.035f, 0.04f, d - iw, y - ih, d + iw, y + ih, colours[0]);
+            Layer(0.04f, 0.045f, d - iw, y - ih, d + (iw * 0.4f), y + (ih * 0.15f), colours[1]);
+            Layer(0.04f, 0.045f, d - (iw * 0.1f), y - ih, d + iw, y - (ih * 0.15f), colours[1]);
+            Layer(0.045f, 0.05f, d - iw, y - ih, d + iw, y - (ih * 0.5f), colours[2]);
         }
 
         // ---- Stairs and floors --------------------------------------------------------------
