@@ -156,6 +156,12 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
 - Two roof windows (`RoofWindow`) light the attic's snug from the back slope: `GableRoof.Build`
   leaves a `RoofOpening` in the slates for each, the attic's lining is cut round them with reveals
   up to the slates, and the glazed sash pivots open about a level line across its middle.
+- The Copper Kettle is a little wedge-shaped (its back wider than its front), so the back windows
+  and the roof's holes are placed through `UnitSpace` (`AcrossAt`, `FractionAcross`): straight
+  behind where the rooms put them, not at the same fraction of a longer wall.
+- `AlarmFittings` puts in a burglar alarm: a sensor high in a corner of every room, the keypad on
+  the hall wall inside the flat's door, and a bell box (30 by 40 cm, white, with a blue strobe
+  across its foot) high on the front between the first two second-floor windows.
 - `CafeAndFlat.Walkways` lists the ways in from each door and through each doorway; a test keeps
   every bit of furniture out of them.
 - Hanging lights go in `BuildContext.Fittings`, a mesh of their own (`MeshCategory.Fittings`) that
@@ -192,6 +198,7 @@ Generators also leave **anchors** (`TownAnchor`) for later systems:
 - the phone box's and the petrol station's lit signs
 - the lights in the petrol station's canopy, shining down on the pumps
 - room lights inside the Copper Kettle's flat (`RoomLight`), which come on in the evening like a home's windows
+- the burglar alarm's sensors, keypad and bell box (`AlarmSensor`, `AlarmKeypad`, `AlarmBell`)
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 
@@ -323,6 +330,17 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   `IInteractable` that swings it open into the room or shut again, about the door's own axis (so it
   also opens the roof windows). In play mode the leaf gets a
   convex collider on a kinematic body, so a shut door blocks you and an open one stands aside.
+- **The burglar alarm.** `BurglarAlarm` (engine-free and tested) is the panel's logic: the code,
+  a 30 second exit time after setting, a 30 second entry time once it's set and something is
+  seen, then the bell (which cuts out after 20 minutes) and the strobe (which flashes until it's
+  unset), and the beeps, once a second and twice a second for the last ten. `MotionSensor` decides
+  what a sensor's wide, downward-tilted cone covers. In Unity, `AlarmSystem` watches the walker
+  through each sensor (a line of sight, so walls and shut doors hide you; only movement counts) and
+  every door opening or shutting, lights the sensors' LEDs, flashes the strobe and a blue light,
+  and plays the bell and beeps from `AlarmSounds`. `AlarmKeypad` is the panel on the wall: E brings
+  up its keypad, which pauses the walker and frees the mouse while `TownscapeShortcuts` stands
+  aside so the number keys type the code. Like a door's open or shut, the alarm's state isn't in
+  the store.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the
