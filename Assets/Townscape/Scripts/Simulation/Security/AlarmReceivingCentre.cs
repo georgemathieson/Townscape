@@ -360,6 +360,16 @@ namespace Townscape.Simulation.Security
             Write(incident.Site, guard ? "Guard on site, checking the building" : "Police on site", ArcSeverity.Response);
         }
 
+        /// <summary>How long a guard (or the police) walking the streets reckon they'll be: on the way, or looking round.</summary>
+        public void Eta(ArcIncident incident, bool guard, float seconds)
+        {
+            var responder = guard ? incident.Guard : incident.Police;
+            if (responder.Stage == ResponderStage.EnRoute || responder.Stage == ResponderStage.OnSite)
+            {
+                responder.Remaining = Math.Max(0f, seconds);
+            }
+        }
+
         /// <summary>A guard or the police are going into the building (with a key): from now on the zones see them.</summary>
         public void GoingIn(ArcIncident incident, bool guard)
         {
