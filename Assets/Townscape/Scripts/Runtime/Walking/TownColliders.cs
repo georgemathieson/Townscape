@@ -7,6 +7,12 @@ using UnityEngine;
 
 namespace Townscape.Runtime.Walking
 {
+#if UNITY_6000_6_OR_NEWER
+    using MeshId = UnityEngine.EntityId;
+#else
+    using MeshId = System.Int32;
+#endif
+
     /// <summary>
     /// Makes the town solid for walking: a mesh collider on every solid mesh (the ground, the
     /// fells, buildings, the bridge and street furniture) and a capsule round every tree trunk.
@@ -21,7 +27,7 @@ namespace Townscape.Runtime.Walking
         private readonly List<SpawnedMesh> _solid = new List<SpawnedMesh>();
         private IReadOnlyList<TownAnchor> _anchors;
         private HideFlags _hideFlags;
-        private NativeArray<int> _meshIds;
+        private NativeArray<MeshId> _meshIds;
         private JobHandle _baking;
 
         /// <summary>True once everything is solid.</summary>
@@ -39,10 +45,14 @@ namespace Townscape.Runtime.Walking
                 }
             }
 
-            _meshIds = new NativeArray<int>(_solid.Count, Allocator.Persistent);
+            _meshIds = new NativeArray<MeshId>(_solid.Count, Allocator.Persistent);
             for (var i = 0; i < _solid.Count; i++)
             {
+#if UNITY_6000_6_OR_NEWER
+                _meshIds[i] = _solid[i].Mesh.GetEntityId();
+#else
                 _meshIds[i] = _solid[i].Mesh.GetInstanceID();
+#endif
             }
 
             _baking = new BakeJob { MeshIds = _meshIds }.Schedule(_meshIds.Length, 1);
@@ -95,7 +105,7 @@ namespace Townscape.Runtime.Walking
         private struct BakeJob : IJobParallelFor
         {
             [ReadOnly]
-            public NativeArray<int> MeshIds;
+            public NativeArray<MeshId> MeshIds;
 
             public void Execute(int index) => Physics.BakeMesh(MeshIds[index], false);
         }
