@@ -43,6 +43,11 @@ namespace Townscape.Runtime.UI
                 return;
             }
 
+            if (_walking.Paused)
+            {
+                return;
+            }
+
             // The crosshair: a light dot with a dark rim, so it shows against snow and night alike.
             var focused = _walking.Focus != null;
             var dot = focused ? 6f : 4f;

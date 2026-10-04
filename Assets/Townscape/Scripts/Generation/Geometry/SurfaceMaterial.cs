@@ -113,6 +113,10 @@ namespace Townscape.Generation.Geometry
         // Window glass you see through from both sides, faintly tinted so you can tell it's there.
         ClearGlass,
 
+        // The burglar alarm's lights, lit by the alarm itself: the sensors' red LEDs and the bell box's blue strobe.
+        AlarmLed,
+        AlarmStrobe,
+
         // Water that moves: the river flows and puddles ripple in the rain.
         RiverWater,
         Puddle,
