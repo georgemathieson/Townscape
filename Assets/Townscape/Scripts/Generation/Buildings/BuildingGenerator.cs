@@ -41,7 +41,7 @@ namespace Townscape.Generation.Buildings
                         builder = new MeshBuilder();
                     }
 
-                    plan.Style.Build(plan.Footprint, new BuildContext(builder, sink.Anchors, plan.Seed));
+                    plan.Style.Build(plan.Footprint, new BuildContext(builder, sink.Anchors, plan.Seed, sink.Doors));
                 }
 
                 if (!builder.IsEmpty)
