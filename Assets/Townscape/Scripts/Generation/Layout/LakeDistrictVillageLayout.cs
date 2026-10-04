@@ -85,7 +85,7 @@ namespace Townscape.Generation.Layout
                 lake: new LakeSpec(new Vector2(150f, -470f), new Vector2(260f, 150f), depth: 4f))
             {
                 Terraces = Terraces(roads[0]),
-                Detached = Detached(roads[1], roads[2], roads[3]),
+                Detached = Detached(roads[0], roads[1], roads[2], roads[3]),
                 Dressing = Dressing(roads[0], roads[1], roads[2], roads[3], river),
             };
         }
@@ -196,12 +196,14 @@ namespace Townscape.Generation.Layout
                 {
                     Shop(VillageShops.PostOffice), Shop(VillageShops.FellAndCrag), Shop(VillageShops.Bluebell), TerraceUnit.House(), TerraceUnit.House(),
                 }, 108),
-                new TerraceSpec("Terrace SE (east)", high, KerbSide.Right, At(73f), At(96f), Houses(4), 109),
             };
         }
 
-        /// <summary>Cottages along the lanes, a detached bookshop, the church and the old mill.</summary>
-        private static IReadOnlyList<DetachedBuildingSpec> Detached(RoadSpec fellRoad, RoadSpec millLane, RoadSpec churchLane)
+        /// <summary>
+        /// Cottages along the lanes, a detached bookshop, the church, the old mill, and the petrol
+        /// station on the way out of the village at the east end of the high street.
+        /// </summary>
+        private static IReadOnlyList<DetachedBuildingSpec> Detached(RoadSpec high, RoadSpec fellRoad, RoadSpec millLane, RoadSpec churchLane)
         {
             var whitewash = new HouseDesign();
             var stone = new HouseDesign
@@ -249,6 +251,8 @@ namespace Townscape.Generation.Layout
                     Shop = VillageShops.Inkwell,
                     Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.SixOverSix, SurfaceMaterial.Kerb),
                 }), 212),
+
+                DetachedBuildingSpec.FacingRoad("Fell View Garage", high, high.AlongNearest(new Vector2(83f, 0f)), KerbSide.Right, 0.3f, 23f, 17.5f, new PetrolStationStyle(), 215),
 
                 DetachedBuildingSpec.Facing("St Bega's Church", new Vector2(75f, 70f), new Vector2(-1f, 0f), 8f, 22f, new ChurchStyle(), 213),
 

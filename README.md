@@ -35,6 +35,8 @@ mist), and even its sounds.
 |---|---|
 | ![Fellside Coffee and Lantern Books after dark](docs/images/gallery/bookshop-night.jpg) | ![The village across the valley at dusk](docs/images/gallery/village-across-the-valley.jpg) |
 | Fellside Coffee and Lantern Books after dark | The village from across the valley at dusk |
+| ![Fell View Garage at dusk, its canopy lit over the pumps](docs/images/gallery/petrol-station-dusk.jpg) | ![String lights and bunting in the garage's shop window at night](docs/images/gallery/petrol-station-window-night.jpg) |
+| Fell View Garage at dusk, with bunting from the canopy | String lights in the shop window after dark |
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain and smoke move, the water ripples and the lightning flickers.*

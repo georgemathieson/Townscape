@@ -27,6 +27,9 @@ before work started; later changes should be recorded here too.
     Other units can be a pub, bakery and chippy.
 - **Smaller roads:** narrow lanes off the high street, like Lake District villages or Brighton's lanes.
 - **Smaller buildings:** detached shops and detached houses.
+- **Petrol station:** a little village garage on the high street: a whitewashed shop and workshop
+  with a pantile roof, two pumps on an island parallel to it under a small flat canopy, a price sign,
+  string lights in the shop windows (red, green, orange, yellow and blue) and bunting.
 - **Green space:** trees, grass and flowers, with green spaces at the edges of the village. Riverside
   footpaths, a small park and a church spire as a landmark.
 - **Out of town:** the river runs out into a valley with a lake, and the fells surround the village.
@@ -106,8 +109,10 @@ before work started; later changes should be recorded here too.
    shop. One site, two customer segments, three menu items (a latte with a milk choice, a pot of tea,
    croissants), prep, a simulated day, a review, profit carried between days, a cash reserve, and one
    upgrade that changes a decision (a bigger display case). Saved as JSON. Played as a full-screen
-   morning newspaper: yesterday's results on the front page, buying in the classifieds.
-   *(this pull request)*
+   morning newspaper: yesterday's results on the front page, buying in the classifieds. *(done)*
+7. **Fell View Garage:** a village petrol station at the east end of the high street, on a concrete
+   forecourt: the garage, pumps, canopy lights, price sign, string lights that twinkle after dark,
+   and bunting. *(this pull request)*
 
 ## Fellside Coffee
 

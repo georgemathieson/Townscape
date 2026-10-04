@@ -18,6 +18,7 @@ namespace Townscape.Generation.Geometry
         Pavement,
         Kerb,
         Gravel,
+        Concrete,
         RiverBed,
         Water,
         Stone,
@@ -30,6 +31,7 @@ namespace Townscape.Generation.Geometry
         RenderWhite,
         RenderCream,
         Slate,
+        Pantile,
         ChimneyPot,
         Timber,
 
@@ -56,6 +58,8 @@ namespace Townscape.Generation.Geometry
         PaintGold,
         PaintOrange,
         PaintPurple,
+        PaintBlue,
+        PaintGreen,
         Bread,
 
         // Street furniture and greenery
@@ -84,6 +88,13 @@ namespace Townscape.Generation.Geometry
         WindowShop,
         InnWindow,
         SignGlass,
+        // The petrol station's lights: panels in the canopy ceiling, and coloured string-light bulbs.
+        CanopyLight,
+        BulbRed,
+        BulbGreen,
+        BulbOrange,
+        BulbYellow,
+        BulbBlue,
 
         // Water that moves: the river flows and puddles ripple in the rain.
         RiverWater,

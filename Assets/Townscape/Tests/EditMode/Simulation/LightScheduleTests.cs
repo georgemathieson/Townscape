@@ -125,7 +125,7 @@ namespace Townscape.Tests.Simulation
         [Test]
         public void EveryLitAnchorKindHasALight()
         {
-            foreach (var kind in new[] { AnchorKind.StreetLamp, AnchorKind.ShopWindow, AnchorKind.DoorLamp, AnchorKind.Beacon, AnchorKind.LitSign })
+            foreach (var kind in new[] { AnchorKind.StreetLamp, AnchorKind.ShopWindow, AnchorKind.DoorLamp, AnchorKind.Beacon, AnchorKind.LitSign, AnchorKind.CanopyLight })
             {
                 Assert.That(NightLights.TryGetLight(kind, out var spec), Is.True, kind.ToString());
                 Assert.That(spec.Range, Is.GreaterThan(1f));
@@ -140,6 +140,53 @@ namespace Townscape.Tests.Simulation
             Assert.That(NightLights.WindowGroup(SurfaceMaterial.Window0), Is.EqualTo(0));
             Assert.That(NightLights.WindowGroup(SurfaceMaterial.Window7), Is.EqualTo(7));
             Assert.That(NightLights.WindowGroup(SurfaceMaterial.WindowGlass), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void StringLights_GlowBrighterAfterDark_AndTwinkleOutOfStep()
+        {
+            for (var colour = 0; colour < 5; colour++)
+            {
+                for (var time = 0f; time < 20f; time += 0.7f)
+                {
+                    Assert.That(LightSchedule.StringLights(colour, Night, time), Is.GreaterThan(LightSchedule.StringLights(colour, Day, time)));
+                    Assert.That(LightSchedule.StringLights(colour, Night, time), Is.InRange(0.5f, 1f), "dimming and brightening, never going out");
+                }
+            }
+
+            var together = Enumerable.Range(0, 5).Select(colour => LightSchedule.StringLights(colour, Night, 10f)).ToList();
+            Assert.That(together.Max() - together.Min(), Is.GreaterThan(0.05f), "each colour breathes at its own pace");
+
+            var red = Enumerable.Range(0, 200).Select(i => LightSchedule.StringLights(0, Night, i * 0.1f)).ToList();
+            Assert.That(red.Max() - red.Min(), Is.GreaterThan(0.2f));
+        }
+
+        [Test]
+        public void CanopyLights_StayOnAllDay_AndAreFullyBrightAtNight()
+        {
+            Assert.That(LightSchedule.Canopy(Day), Is.GreaterThan(0f));
+            Assert.That(LightSchedule.Canopy(Night), Is.EqualTo(1f).Within(1e-4f));
+            Assert.That(Brightness(NightLights.Emission(SurfaceMaterial.CanopyLight, 21f, Night, 0f)), Is.GreaterThan(Brightness(NightLights.Emission(SurfaceMaterial.CanopyLight, 12f, Day, 0f))));
+        }
+
+        [Test]
+        public void Bulbs_KeepTheirOwnColoursAtNight()
+        {
+            var red = NightLights.Emission(SurfaceMaterial.BulbRed, 21f, Night, 0f);
+            var green = NightLights.Emission(SurfaceMaterial.BulbGreen, 21f, Night, 0f);
+            var orange = NightLights.Emission(SurfaceMaterial.BulbOrange, 21f, Night, 0f);
+            var yellow = NightLights.Emission(SurfaceMaterial.BulbYellow, 21f, Night, 0f);
+            var blue = NightLights.Emission(SurfaceMaterial.BulbBlue, 21f, Night, 0f);
+
+            Assert.That(red.R, Is.GreaterThan(10f * (red.G + red.B)));
+            Assert.That(green.G, Is.GreaterThan(5f * (green.R + green.B)));
+            Assert.That(blue.B, Is.GreaterThan(3f * (blue.R + blue.G)));
+            Assert.That(orange.G / orange.R, Is.InRange(0.1f, 0.4f));
+            Assert.That(yellow.G / yellow.R, Is.InRange(0.55f, 0.9f));
+
+            Assert.That(NightLights.BulbColour(SurfaceMaterial.BulbRed), Is.EqualTo(0));
+            Assert.That(NightLights.BulbColour(SurfaceMaterial.BulbBlue), Is.EqualTo(4));
+            Assert.That(NightLights.BulbColour(SurfaceMaterial.PaintRed), Is.EqualTo(-1));
         }
 
         private static float Brightness(Rgb colour) => colour.R + colour.G + colour.B;

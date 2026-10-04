@@ -49,6 +49,21 @@ namespace Townscape.Simulation
         /// <summary>Signs lit from inside: dim by day, full once it gets dark.</summary>
         public static float Sign(float darkness) => 0.15f + (0.85f * SmoothStep(0.2f, 0.3f, darkness));
 
+        /// <summary>
+        /// String lights in a window: on all the time, brighter once it's dark, and each colour
+        /// slowly breathing at its own pace so the string twinkles gently rather than blinking.
+        /// </summary>
+        public static float StringLights(int colour, float darkness, float time)
+        {
+            var pace = 0.55f + (0.35f * Hash01((colour * 53) + 5));
+            var phase = 6.2831853f * Hash01((colour * 29) + 3);
+            var breath = 0.5f + (0.5f * (float)Math.Sin((time * pace) + phase));
+            return (0.3f + (0.7f * SmoothStep(0.15f, 0.35f, darkness))) * (0.6f + (0.4f * breath));
+        }
+
+        /// <summary>A petrol station canopy: bright by night, a dim glow on a gloomy day.</summary>
+        public static float Canopy(float darkness) => 0.12f + (0.88f * SmoothStep(0.15f, 0.3f, darkness));
+
         /// <summary>Belisha beacons flash about 75 times a minute, day and night.</summary>
         public static float BeaconPulse(float time)
         {

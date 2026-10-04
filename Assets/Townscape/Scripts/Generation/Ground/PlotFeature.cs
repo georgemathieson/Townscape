@@ -9,20 +9,26 @@ namespace Townscape.Generation.Ground
     /// <summary>
     /// The ground under and just around a building: flat, flagged and at pavement height, so
     /// hummocks never poke through floors or shop displays and every building sits on a neat apron.
+    /// A building can ask for another finish, like a petrol station's concrete forecourt.
     /// </summary>
     public sealed class PlotFeature : IGroundFeature
     {
-        private static readonly ISurfaceRegion Yard =
+        private static readonly ISurfaceRegion Flagged =
             new FlatRegion(RegionKind.Yard, SurfaceMaterial.Pavement, SurfaceMaterial.Kerb, RoadFeature.PavementHeight);
 
+        private readonly ISurfaceRegion _yard;
         private readonly Vector2[] _corners;
         private readonly Vector2[] _normals;
         private readonly float _margin;
 
         /// <param name="corners">A convex polygon, in either winding.</param>
         /// <param name="margin">How far the apron extends beyond the polygon.</param>
-        public PlotFeature(IReadOnlyList<Vector2> corners, float margin)
+        /// <param name="finish">What the apron is surfaced with: flagstones unless the building asks otherwise.</param>
+        public PlotFeature(IReadOnlyList<Vector2> corners, float margin, SurfaceMaterial finish = SurfaceMaterial.Pavement)
         {
+            _yard = finish == SurfaceMaterial.Pavement
+                ? Flagged
+                : new FlatRegion(RegionKind.Yard, finish, SurfaceMaterial.Kerb, RoadFeature.PavementHeight);
             _corners = new Vector2[corners.Count];
             _normals = new Vector2[corners.Count];
             _margin = margin;
@@ -65,7 +71,7 @@ namespace Townscape.Generation.Ground
                 return false;
             }
 
-            claim = new SurfaceClaim(Yard, GroundPriority.Plot);
+            claim = new SurfaceClaim(_yard, GroundPriority.Plot);
             return true;
         }
 
