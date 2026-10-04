@@ -312,7 +312,7 @@ design, the rules and the balance numbers. In outline:
 | Tool | What it does |
 |---|---|
 | `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State, Generation, Simulation and CoffeeShop) under .NET 8 |
-| `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs |
+| `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs, and the EditMode tests against NUnit 3.5, the older NUnit that Unity's Test Framework ships |
 | `tools/preview` | Runs the real generator, exports glTF, the night lights and the storm, and renders PNGs with three.js in headless Chromium |
 | `dotnet run -c Release --project tools/coffee-sim` | Plays 200 seeded games of Fellside Coffee with simple players and reports profit, waste, misses, the queue and what upgrades earn |
 | `python3 tools/generate_meta.py` | Creates `.meta` files with GUIDs derived from the path, so references can be written by hand |

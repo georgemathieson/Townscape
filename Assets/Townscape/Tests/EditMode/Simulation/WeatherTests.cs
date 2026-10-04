@@ -338,7 +338,7 @@ namespace Townscape.Tests.Simulation
                 var wet = Wetness.Apply(material, dry, 1f);
                 Assert.That(wet.R, Is.EqualTo(dry.R), material.ToString());
                 Assert.That(wet.Smoothness, Is.EqualTo(dry.Smoothness), material.ToString());
-                Assert.That(Wetness.Affected, Does.Not.Contain(material));
+                Assert.That(Wetness.Affected, Has.No.Member(material));
             }
         }
 
