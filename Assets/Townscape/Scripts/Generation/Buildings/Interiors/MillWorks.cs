@@ -495,9 +495,11 @@ namespace Townscape.Generation.Buildings.Interiors
 
         // ---- The burglar alarm and the broadband ---------------------------------------------
 
-        // Its own alarm: a contact on the front door and a sensor on each floor (and the stairs),
-        // a keypad inside the door, the control box and the fibre kit on the stair core's wall,
-        // and a yellow bell box on the front.
+        // Its own alarm: a contact on the front door and one sensor in each room (the ground
+        // floor's open-plan office, whose sensor in the kitchen corner sees as far as the front
+        // door; the stairs; the alarm receiving centre; the meeting room), a keypad inside the
+        // door, the control box and the fibre kit on the stair core's wall, and a yellow bell box
+        // on the front.
         private static void Alarm(BuildContext context, UnitSpace space, Footprint footprint, float[] f, float ceiling)
         {
             var door = context.Doors.LastOrDefault(d => d.Name == DoorName);
@@ -513,8 +515,7 @@ namespace Townscape.Generation.Buildings.Interiors
             var zones = new List<AlarmZone>
             {
                 AlarmFittings.DoorContact("Front door", door),
-                AlarmFittings.CornerSensor(context, space, "Reception sensor", core, f[1] - CafeAndFlat.Slab, Shell, -1f, 1f),
-                AlarmFittings.CornerSensor(context, space, "Kitchen sensor", Shell, f[1] - CafeAndFlat.Slab, back, 1f, -1f),
+                AlarmFittings.CornerSensor(context, space, "Office sensor", Shell, f[1] - CafeAndFlat.Slab, back, 1f, -1f),
                 AlarmFittings.CornerSensor(context, space, "Stairs sensor", right, f[1] - CafeAndFlat.Slab, back, -1f, -1f),
                 AlarmFittings.CornerSensor(context, space, "ARC sensor", Shell, f[2] - CafeAndFlat.Slab, back, 1f, -1f),
                 AlarmFittings.CornerSensor(context, space, "Meeting room sensor", core, ceiling, back, -1f, -1f),
