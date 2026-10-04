@@ -35,6 +35,11 @@ namespace Townscape.Runtime.Controls
 
         public bool WasPressed(Shortcut shortcut)
         {
+            if (shortcut == Shortcut.Click)
+            {
+                return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+            }
+
             var keyboard = Keyboard.current;
             if (keyboard == null)
             {
@@ -59,6 +64,9 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.CyclePerformance: return keyboard.fKey.wasPressedThisFrame;
                 case Shortcut.ToggleCoffeeShop: return keyboard.cKey.wasPressedThisFrame;
                 case Shortcut.CycleWeather: return keyboard.nKey.wasPressedThisFrame;
+                case Shortcut.ToggleWalking: return keyboard.vKey.wasPressedThisFrame;
+                case Shortcut.Jump: return keyboard.spaceKey.wasPressedThisFrame;
+                case Shortcut.Interact: return keyboard.eKey.wasPressedThisFrame;
                 default: return false;
             }
         }

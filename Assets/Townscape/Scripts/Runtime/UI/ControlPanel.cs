@@ -1,5 +1,6 @@
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
+using Townscape.Runtime.Walking;
 using Townscape.Runtime.Weather;
 using Townscape.Simulation.Weather;
 using Townscape.State;
@@ -29,7 +30,8 @@ namespace Townscape.Runtime.UI
             "<b>T</b> run the clock   <b>N</b> thunderstorm or snowstorm\n" +
             "<b>R L G</b> rain or snow, lightning, wind\n" +
             "<b>B</b> strike   <b>M</b> mute   <b>F</b> frame rate\n" +
-            "<b>C</b> Fellside Coffee   <b>H</b> hide this panel";
+            "<b>C</b> Fellside Coffee   <b>H</b> hide this panel\n" +
+            "<b>V</b> walk or fly   <b>Space</b> jump   <b>E</b> open";
 
         private Store<TownState> _store;
         private TimeOfDayLighting _lighting;
@@ -41,6 +43,9 @@ namespace Townscape.Runtime.UI
         private bool _showKeys;
 
         public bool Visible { get; set; } = true;
+
+        /// <summary>Walking mode, for the panel's walk button; set once both exist.</summary>
+        public WalkingController Walking { get; set; }
 
         public void Initialize(Store<TownState> store, TimeOfDayLighting lighting, StormSystem storm, CoffeeShopGame coffee = null)
         {
@@ -227,16 +232,28 @@ namespace Townscape.Runtime.UI
 
         private void CoffeeShopButton()
         {
-            if (_coffee == null)
+            if (_coffee == null && Walking == null)
             {
                 return;
             }
 
-            GUILayout.Label("FELLSIDE COFFEE", _skin.Heading);
-            if (GUILayout.Button("Run the coffee shop", _skin.Button))
+            GUILayout.Label("GET ABOUT", _skin.Heading);
+            GUILayout.BeginHorizontal();
+            if (Walking != null)
+            {
+                var walking = Walking.Active || Walking.Waiting;
+                if (GUILayout.Toggle(walking, "Walk (V)", _skin.Button) != walking)
+                {
+                    Walking.Toggle();
+                }
+            }
+
+            if (_coffee != null && GUILayout.Button("Run the coffee shop", _skin.Button))
             {
                 _coffee.Open();
             }
+
+            GUILayout.EndHorizontal();
         }
 
         private void Footer()

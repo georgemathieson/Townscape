@@ -24,6 +24,18 @@ namespace Townscape.Generation
         Puddles,
     }
 
+    public static class MeshCategories
+    {
+        /// <summary>
+        /// Whether a walker bumps into meshes of this kind. Water, road markings and puddles lie
+        /// flat on something solid; plants are left out because their leaves would snag, and their
+        /// trunks are marked separately with <see cref="AnchorKind.TreeTrunk"/> anchors.
+        /// </summary>
+        public static bool IsSolid(MeshCategory category) =>
+            category == MeshCategory.Ground || category == MeshCategory.Fells || category == MeshCategory.Structure ||
+            category == MeshCategory.Building || category == MeshCategory.Furniture;
+    }
+
     public sealed class GeneratedMesh
     {
         public GeneratedMesh(MeshData mesh, MeshCategory category)

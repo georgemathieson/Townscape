@@ -106,6 +106,15 @@ namespace Townscape.Runtime.Controls
             _pitch = euler.x > 180f ? euler.x - 360f : euler.x;
         }
 
+        // Pick up wherever something else (walking, the coffee shop) left the camera pointing.
+        private void OnEnable()
+        {
+            var euler = transform.rotation.eulerAngles;
+            _yaw = euler.y;
+            _pitch = euler.x > 180f ? euler.x - 360f : euler.x;
+            _velocity = Vector3.zero;
+        }
+
         private void OnDisable()
         {
             Cursor.lockState = CursorLockMode.None;

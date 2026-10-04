@@ -123,7 +123,10 @@ before work started; later changes should be recorded here too.
    and bunting. *(done)*
 8. **Snowstorm:** a second weather profile alongside the thunderstorm: falling snow, snow that
    settles and thaws, whiteout fog, blowing snow, a weather switch on the panel and the N key.
-   *(this pull request)*
+   *(done)*
+9. **Walking mode:** walk the village at eye level (V), bumping into buildings, walls, street
+   furniture and tree trunks, with a crosshair and E to use things. *(this pull request)*
+10. **The Copper Kettle:** go inside the café and the flat above it through doors that open.
 
 ## Fellside Coffee
 
@@ -154,7 +157,6 @@ before work started; later changes should be recorded here too.
 - Wind sway on the GPU (a vertex shader) if the CPU version shows up in the profiler.
 - People and traffic: a few walkers with umbrellas, a bus that stops at the bus stop.
 - A pelican crossing with lights on another road.
-- A first-person walking camera alongside the free-fly one.
 - Fellside Coffee beyond the slice: more upgrades (a faster machine, cold drinks, seating and music, a
   second milk, a pop-up at another site), syrups, more segments, regulars who remember their usual
   order, and footfall that follows the town's weather. See [COFFEE_SHOP.md](COFFEE_SHOP.md).
