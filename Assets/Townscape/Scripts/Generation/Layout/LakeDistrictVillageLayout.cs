@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using Townscape.Generation.Buildings.Interiors;
 using Townscape.Generation.Buildings.Parts;
 using Townscape.Generation.Buildings.Styles;
 using Townscape.Generation.Dressing;
@@ -260,18 +261,8 @@ namespace Townscape.Generation.Layout
 
                 DetachedBuildingSpec.Facing("St Bega's Church", new Vector2(75f, 70f), new Vector2(-1f, 0f), 8f, 22f, new ChurchStyle(), 213),
 
-                DetachedBuildingSpec.Facing("The Old Mill", new Vector2(-19f, -68f), new Vector2(0f, 1f), 12f, 8f, new DetachedHouseStyle(new HouseDesign
-                {
-                    Floors = 3,
-                    Bays = 5,
-                    Wall = SurfaceMaterial.Stone,
-                    Windows = new WindowStyle(SurfaceMaterial.PaintWhite, GlazingPattern.SixOverSix, SurfaceMaterial.Kerb),
-                    DoorPaint = SurfaceMaterial.PaintDarkGreen,
-                    Trim = SurfaceMaterial.Timber,
-                    Pitch = 35f,
-                    Sign = "THE OLD MILL",
-                    Pots = 3,
-                }), 214),
+                // The old mill, now Mill Works: co-working downstairs and the alarm receiving centre above.
+                DetachedBuildingSpec.Facing(MillWorks.Name, new Vector2(-19f, -68f), new Vector2(0f, 1f), 12f, 8f, new MillWorksStyle(), 214),
             };
         }
 

@@ -55,6 +55,9 @@ namespace Townscape.Runtime.Security
         /// <summary>Whose alarm it is: "The Copper Kettle", "The flat".</summary>
         public string Name => _spec?.Name;
 
+        /// <summary>The alarm as generation described it: its zones, keypads, control box and bell box.</summary>
+        public TownAlarm Spec => _spec;
+
         /// <summary>Puts every building's alarm into the town.</summary>
         public static IReadOnlyList<AlarmSystem> CreateAll(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors)
         {
