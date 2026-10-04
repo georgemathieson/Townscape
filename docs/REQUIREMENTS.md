@@ -43,7 +43,8 @@ before work started; later changes should be recorded here too.
 
 ## Weather
 
-- The headline feature. For now it **always rains**, with **frequent thunderstorms**: cosy and stormy.
+- The headline feature. It **always rains**, with **frequent thunderstorms**: cosy and stormy. Or
+  switch to a **snowstorm**.
 - Effects:
   - rain that follows the camera, with splashes
   - wet, reflective roads with puddle ripples
@@ -52,8 +53,15 @@ before work started; later changes should be recorded here too.
   - thunder that arrives after the flash, delayed by distance
   - wind that sways the trees and slants the rain
   - the river flowing
-- Controls for rain intensity, lightning frequency and wind strength.
-- Built as swappable weather profiles, so clear skies, fog or snow can be added later.
+- The snowstorm:
+  - snow that drifts down round the camera, carried and swirled by the wind
+  - snow settling over a minute or two: roofs and fields first, then pavements, while the road
+    stays a grey slush; it thaws when the snow stops, and the rain washes it away
+  - whiter, thicker fog in heavy snow, closing right in during a blizzard, and blowing snow
+  - more chimney fires lit in the cold, and the odd rumble of thundersnow
+- Controls to switch between the thunderstorm and the snowstorm, and for rain or snow intensity,
+  lightning frequency and wind strength.
+- Built as swappable weather profiles, so clear skies or fog can be added later.
 
 ## Time of day
 
@@ -112,7 +120,10 @@ before work started; later changes should be recorded here too.
    morning newspaper: yesterday's results on the front page, buying in the classifieds. *(done)*
 7. **Fell View Garage:** a village petrol station at the east end of the high street, on a concrete
    forecourt: the garage, pumps, canopy lights, price sign, string lights that twinkle after dark,
-   and bunting. *(this pull request)*
+   and bunting. *(done)*
+8. **Snowstorm:** a second weather profile alongside the thunderstorm: falling snow, snow that
+   settles and thaws, whiteout fog, blowing snow, a weather switch on the panel and the N key.
+   *(this pull request)*
 
 ## Fellside Coffee
 
@@ -137,7 +148,9 @@ before work started; later changes should be recorded here too.
 
 ## Ideas for later
 
-- More weather profiles: clear skies, fog, snow (a new `IWeatherProfile` each).
+- More weather profiles: clear skies, fog (a new `IWeatherProfile` each).
+- Snow on the tops of walls, fences and branches, and footprints in it: these need geometry or a
+  shader rather than a change of material colour.
 - Wind sway on the GPU (a vertex shader) if the CPU version shows up in the profiler.
 - People and traffic: a few walkers with umbrellas, a bus that stops at the bus stop.
 - A pelican crossing with lights on another road.

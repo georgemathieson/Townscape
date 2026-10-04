@@ -58,6 +58,7 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.ToggleMute: return keyboard.mKey.wasPressedThisFrame;
                 case Shortcut.CyclePerformance: return keyboard.fKey.wasPressedThisFrame;
                 case Shortcut.ToggleCoffeeShop: return keyboard.cKey.wasPressedThisFrame;
+                case Shortcut.CycleWeather: return keyboard.nKey.wasPressedThisFrame;
                 default: return false;
             }
         }

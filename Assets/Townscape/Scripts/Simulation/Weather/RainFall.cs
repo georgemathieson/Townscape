@@ -21,14 +21,15 @@ namespace Townscape.Simulation.Weather
         public static float SplashChance(float rain) => 0.35f + (0.4f * Math.Clamp(rain, 0f, 1f));
     }
 
-    /// <summary>Which chimneys have a fire lit. More fires burn in the evening.</summary>
+    /// <summary>Which chimneys have a fire lit. More fires burn in the evening, and in the cold.</summary>
     public static class ChimneySmoke
     {
-        public static bool IsBurning(int seed, float hour)
+        /// <param name="cold">How wintry it is, from 0 to 1: lying snow brings more fires out.</param>
+        public static bool IsBurning(int seed, float hour, float cold = 0f)
         {
             var evening = LightSchedule.Window(hour, 16f, 23.5f);
             var morning = LightSchedule.Window(hour, 6.5f, 9.5f);
-            var share = 0.35f + (0.35f * MathF.Max(evening, morning * 0.6f));
+            var share = 0.35f + (0.35f * MathF.Max(evening, morning * 0.6f)) + (0.25f * Math.Clamp(cold, 0f, 1f));
             return LightSchedule.Hash01((seed * 31) + 5) < share;
         }
 

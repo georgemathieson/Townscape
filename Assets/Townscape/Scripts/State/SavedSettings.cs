@@ -30,6 +30,7 @@ namespace Townscape.State
                 $"speed={Number(time.CycleHoursPerMinute)}",
                 $"weather={weather.Kind}",
                 $"rain={Number(weather.RainIntensity)}",
+                $"snow={Number(weather.SnowIntensity)}",
                 $"lightning={Number(weather.LightningFrequency)}",
                 $"wind={Number(weather.WindStrength)}",
                 $"volume={Number(audio.Volume)}",
@@ -72,6 +73,7 @@ namespace Townscape.State
             {
                 Kind = values.TryGetValue("weather", out var kindName) && Enum.TryParse(kindName, out WeatherKind kind) && Enum.IsDefined(typeof(WeatherKind), kind) ? kind : weather.Kind,
                 RainIntensity = TimeMath.Clamp01(Float(values, "rain", weather.RainIntensity)),
+                SnowIntensity = TimeMath.Clamp01(Float(values, "snow", weather.SnowIntensity)),
                 LightningFrequency = TimeMath.Clamp01(Float(values, "lightning", weather.LightningFrequency)),
                 WindStrength = TimeMath.Clamp01(Float(values, "wind", weather.WindStrength)),
             };

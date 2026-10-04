@@ -58,7 +58,17 @@ namespace Townscape.Runtime.Controls
             }
 
             var weather = _store.State.Weather;
-            if (_input.WasPressed(Shortcut.CycleRain))
+            if (_input.WasPressed(Shortcut.CycleWeather))
+            {
+                _store.Dispatch(new SetWeatherKind(WeatherKinds.Next(weather.Kind)));
+            }
+
+            // R turns up whatever is falling: rain in the thunderstorm, snow in the snowstorm.
+            if (_input.WasPressed(Shortcut.CycleRain) && weather.Kind == WeatherKind.Snow)
+            {
+                _store.Dispatch(new SetSnowIntensity(WeatherSteps.Next(weather.SnowIntensity, WeatherSteps.Snow)));
+            }
+            else if (_input.WasPressed(Shortcut.CycleRain))
             {
                 _store.Dispatch(new SetRainIntensity(WeatherSteps.Next(weather.RainIntensity, WeatherSteps.Rain)));
             }

@@ -24,13 +24,15 @@ const presets = {
   night: { fog: 0x12161f, density: 0.011, sky: 0x2a3550, ground: 0x0c0c10, hemi: 0.7, sun: 0x8aa0d0, sunIntensity: 0.45, elevation: 35, azimuth: 120, exposure: 1.3 },
 };
 
-// Rain and smoke catch whatever light there is: pale by day, dim at night.
+// Rain, snow and smoke catch whatever light there is: pale by day, dim at night.
 const rainTint = { day: 0xc8ced6, dusk: 0x8a90a6, night: 0x55607a };
+const snowTint = { day: 0xf4f6fa, dusk: 0xb4b9cc, night: 0x7a8298 };
 const smokeTint = { day: 0x9a9da3, dusk: 0x5d6070, night: 0x2c3140 };
 
 // A lightning strike at night, frozen at the brightest moment of its flash.
 presets.flash = { ...presets.night, flash: true };
 rainTint.flash = 0xb8c4e8;
+snowTint.flash = 0xd4dcf4;
 smokeTint.flash = 0x7e86a0;
 const flashColour = new THREE.Color(0.62, 0.68, 0.92);
 
@@ -98,12 +100,26 @@ scene.add(lampGroup);
 // The storm, worked out by the same C# simulation Unity uses (see Exporter/StormExport.cs).
 const storm = await (await fetch('/out/storm.json')).json();
 
-// It always rains, so every surface the rain changes is wet: darker and glossier.
-for (const [name, [r, g, b, roughness]] of Object.entries(storm.wet)) {
+// In the thunderstorm every surface the rain changes is wet: darker and glossier. In the snowstorm
+// the rain has gone and the snow lies deep on roofs, grass and pavements.
+const dry = {};
+for (const name of new Set([...Object.keys(storm.wet), ...Object.keys(storm.snow.surfaces)])) {
   const material = materials[name];
-  if (!material) continue;
-  material.color.setRGB(r, g, b);
-  material.roughness = roughness;
+  if (material) dry[name] = [material.color.clone(), material.roughness];
+}
+function weatherSurfaces(weather) {
+  for (const [name, [colour, roughness]] of Object.entries(dry)) {
+    materials[name].color.copy(colour);
+    materials[name].roughness = roughness;
+  }
+  for (const [name, [r, g, b, roughness]] of Object.entries(weather === 'snow' ? storm.snow.surfaces : storm.wet)) {
+    const material = materials[name];
+    if (!material) continue;
+    material.color.setRGB(r, g, b);
+    material.roughness = roughness;
+  }
+  // Puddles only show while the ground is wet.
+  if (materials.Puddle) materials.Puddle.visible = weather !== 'snow';
 }
 
 // Raindrop rings on puddles, the river and the lake: one frame of Unity's normal-map flipbooks.
@@ -152,6 +168,37 @@ function makeRain(cameraPosition, presetName) {
   rainGroup.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: rainTint[presetName], transparent: true, opacity: 0.4, depthWrite: false })));
 }
 
+// Snow: soft flakes all through a box of air round the camera, as in SnowEffect.
+const flakeTexture = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 32;
+  const context = canvas.getContext('2d');
+  const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.45, 'rgba(255,255,255,0.6)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 32, 32);
+  return new THREE.CanvasTexture(canvas);
+})();
+const snowGroup = new THREE.Group();
+scene.add(snowGroup);
+function makeSnow(cameraPosition, presetName) {
+  snowGroup.clear();
+  const [size, height] = [26, 12];
+  const count = Math.round(storm.snow.density * size * size * height);
+  const positions = [];
+  const next = random(13);
+  for (let i = 0; i < count; i++) {
+    const flake = new THREE.Vector3(cameraPosition.x + ((next() - 0.5) * size), cameraPosition.y - 3 + (next() * height), cameraPosition.z + ((next() - 0.5) * size));
+    // Unity fades flakes out right in front of the lens.
+    if (flake.distanceTo(cameraPosition) > 1.2) positions.push(flake.x, flake.y, flake.z);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  snowGroup.add(new THREE.Points(geometry, new THREE.PointsMaterial({ map: flakeTexture, color: snowTint[presetName], size: 0.1, sizeAttenuation: true, transparent: true, opacity: 0.9, depthWrite: false })));
+}
+
 // Chimney smoke: puffs drifting downwind from each chimney with a fire lit at this hour.
 const puffTexture = (() => {
   const canvas = document.createElement('canvas');
@@ -167,11 +214,12 @@ const puffTexture = (() => {
 })();
 const smokeGroup = new THREE.Group();
 scene.add(smokeGroup);
-function makeSmoke(cameraPosition, presetName) {
+function makeSmoke(cameraPosition, presetName, weather) {
   smokeGroup.clear();
-  const wind = new THREE.Vector3(...storm.wind);
+  const snowing = weather === 'snow';
+  const wind = new THREE.Vector3(...(snowing ? storm.snow.wind : storm.wind));
   const next = random(11);
-  for (const top of storm.smoke[presetName === 'flash' ? 'night' : presetName] ?? []) {
+  for (const top of (snowing ? storm.snow.smoke : storm.smoke)[presetName === 'flash' ? 'night' : presetName] ?? []) {
     const base = new THREE.Vector3(...top);
     if (base.distanceTo(cameraPosition) > 220) continue;
     for (let k = 0; k < 22; k++) {
@@ -262,18 +310,31 @@ function environmentFor(preset) {
   return environments[key];
 }
 
-window.renderView = (viewName, presetName) => {
+const snowFogColour = new THREE.Color(0.86, 0.89, 0.93);
+
+window.renderView = (viewName, presetName, weather = 'storm') => {
   const preset = presets[presetName];
-  scene.environment = environmentFor(preset);
-  scene.environmentIntensity = 0.6;
+  const snowing = weather === 'snow';
+  weatherSurfaces(weather);
   const view = views[viewName];
-  // Lightning washes the fog and the shadows with a cold light (WeatherLighting in Unity); mist thickens the fog.
+  // As WeatherLighting in Unity: falling snow pales the fog to grey-white at the time of day's
+  // brightness, and lightning washes it with a cold light. Mist and snow thicken it (WeatherFog).
   const flash = preset.flash ? 1 : 0;
-  const fog = new THREE.Color(preset.fog).lerp(flashColour.clone().multiplyScalar(0.75), flash * 0.4);
+  const fog = new THREE.Color(preset.fog);
+  if (snowing) {
+    const brightness = Math.min(1, (Math.max(fog.r, fog.g, fog.b) * 1.25) + 0.02);
+    fog.lerp(snowFogColour.clone().multiplyScalar(brightness), storm.snow.whiteness);
+  }
+  fog.lerp(flashColour.clone().multiplyScalar(0.75), flash * 0.4);
+  scene.environment = environmentFor({ ...preset, fog: fog.getHex() });
+  scene.environmentIntensity = 0.6;
   scene.background = fog;
-  scene.fog = viewName === 'map' ? null : new THREE.FogExp2(fog, preset.density * (0.9 + (0.3 * storm.rain.mist)));
+  const fogScale = snowing ? storm.snow.fogScale : 0.9 + (0.3 * storm.rain.mist);
+  scene.fog = viewName === 'map' ? null : new THREE.FogExp2(fog, preset.density * fogScale);
   hemi.color.set(preset.sky).lerp(flashColour, flash * 0.5);
   hemi.groundColor.set(preset.ground);
+  // Lying snow throws the sky's light back up into the shadows.
+  if (snowing) hemi.groundColor.lerp(new THREE.Color(preset.sky).multiplyScalar(0.9), 0.6);
   hemi.intensity = preset.hemi * (1 + (1.2 * flash));
   lightning.intensity = 1.6 * Math.PI * flash;
   sun.color.set(preset.sun);
@@ -317,10 +378,13 @@ window.renderView = (viewName, presetName) => {
   }
 
   const showWeather = viewName !== 'map';
-  rainGroup.visible = smokeGroup.visible = showWeather;
+  smokeGroup.visible = showWeather;
+  rainGroup.visible = showWeather && !snowing;
+  snowGroup.visible = showWeather && snowing;
   if (showWeather) {
-    makeRain(camera.position, presetName);
-    makeSmoke(camera.position, presetName);
+    if (snowing) makeSnow(camera.position, presetName);
+    else makeRain(camera.position, presetName);
+    makeSmoke(camera.position, presetName, weather);
   }
   makeBolts(camera, flash > 0 && showWeather);
 

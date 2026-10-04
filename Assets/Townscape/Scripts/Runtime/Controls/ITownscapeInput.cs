@@ -19,6 +19,7 @@ namespace Townscape.Runtime.Controls
         ToggleMute,
         CyclePerformance,
         ToggleCoffeeShop,
+        CycleWeather,
     }
 
     /// <summary>
