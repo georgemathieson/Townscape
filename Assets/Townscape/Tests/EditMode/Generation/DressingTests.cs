@@ -50,7 +50,10 @@ namespace Townscape.Tests.Generation
         [Test]
         public void PhoneBox_HasALitSign()
         {
-            Assert.That(GeneratedVillage.Town.Anchors.Count(a => a.Kind == AnchorKind.LitSign), Is.EqualTo(1));
+            // The phone box stands by the bridge; the petrol station's price sign is lit too.
+            var phoneBox = new Vector2(-12.5f, 9f);
+            var signs = GeneratedVillage.Town.Anchors.Where(a => a.Kind == AnchorKind.LitSign).ToList();
+            Assert.That(signs.Count(a => Vector2.Distance(new Vector2(a.Position.X, a.Position.Z), phoneBox) < 2f), Is.EqualTo(1));
         }
 
         [Test]
