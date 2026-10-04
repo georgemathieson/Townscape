@@ -10,9 +10,10 @@ namespace Townscape.Generation
     /// </summary>
     public sealed class TownAlarmCentre
     {
-        public TownAlarmCentre(string name, IReadOnlyList<WallMount> consoles, IReadOnlyList<WallMount> videoWall, Vector3 room)
+        public TownAlarmCentre(string name, IReadOnlyList<WallMount> consoles, IReadOnlyList<WallMount> videoWall, Vector3 room, string guardPost = null)
         {
             Name = name;
+            GuardPost = guardPost;
             Consoles = consoles;
             VideoWall = videoWall;
             Room = room;
@@ -28,5 +29,8 @@ namespace Townscape.Generation
 
         /// <summary>The middle of the room, at head height: where its chime sounds.</summary>
         public Vector3 Room { get; }
+
+        /// <summary>Where the key-holding guard waits to be sent out: the name of a <see cref="RouteStop"/>.</summary>
+        public string GuardPost { get; }
     }
 }

@@ -31,6 +31,9 @@ namespace Townscape.Generation.Buildings.Interiors
         public const string DoorName = "Mill Works door";
         public const string CentreDoorName = "ARC door";
 
+        /// <summary>Where the key-holding guard waits in the alarm receiving centre to be sent out.</summary>
+        public const string GuardPost = CentreName + ": guard's post";
+
         public const float MinimumWidth = 11.5f;
         public const float MinimumDepth = 7.5f;
         public const float FloorHeight = 3.1f;
@@ -229,6 +232,7 @@ namespace Townscape.Generation.Buildings.Interiors
             var centre = CentreFloor(context, space, f[1], f[2] - CafeAndFlat.Slab);
             TopFloor(context, space, f[2], ceiling);
             Alarm(context, space, footprint, f, ceiling);
+            Site(context, space, f);
             context.AlarmCentres.Add(centre);
         }
 
@@ -427,7 +431,7 @@ namespace Townscape.Generation.Buildings.Interiors
                 PanelLight(context, space, x, top, d, AnchorKind.OfficeLight);
             }
 
-            return new TownAlarmCentre(CentreName, consoles, screens, space.At((left + core) * 0.5f, floor + 1.6f, mid));
+            return new TownAlarmCentre(CentreName, consoles, screens, space.At((left + core) * 0.5f, floor + 1.6f, mid), GuardPost);
         }
 
         // A desk facing the screens (towards -x) at x0, its two monitors at the front, a phone and
@@ -536,6 +540,57 @@ namespace Townscape.Generation.Buildings.Interiors
             var windowTop = f[2] + 2.35f;
             var strobe = AlarmFittings.BellBox(context, front, space.Width * 0.8f, windowTop - 0.02f, 0f, SurfaceMaterial.PaintButter);
             context.Alarms.Add(new TownAlarm(Name, zones, new[] { keypad }, box, strobe));
+        }
+
+        // ---- The ways through it ------------------------------------------------------------
+
+        // In at the front door to the keypad; round the office to the kitchen; across to the
+        // stairs and up to the landing, where the alarm receiving centre's door is (and the
+        // guard's post inside it); and on up to the meeting room.
+        private static void Site(BuildContext context, UnitSpace space, float[] f)
+        {
+            var core = CoreX(space);
+            var middle = Middle(space);
+            var right = space.Width - Shell;
+            var door = Door(space);
+            var doorX = (door.From + door.To) * 0.5f;
+            var front = (FrontDoorway.From + FrontDoorway.To) * 0.5f;
+            var centre = (CentreDoorway.From + CentreDoorway.To) * 0.5f;
+            var flightA = (middle + right) * 0.5f;
+            var flightB = (core + Thin + middle) * 0.5f;
+            var landing = (TurnD + space.Depth - Shell) * 0.5f;
+            RouteStop Stop(float x, float y, float d, string name = null, string through = null) =>
+                new RouteStop(space.At(x, y, d), name == null ? null : $"{Name}: {name}", through);
+            string Named(string name) => $"{Name}: {name}";
+
+            var inside = Stop(doorX, f[0], 0.9f, "inside the door", DoorName);
+            var stairs = Stop(middle, f[1], landing, "landing");
+            var arc = Stop(core - 1.4f, f[1], centre + 0.1f, "ARC", CentreDoorName);
+            var routes = new[]
+            {
+                new TownRoute(new[] { Stop(doorX, f[0], -1.3f, "outside"), inside, Stop(door.From - 0.4f, f[0], 0.85f, "keypad") }, joinsStreet: true),
+                new TownRoute(new[] { inside, Stop(4.8f, f[0], 2.7f, "office"), Stop(4.6f, f[0], 5.6f, "kitchen") }),
+                new TownRoute(new[]
+                {
+                    inside, Stop(core - 0.6f, f[0], front), Stop(middle - 0.5f, f[0], front), Stop(flightA, f[0], front),
+                    Stop(flightA, f[0], FootD), Stop(flightA, f[1], TurnD), stairs,
+                    Stop(core + 0.5f, f[1], centre), arc, new RouteStop(space.At(core - 1.3f, f[1], 5.2f), GuardPost),
+                }),
+                new TownRoute(new[] { arc, Stop(4.6f, f[1], 7.15f, "the back of the ARC") }),
+                new TownRoute(new[]
+                {
+                    stairs, Stop(flightB, f[1], TurnD), Stop(flightB, f[2], FootD), Stop(flightB, f[2], front),
+                    Stop(core - 0.6f, f[2], front), Stop(6.6f, f[2], 2.4f, "meeting room"),
+                }),
+            };
+
+            context.Sites.Add(new TownSite(
+                Name,
+                routes,
+                Named("outside"),
+                Named("keypad"),
+                new[] { Named("office"), Named("kitchen"), Named("landing"), Named("the back of the ARC"), Named("meeting room") },
+                new[] { Named("office"), Named("meeting room") }));
         }
 
         // ---- Furniture ------------------------------------------------------------------------

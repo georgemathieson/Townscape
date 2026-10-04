@@ -6,6 +6,7 @@ using Townscape.Generation.Geometry;
 using Townscape.Generation.Ground;
 using Townscape.Generation.Layout;
 using Townscape.Generation.Markings;
+using Townscape.Generation.Routes;
 using Townscape.Generation.Structures;
 using Townscape.Generation.Terrain;
 
@@ -92,6 +93,15 @@ namespace Townscape.Generation
 
         /// <summary>Alarm receiving centres, where the alarms report.</summary>
         public IReadOnlyList<TownAlarmCentre> AlarmCentres { get; }
+
+        /// <summary>Alarmed buildings as the people who come to them see them: outside, the keypad, the rooms.</summary>
+        public IReadOnlyList<TownSite> Sites { get; init; } = System.Array.Empty<TownSite>();
+
+        /// <summary>The ways people walk about the town, and through the buildings they go into.</summary>
+        public RouteNetwork Walking { get; init; } = new RouteNetwork();
+
+        /// <summary>The ways cars drive about the town.</summary>
+        public RouteNetwork Driving { get; init; } = new RouteNetwork();
     }
 
     /// <summary>
@@ -188,7 +198,12 @@ namespace Townscape.Generation
             }
 
             meshes.AddRange(sink.Meshes);
-            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats, sink.DoorList, sink.AlarmList, sink.BroadbandList, sink.CabinetList, sink.AlarmCentreList);
+            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats, sink.DoorList, sink.AlarmList, sink.BroadbandList, sink.CabinetList, sink.AlarmCentreList)
+            {
+                Sites = sink.SiteList,
+                Walking = RouteNetworkBuilder.Walking(context, sink.SiteList),
+                Driving = RouteNetworkBuilder.Driving(context),
+            };
         }
     }
 }

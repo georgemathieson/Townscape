@@ -45,6 +45,11 @@ namespace Townscape.Generation.Buildings.Interiors
         private const float UpperFoot = 1.6f;
         private const float BackLanding = 7.0f;
 
+        // The café's serving counter, and the back counter behind it against the storeroom wall.
+        private const float CounterFront = 4.6f;
+        private const float CounterBack = 5.2f;
+        private const float BackCounterFront = 6.05f;
+
         // The partitions.
         private const float StoreWall = 6.6f;
         private const float RoomsWall = 4.9f;
@@ -152,6 +157,7 @@ namespace Townscape.Generation.Buildings.Interiors
             Attic(context, space, design, roof, f[3], dormer, roofWindows);
             Alarm(context, space, footprint, f, wallTop);
             Broadband(context, space, f);
+            Sites(context, space, f);
         }
 
         // ---- Ground floor -------------------------------------------------------------------
@@ -214,8 +220,8 @@ namespace Townscape.Generation.Buildings.Interiors
             var builder = context.Builder;
 
             // The serving counter across the back of the café, with the till and the cake cabinet.
-            const float counterFront = 4.6f;
-            const float counterBack = 5.2f;
+            const float counterFront = CounterFront;
+            const float counterBack = CounterBack;
             var counterLeft = 3.2f;
             var counterRight = right - 0.55f;
             space.Box(builder, counterLeft, floor, counterFront, counterRight, floor + 0.98f, counterBack, SurfaceMaterial.PaintSage);
@@ -247,7 +253,7 @@ namespace Townscape.Generation.Buildings.Interiors
             }
 
             // The back counter, against the storeroom wall: espresso machine, grinder and cups.
-            const float backFront = 6.05f;
+            const float backFront = BackCounterFront;
             const float wallFace = StoreWall;
             var backLeft = CafeLeft + 1.6f;
             space.Box(builder, backLeft, floor, backFront, right, floor + 0.92f, wallFace, SurfaceMaterial.PaintSage);
@@ -844,6 +850,65 @@ namespace Townscape.Generation.Buildings.Interiors
             space.Box(context.Builder, CafeLeft, shop.Router.Position.Y - 0.054f, routerEdge, CafeLeft + 0.012f, shop.Router.Position.Y - 0.046f, boxD, SurfaceMaterial.PaintBlue);
 
             BroadbandFittings.Fit(context, space, FlatAlarm, 900f, StripB + Thin, 1f, f[1], f[1] + 1.3f, 2.75f, 3.15f);
+        }
+
+        // ---- The ways through it ------------------------------------------------------------
+
+        // The café: in through the lobby, the keypad on its side wall, round the tables, behind
+        // the counter to the till, and through to the storeroom. The flat: in at its door to the
+        // keypad at the foot of the stairs, up to the landing, the kitchen and the living room,
+        // and on up to the bedroom and the bathroom.
+        private static void Sites(BuildContext context, UnitSpace space, float[] f)
+        {
+            var layout = TraditionalShopfront.Layout(space.Width);
+            var right = space.Width - Side;
+            var lobby = TraditionalShopfront.LobbyDepth;
+            RouteStop Stop(string site, float x, float y, float d, string name = null, string through = null) =>
+                new RouteStop(space.At(x, y, d), name == null ? null : $"{site}: {name}", through);
+
+            var shop = ShopAlarm;
+            var doorX = (layout.DoorLeft + layout.DoorRight) * 0.5f;
+            var aisle = (CounterBack + BackCounterFront) * 0.5f;
+            var inside = Stop(shop, doorX, f[0], lobby + 0.9f, "inside the door", "Shop door");
+            var behind = Stop(shop, 2.75f, f[0], aisle);
+            context.Sites.Add(new TownSite(
+                shop,
+                new[]
+                {
+                    new TownRoute(new[] { Stop(shop, doorX, f[0], -1.0f, "outside"), Stop(shop, doorX, f[0], (FrontFace + lobby) * 0.5f), inside, Stop(shop, layout.DoorLeft - 0.36f, f[0], 1.15f, "keypad") }, joinsStreet: true),
+                    new TownRoute(new[] { inside, Stop(shop, doorX - 0.65f, f[0], 3.0f, "café"), Stop(shop, 2.75f, f[0], 4.25f), behind, Stop(shop, right - 1.05f, f[0], aisle, "till") }),
+                    new TownRoute(new[] { behind, Stop(shop, CafeLeft + 0.95f, f[0], BackCounterFront + 0.1f), Stop(shop, CafeLeft + 0.95f, f[0], StoreWall + 0.55f), Stop(shop, 3.4f, f[0], 7.7f, "storeroom") }),
+                },
+                $"{shop}: outside",
+                $"{shop}: keypad",
+                new[] { $"{shop}: café", $"{shop}: storeroom" },
+                new[] { $"{shop}: till" }));
+
+            var flat = FlatAlarm;
+            var flatX = (layout.FlatDoorLeft + layout.FlatDoorRight) * 0.5f;
+            var stripA = (Side + StripA) * 0.5f;
+            var stripB = (StripA + StripB) * 0.5f;
+            var rooms = StripB + Thin + 1.0f;
+            var between = (Between.From + Between.To) * 0.5f;
+            var keypad = Stop(flat, flatX, f[0], 0.85f, "keypad", "Flat door");
+            var landing = Stop(flat, 1.3f, f[1], (Turn + BackLanding) * 0.5f, "landing");
+            var kitchen = Stop(flat, rooms + 0.2f, f[1], (Turn + BackLanding) * 0.5f, "kitchen");
+            var upstairs = Stop(flat, stripB, f[2], (FrontFace + UpperFoot) * 0.5f + 0.1f);
+            var bedroom = Stop(flat, rooms + 0.05f, f[2], 1.6f, "bedroom");
+            context.Sites.Add(new TownSite(
+                flat,
+                new[]
+                {
+                    new TownRoute(new[] { Stop(flat, flatX, f[0], -1.0f, "outside"), keypad }, joinsStreet: true),
+                    new TownRoute(new[] { keypad, Stop(flat, stripA, f[0], FirstFoot), Stop(flat, stripA, f[1], Turn), landing, kitchen }),
+                    new TownRoute(new[] { kitchen, Stop(flat, between, f[1], RoomsWall + 0.7f), Stop(flat, between + 0.1f, f[1], 3.4f, "living room") }),
+                    new TownRoute(new[] { landing, Stop(flat, stripB, f[1], Turn), Stop(flat, stripB, f[2], UpperFoot), upstairs, bedroom }),
+                    new TownRoute(new[] { bedroom, Stop(flat, between, f[2], RoomsWall - 0.6f), Stop(flat, between + 0.5f, f[2], 6.4f, "bathroom") }),
+                },
+                $"{flat}: outside",
+                $"{flat}: keypad",
+                new[] { $"{flat}: landing", $"{flat}: kitchen", $"{flat}: living room", $"{flat}: bedroom", $"{flat}: bathroom" },
+                new[] { $"{flat}: living room", $"{flat}: bedroom" }));
         }
 
         // ---- Stairs and floors --------------------------------------------------------------
