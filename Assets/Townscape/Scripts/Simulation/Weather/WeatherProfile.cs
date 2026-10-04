@@ -5,11 +5,12 @@ namespace Townscape.Simulation.Weather
     /// <summary>The user's weather settings, each from 0 to 1.</summary>
     public readonly struct WeatherSettings
     {
-        public WeatherSettings(float rain, float lightning, float wind)
+        public WeatherSettings(float rain, float lightning, float wind, float snow = 0f)
         {
             Rain = rain;
             Lightning = lightning;
             Wind = wind;
+            Snow = snow;
         }
 
         public float Rain { get; }
@@ -17,21 +18,27 @@ namespace Townscape.Simulation.Weather
         public float Lightning { get; }
 
         public float Wind { get; }
+
+        public float Snow { get; }
     }
 
     /// <summary>What the weather is doing at one moment.</summary>
     public readonly struct WeatherConditions
     {
-        public WeatherConditions(float rain, Vector2 wind, float strikesPerMinute, float mist)
+        public WeatherConditions(float rain, Vector2 wind, float strikesPerMinute, float mist, float snow = 0f)
         {
             Rain = rain;
             Wind = wind;
             StrikesPerMinute = strikesPerMinute;
             Mist = mist;
+            Snow = snow;
         }
 
         /// <summary>How hard it is raining, from 0 (dry) to 1 (a downpour).</summary>
         public float Rain { get; }
+
+        /// <summary>How hard it is snowing, from 0 (not at all) to 1 (a blizzard's worth of flakes).</summary>
+        public float Snow { get; }
 
         /// <summary>Wind velocity in metres per second: x east, y north, pointing where the wind blows to.</summary>
         public Vector2 Wind { get; }

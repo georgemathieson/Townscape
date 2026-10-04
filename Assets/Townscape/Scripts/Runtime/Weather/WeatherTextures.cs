@@ -30,6 +30,13 @@ namespace Townscape.Runtime.Weather
                 return Mathf.Clamp01(1f - (r * r));
             });
 
+            // A snowflake: a bright core that softens to nothing, so flakes read as soft dots.
+            Flake = Create("Flake", 16, 16, (u, v) =>
+            {
+                var r = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f)) * 2f;
+                return Mathf.Pow(Mathf.Clamp01(1f - r), 1.5f);
+            });
+
             var noise = new GradientNoise(23);
             Puff = Create("Puff", 64, 64, (u, v) =>
             {
@@ -46,6 +53,8 @@ namespace Townscape.Runtime.Weather
         public Texture2D RainStreak { get; }
 
         public Texture2D Droplet { get; }
+
+        public Texture2D Flake { get; }
 
         public Texture2D Puff { get; }
 

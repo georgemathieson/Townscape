@@ -1,5 +1,5 @@
 // Renders preview images of the generated town with three.js in headless Chromium.
-//   node render.mjs <dir-with-town.gltf> [view:preset ...]
+//   node render.mjs <dir-with-town.gltf> [view:preset[:snow] ...]
 // Views and lighting presets are defined in page.html.
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -41,9 +41,9 @@ await page.waitForFunction(() => window.previewReady === true, null, { timeout: 
 
 await mkdir(join(outDir, 'renders'), { recursive: true });
 for (const shot of shots) {
-  const [view, preset] = shot.split(':');
-  const dataUrl = await page.evaluate(([v, p]) => window.renderView(v, p), [view, preset ?? 'dusk']);
-  const file = join(outDir, 'renders', `${view}-${preset ?? 'dusk'}.png`);
+  const [view, preset, weather] = shot.split(':');
+  const dataUrl = await page.evaluate(([v, p, w]) => window.renderView(v, p, w), [view, preset ?? 'dusk', weather ?? 'storm']);
+  const file = join(outDir, 'renders', `${view}-${preset ?? 'dusk'}${weather ? `-${weather}` : ''}.png`);
   await writeFile(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
   console.log(`wrote ${file}`);
 }

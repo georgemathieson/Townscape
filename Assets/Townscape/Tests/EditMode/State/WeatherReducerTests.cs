@@ -13,6 +13,7 @@ namespace Townscape.Tests.State
             var storm = WeatherState.DefaultStorm;
 
             Assert.That(WeatherReducer.Reduce(storm, new SetRainIntensity(input)).RainIntensity, Is.EqualTo(expected));
+            Assert.That(WeatherReducer.Reduce(storm, new SetSnowIntensity(input)).SnowIntensity, Is.EqualTo(expected));
             Assert.That(WeatherReducer.Reduce(storm, new SetLightningFrequency(input)).LightningFrequency, Is.EqualTo(expected));
             Assert.That(WeatherReducer.Reduce(storm, new SetWindStrength(input)).WindStrength, Is.EqualTo(expected));
         }
@@ -26,6 +27,29 @@ namespace Townscape.Tests.State
             Assert.That(WeatherState.DefaultStorm.StrikeRequests, Is.EqualTo(0));
             Assert.That(twice.StrikeRequests, Is.EqualTo(2));
             Assert.That(twice.RainIntensity, Is.EqualTo(WeatherState.DefaultStorm.RainIntensity));
+        }
+
+        [Test]
+        public void SwitchingWeather_KeepsTheRainAndTheSnowAsTheyWereSet()
+        {
+            var wet = WeatherReducer.Reduce(WeatherState.DefaultStorm, new SetRainIntensity(0.3f));
+            var snowy = WeatherReducer.Reduce(WeatherReducer.Reduce(wet, new SetWeatherKind(WeatherKind.Snow)), new SetSnowIntensity(0.9f));
+            var back = WeatherReducer.Reduce(snowy, new SetWeatherKind(WeatherKind.Storm));
+
+            Assert.That(snowy.Kind, Is.EqualTo(WeatherKind.Snow));
+            Assert.That(back.RainIntensity, Is.EqualTo(0.3f));
+            Assert.That(back.SnowIntensity, Is.EqualTo(0.9f));
+            Assert.That(WeatherState.DefaultStorm.SnowIntensity, Is.EqualTo(WeatherState.DefaultSnow));
+        }
+
+        [Test]
+        public void WeatherKinds_CycleRound_WithNamesForThePanel()
+        {
+            Assert.That(WeatherKinds.Next(WeatherKind.Storm), Is.EqualTo(WeatherKind.Snow));
+            Assert.That(WeatherKinds.Next(WeatherKind.Snow), Is.EqualTo(WeatherKind.Storm));
+            Assert.That(WeatherKinds.All, Is.EquivalentTo(System.Enum.GetValues(typeof(WeatherKind))));
+            Assert.That(WeatherKinds.Title(WeatherKind.Snow), Is.EqualTo("Snowstorm"));
+            Assert.That(WeatherKinds.Title(WeatherKind.Storm), Is.EqualTo("Thunderstorm"));
         }
 
         [TestCase(0.25f, 0.5f)]

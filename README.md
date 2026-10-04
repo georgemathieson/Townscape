@@ -2,11 +2,11 @@
 
 ![The high street at dusk in the rain: wet tarmac, glowing shop windows and lit homes above](docs/images/gallery/high-street-dusk.jpg)
 
-A cosy, small, low poly Lake District village in a never-ending thunderstorm, built in Unity 6 (URP)
-with C#. Everything you see is generated from code: the ground, roads and markings, the river and
-the stone humpback bridge, the terraces and shops, street furniture and trees, the fells around the
-village, the lamps and windows that light it after dark, the storm (rain, lightning, wind and
-mist), and even its sounds.
+A cosy, small, low poly Lake District village in a never-ending thunderstorm (or, at the press of a
+key, a snowstorm), built in Unity 6 (URP) with C#. Everything you see is generated from code: the
+ground, roads and markings, the river and the stone humpback bridge, the terraces and shops, street
+furniture and trees, the fells around the village, the lamps and windows that light it after dark,
+the weather (rain, snow, lightning, wind and mist), and even its sounds.
 
 - [Requirements](docs/REQUIREMENTS.md): what we're building, and the milestone plan
 - [Architecture](docs/ARCHITECTURE.md): how the code is organised and why
@@ -29,6 +29,13 @@ mist), and even its sounds.
 | ![Wet tarmac and puddles reflecting the lamps at dusk](docs/images/gallery/wet-street-dusk.jpg) | ![Chimney smoke streaming downwind over the rooftops](docs/images/gallery/chimney-smoke-dusk.jpg) |
 | Wet tarmac at dusk, with puddles in the gutters | Smoke from the chimneys streams away downwind |
 
+### The snowstorm
+
+| | |
+|---|---|
+| ![Snow lying on the roofs and fields of the village, falling thickly](docs/images/gallery/snowstorm-village-day.jpg) | ![The snowy village at dusk with the lamps and windows lit](docs/images/gallery/snowstorm-village-dusk.jpg) |
+| Snow lying deep on the roofs and the fields | The snowy village as the lamps come on |
+
 ### The village
 
 | | |
@@ -39,7 +46,7 @@ mist), and even its sounds.
 | Fell View Garage at dusk, with bunting from the canopy | String lights in the shop window after dark |
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
-outside Unity. In Unity the rain and smoke move, the water ripples and the lightning flickers.*
+outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*
 
 ## Getting started (macOS or Windows)
 
@@ -64,8 +71,8 @@ list) for macOS or Windows.
 ## Controls
 
 The panel in the top-left corner has everything: the time of day (presets, a time slider, and a
-clock you can run at any speed), the storm (rain, lightning and wind sliders, and a button for a
-lightning strike) and the volume. Your settings are remembered between sessions; **Reset all**
+clock you can run at any speed), the weather (a thunderstorm or a snowstorm; rain or snow, lightning
+and wind sliders; and a button for a lightning strike) and the volume. Your settings are remembered between sessions; **Reset all**
 puts them back. Everything also has a key:
 
 | Input | Action |
@@ -78,7 +85,8 @@ puts them back. Everything also has a key:
 | 1 / 2 / 3 / 4 | Dawn / Day / Dusk / Night |
 | [ / ] | An hour earlier / later |
 | T | Start or stop the clock |
-| R | More rain (cycles back to light rain) |
+| N | Switch between the thunderstorm and the snowstorm |
+| R | More rain, or more snow in the snowstorm (cycles back to light) |
 | L | More lightning (cycles back to none) |
 | G | More wind (cycles back to calm) |
 | B | A lightning strike now |

@@ -27,7 +27,8 @@ namespace Townscape.Runtime.UI
             "<b>Right mouse</b> look   <b>WASD</b> move   <b>Q/E</b> down/up\n" +
             "<b>Shift</b> faster   <b>Scroll</b> speed\n" +
             "<b>1–4</b> dawn, day, dusk, night   <b>[ ]</b> an hour\n" +
-            "<b>T</b> run the clock   <b>R L G</b> rain, lightning, wind\n" +
+            "<b>T</b> run the clock   <b>N</b> thunderstorm or snowstorm\n" +
+            "<b>R L G</b> rain or snow, lightning, wind\n" +
             "<b>B</b> strike   <b>M</b> mute   <b>F</b> frame rate\n" +
             "<b>C</b> Fellside Coffee   <b>H</b> hide this panel\n" +
             "<b>V</b> walk or fly   <b>Space</b> jump   <b>E</b> open";
@@ -161,12 +162,34 @@ namespace Townscape.Runtime.UI
 
         private void Weather(WeatherState weather)
         {
-            GUILayout.Label("STORM", _skin.Heading);
-
-            var rain = Slider("Rain", weather.RainIntensity, 0f, 1f, Percent(weather.RainIntensity));
-            if (Changed(rain, weather.RainIntensity))
+            GUILayout.Label("WEATHER", _skin.Heading);
+            GUILayout.BeginHorizontal();
+            foreach (var kind in WeatherKinds.All)
             {
-                _store.Dispatch(new SetRainIntensity(rain));
+                var selected = weather.Kind == kind;
+                if (GUILayout.Toggle(selected, WeatherKinds.Title(kind), _skin.Button) && !selected)
+                {
+                    _store.Dispatch(new SetWeatherKind(kind));
+                }
+            }
+
+            GUILayout.EndHorizontal();
+
+            if (weather.Kind == WeatherKind.Snow)
+            {
+                var snow = Slider("Snow", weather.SnowIntensity, 0f, 1f, Percent(weather.SnowIntensity));
+                if (Changed(snow, weather.SnowIntensity))
+                {
+                    _store.Dispatch(new SetSnowIntensity(snow));
+                }
+            }
+            else
+            {
+                var rain = Slider("Rain", weather.RainIntensity, 0f, 1f, Percent(weather.RainIntensity));
+                if (Changed(rain, weather.RainIntensity))
+                {
+                    _store.Dispatch(new SetRainIntensity(rain));
+                }
             }
 
             var lightning = Slider("Lightning", weather.LightningFrequency, 0f, 1f, Percent(weather.LightningFrequency));

@@ -34,8 +34,8 @@ order.
 | In the store | Owned by a system, recalculated every frame |
 |---|---|
 | Target hour, preset, auto-cycle on/off, cycle speed | The hour currently shown while blending |
-| Rain intensity, lightning frequency, wind strength | Particle rates, gusts, the flash brightness |
-| Weather profile | Lightning and thunder timing, how wet things are |
+| Rain and snow intensity, lightning frequency, wind strength | Particle rates, gusts, the flash brightness |
+| Weather profile (thunderstorm or snowstorm) | Lightning and thunder timing, how wet things are, how much snow is lying |
 | Requests for a lightning strike (a count that only goes up) | Which windows and lamps are lit, the beacons' flash |
 | Volume and mute | How loud the rain, wind and river are right now |
 
@@ -70,8 +70,8 @@ data.
 | `IDressingRule` | street lamps, Belisha beacons, river railings, placed props, dry-stone walls, churchyard, trees, ground cover, flower beds, puddles | hedges, parked cars |
 | `IProp` | lamp post, K6 phone box, pillar box, bench, bus stop, Belisha beacon, memorial, gravestone, tree (four species), flower clump | anything placed |
 | `ITownscapeInput` | Input System, legacy Input Manager | gamepad |
-| `IWeatherProfile` | thunderstorm | clear skies, fog, snow |
-| `IWeatherEffect` | rain and splashes, lightning, wet surfaces, water, mist, chimney smoke, wind sway | hail, a rainbow |
+| `IWeatherProfile` | thunderstorm, snowstorm | clear skies, fog |
+| `IWeatherEffect` | rain and splashes, snow, lightning, wet and snowy surfaces, water, mist and blowing snow, chimney smoke, wind sway | hail, a rainbow |
 
 Data: `SurfacePalette` (colours), `LightingProfile` (time-of-day keyframes), `NightLights` (glow
 colours and light brightness), `GenerationSettings` and `VillageShops` (each shop's name, paint,
@@ -221,18 +221,21 @@ Unity doesn't, so the preview multiplies light intensities by π. Both use ACES 
 bleaches bright glows towards white, so glow colours are set more saturated than they should look:
 the street lamps' glass comes out a creamy warm white and the beacons amber-orange.
 
-## The storm
+## The weather
 
 Like the lights, the rules are engine-free (`Simulation/Weather`) and tested, and Unity only
 applies them. Everything is driven from code on stock URP materials, apart from one small shader.
 
 - **Profiles.** An `IWeatherProfile` turns the user's settings and the clock into
-  `WeatherConditions`: how hard it is raining, the wind, strikes a minute and mist. The
+  `WeatherConditions`: how hard it is raining or snowing, the wind, strikes a minute and mist. The
   `ThunderstormProfile` makes rain come in surges, the south-westerly wind gust and veer, and storm
-  cells drift through so lightning comes in bursts.
-- **`StormSystem`** (Runtime) samples the profile each frame, moves the wetness on, runs the
-  lightning and ticks every `IWeatherEffect` with a `WeatherFrame`. It also raises `Struck` and
-  `ThunderArrived` events for the audio milestone.
+  cells drift through so lightning comes in bursts. The `SnowstormProfile` brings snow in squalls
+  on a gusty north-easterly, with the odd strike of thundersnow. `WeatherState.Kind` picks the
+  profile; the store keeps the rain and snow settings apart, so switching keeps both as they were.
+- **`StormSystem`** (Runtime) samples the profile each frame, moves the wetness and the lying snow
+  on, runs the lightning and ticks every `IWeatherEffect` with a `WeatherFrame`. It also raises
+  `Struck` and `ThunderArrived` events for the audio. Effects only see the conditions, so the rain
+  stops and the snow starts on their own when the profile changes.
 - **Lightning.** `LightningStorm` schedules strikes at random at the current rate. Each is a few
   return strokes a fraction of a second apart, which makes the flicker. Its thunder arrives
   distance ÷ 343 m/s later, louder and sharper when close. `LightningBolt` draws the jagged channel
@@ -245,13 +248,27 @@ applies them. Everything is driven from code on stock URP materials, apart from 
 - **Rain** is a particle system in a box that follows the camera, slanted by the wind.
   `RainCatchMap` is a height map of whatever rain hits first (roofs, awnings, the bridge, the road,
   the river), rasterised once from the generated meshes; drops end there and splash.
-- **Wet surfaces.** `Wetness` darkens and glosses each kind of surface: tarmac and flagstones most,
-  render and paint less, glass not at all. Surfaces soak up in about half a minute of heavy rain.
+- **Snow** (`SnowEffect`) is soft flakes born all through a box of air round the camera rather
+  than at its top, because the wind carries a flake much further than a raindrop. `SnowFall` sets
+  their slow fall, their drift and flutter, and how many fill the air; they end on the same
+  `RainCatchMap` as the rain, so none fall indoors.
+- **Wet and snowy surfaces.** `Wetness` darkens and glosses each kind of surface: tarmac and
+  flagstones most, render and paint less, glass not at all. Surfaces soak up in about half a minute
+  of heavy rain. `SnowCover` whitens them as snow lies: each kind over its own part of the build-up,
+  roofs and grass first, pavements next and the road last, as a grey slush. Walls, glass and water
+  take none. Snow settles in a minute or two, thaws over several and washes away in rain.
+  `SurfaceWeather` puts the two together (snow on top of wet) for `WeatheredSurfacesEffect`. A whole
+  material changes at once, so snow can't sit on top of a wall whose sides share its material.
+- **Fog.** `WeatherFog` thickens the fog a little in mist and a lot in heavy, wind-driven snow, and
+  pales it towards grey-white at the time of day's brightness. Lying snow also lifts the ambient
+  light from below. Both reach `TimeOfDayLighting` through `WeatherLighting`.
 - **Water.** `RippleField` makes looping, tileable normal maps of raindrop rings (and a swell for
   open water). They play as flipbooks on puddles, the lake and the river, and the river's texture
   slides downstream.
-- **Mist** is big soft particles near the ground plus thicker fog. **Chimney smoke** comes from the
-  chimneys with a fire lit (more in the evening): it rises, slows as it cools and bends downwind.
+- **Mist** is big soft particles near the ground plus thicker fog; in the snowstorm the same puffs
+  are whiter and driven faster, as blowing snow. **Chimney smoke** comes from the chimneys with a
+  fire lit (more in the evening, and more again with snow lying): it rises, slows as it cools and
+  bends downwind.
 - **Wind sway** moves plant vertices on the CPU, only near the camera. `WindSway.Motion` is worked
   out once per 2.5 m patch (gusts roll across the land as waves, so neighbours move together), and
   each vertex scales it by its own bend.
@@ -269,14 +286,16 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   is on within reach shows its prompt in `WalkingHud` and is used with E or a click.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
-  Like `TownscapeShortcuts`, it only dispatches actions. The time slider dispatches
+  Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the
+  thunderstorm and the snowstorm and shows the rain or the snow slider to match. The time slider dispatches
   `SetTargetHour(hour, Scrub: true)`, which sets a very short blend so the clock follows the hand.
 - **`PerformanceOverlay`** sits in the top-right corner, apart from the panel so it stays up when
   the panel is hidden. It shows the frame rate and the slowest recent frame (`FrameTimes`), and in
   its detailed view the GPU time where the platform reports it, how long the town took to build,
   each storm effect's and the lights' cost per frame (timed and smoothed by `StormSystem` and
   `TownLights`), and the render counters from Unity's `ProfilerRecorder`.
-- **`TownAudio`** plays rain and wind loops, the river from the nearest point on its course, and
+- **`TownAudio`** plays rain and wind loops (the rain falls silent in the snowstorm, as its volume
+  follows the conditions), the river from the nearest point on its course, and
   thunder from a pool of voices placed towards each strike when `StormSystem.ThunderArrived` fires.
   Volumes come from `AudioMix`. Any clip slot left empty on the bootstrap is filled by
   `ProceduralSounds` on a background thread, so play mode never stalls: rain as a soft patter of
@@ -321,7 +340,7 @@ design, the rules and the balance numbers. In outline:
 | Tool | What it does |
 |---|---|
 | `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State, Generation, Simulation and CoffeeShop) under .NET 8 |
-| `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs |
+| `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs, and the EditMode tests against NUnit 3.5, the older NUnit that Unity's Test Framework ships |
 | `tools/preview` | Runs the real generator, exports glTF, the night lights and the storm, and renders PNGs with three.js in headless Chromium |
 | `dotnet run -c Release --project tools/coffee-sim` | Plays 200 seeded games of Fellside Coffee with simple players and reports profit, waste, misses, the queue and what upgrades earn |
 | `python3 tools/generate_meta.py` | Creates `.meta` files with GUIDs derived from the path, so references can be written by hand |

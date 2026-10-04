@@ -14,6 +14,7 @@ namespace Townscape.Runtime.Weather
             float deltaTime,
             float hour,
             float wetness,
+            float snowCover,
             float flash,
             Color ambient,
             Transform camera,
@@ -24,6 +25,7 @@ namespace Townscape.Runtime.Weather
             DeltaTime = deltaTime;
             Hour = hour;
             Wetness = wetness;
+            SnowCover = snowCover;
             Flash = flash;
             Ambient = ambient;
             Camera = camera;
@@ -41,6 +43,9 @@ namespace Townscape.Runtime.Weather
 
         /// <summary>How wet surfaces are, from 0 to 1. Lags behind the rain.</summary>
         public float Wetness { get; }
+
+        /// <summary>How much snow is lying, from 0 (none) to 1 (deep). Builds and thaws slowly.</summary>
+        public float SnowCover { get; }
 
         /// <summary>Lightning brightness right now, from 0 to 1.</summary>
         public float Flash { get; }
@@ -62,8 +67,8 @@ namespace Townscape.Runtime.Weather
     }
 
     /// <summary>
-    /// Strategy for one part of the storm: rain, lightning, wet surfaces, water, mist, smoke or
-    /// wind. The storm system ticks each in turn; adding an effect never touches the others.
+    /// Strategy for one part of the weather: rain, snow, lightning, wet and snowy surfaces, water,
+    /// mist, smoke or wind. The storm system ticks each in turn; adding an effect never touches the others.
     /// </summary>
     public interface IWeatherEffect : IDisposable
     {
