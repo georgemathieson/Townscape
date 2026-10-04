@@ -7,7 +7,8 @@ namespace Townscape.Runtime.Weather
 {
     /// <summary>
     /// Low mist: big, faint, soft-edged puffs drifting with the wind a few metres above the
-    /// ground round the camera. Thicker fog for the whole scene comes from <c>TimeOfDayLighting</c>.
+    /// ground round the camera. In a snowstorm the same puffs are blowing snow: whiter, a little
+    /// thicker, and driven faster. Thicker fog for the whole scene comes from <c>TimeOfDayLighting</c>.
     /// </summary>
     public sealed class MistEffect : IWeatherEffect
     {
@@ -33,6 +34,7 @@ namespace Townscape.Runtime.Weather
         public void Tick(in WeatherFrame frame)
         {
             var mist = frame.Conditions.Mist;
+            var snow = frame.Conditions.Snow;
             var wanted = Mathf.RoundToInt(Mathf.Lerp(30f, MaxPuffs, mist));
             var camera = frame.CameraPosition;
             var puff = new ParticleSystem.EmitParams();
@@ -44,16 +46,16 @@ namespace Townscape.Runtime.Weather
                 var distance = Radius * Mathf.Sqrt((float)_random.NextDouble());
                 var flat = new Vector2(camera.x + (Mathf.Cos(angle) * distance), camera.z + (Mathf.Sin(angle) * distance));
                 puff.position = new Vector3(flat.x, _groundHeight(flat) + 0.5f + (2.5f * (float)_random.NextDouble()), flat.y);
-                puff.velocity = (frame.Wind * 0.25f) + (Vector3.up * 0.05f);
+                puff.velocity = (frame.Wind * (0.25f + (0.45f * snow))) + (Vector3.up * 0.05f);
                 puff.startSize = 12f + (12f * (float)_random.NextDouble());
                 puff.startLifetime = 16f + (8f * (float)_random.NextDouble());
                 puff.rotation = (float)_random.NextDouble() * 360f;
                 _mist.Emit(puff, 1);
             }
 
-            // Mist glows with whatever light there is, and flares with lightning.
-            var tint = (frame.Ambient * 1.6f) + new Color(0.05f, 0.05f, 0.06f);
-            tint.a = 0.05f + (0.09f * mist);
+            // Mist glows with whatever light there is, and flares with lightning; blowing snow is whiter.
+            var tint = (frame.Ambient * (1.6f + (1.2f * snow))) + new Color(0.05f, 0.05f, 0.06f);
+            tint.a = 0.05f + (0.09f * mist) + (0.04f * snow);
             EffectMaterials.SetColour(_material, tint);
         }
 

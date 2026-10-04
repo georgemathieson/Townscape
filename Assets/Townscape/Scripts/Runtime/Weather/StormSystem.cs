@@ -12,10 +12,10 @@ using UnityEngine;
 namespace Townscape.Runtime.Weather
 {
     /// <summary>
-    /// The storm. Reads the weather settings from the store, asks the weather profile what the
-    /// weather is doing, runs the lightning, and ticks every effect with the result. Like the
-    /// clock, its per-frame values (gusts, flashes, how wet things are) stay here and never go
-    /// through the store.
+    /// The weather. Reads the weather settings from the store, asks the weather profile (the
+    /// thunderstorm or the snowstorm) what the weather is doing, runs the lightning, and ticks every
+    /// effect with the result. Like the clock, its per-frame values (gusts, flashes, how wet things
+    /// are, how much snow is lying) stay here and never go through the store.
     /// </summary>
     /// <remarks>
     /// Runs before other scripts so the lighting sees this frame's flash.
@@ -52,6 +52,9 @@ namespace Townscape.Runtime.Weather
         /// <summary>How wet the town is, from 0 to 1.</summary>
         public float Wetness { get; private set; }
 
+        /// <summary>How much snow is lying on the town, from 0 to 1.</summary>
+        public float SnowCover { get; private set; }
+
         public string ProfileName => _profile.Name;
 
         /// <summary>How long each effect takes a frame, smoothed, slowest first: for the performance readout.</summary>
@@ -87,9 +90,11 @@ namespace Townscape.Runtime.Weather
                 return Mathf.Max(inCore ? ground.HeightAt(flat) : terrain.FarHeightAt(flat), waterLevel);
             }
 
-            _effects.Add(new WetSurfacesEffect(materials));
+            var catchMap = RainCatchMap.Build(town, core + 60f, 0.5f);
+            _effects.Add(new WeatheredSurfacesEffect(materials));
             _effects.Add(new WaterEffect(materials, _textures));
-            _effects.Add(new RainEffect(transform, hideFlags, _textures, RainCatchMap.Build(town, core + 60f, 0.5f)));
+            _effects.Add(new RainEffect(transform, hideFlags, _textures, catchMap));
+            _effects.Add(new SnowEffect(transform, hideFlags, _textures, catchMap));
             _effects.Add(new LightningEffect(transform, hideFlags, GroundHeight));
             _effects.Add(new MistEffect(transform, hideFlags, _textures, GroundHeight));
             _effects.Add(new ChimneySmokeEffect(transform, hideFlags, _textures, town.Anchors));
@@ -101,13 +106,15 @@ namespace Townscape.Runtime.Weather
 
             _subscription = store.Subscribe(state => state.Weather, OnWeatherChanged);
 
-            // It has been raining for a while before the scene opens.
-            Wetness = Simulation.Weather.Wetness.Step(0f, _settings.Rain, 1000f);
+            // The weather has been at it for a while before the scene opens: wet from the rain, or under snow.
+            var opening = _profile.Sample(_settings, 0f);
+            Wetness = Simulation.Weather.Wetness.Step(0f, opening.Rain, 1000f);
+            SnowCover = Simulation.Weather.SnowCover.Step(0f, opening.Snow, opening.Rain, 1000f);
         }
 
         private void OnWeatherChanged(WeatherState weather)
         {
-            _settings = new WeatherSettings(weather.RainIntensity, weather.LightningFrequency, weather.WindStrength);
+            _settings = new WeatherSettings(weather.RainIntensity, weather.LightningFrequency, weather.WindStrength, weather.SnowIntensity);
             _profile = ProfileFor(weather.Kind);
 
             // The first call only records the count; later increases are requests to strike.
@@ -123,6 +130,8 @@ namespace Townscape.Runtime.Weather
         {
             switch (kind)
             {
+                case WeatherKind.Snow:
+                    return _profile as SnowstormProfile ?? new SnowstormProfile();
                 case WeatherKind.Storm:
                 default:
                     return _profile as ThunderstormProfile ?? new ThunderstormProfile();
@@ -140,6 +149,7 @@ namespace Townscape.Runtime.Weather
             var deltaTime = Time.deltaTime;
             Conditions = _profile.Sample(_settings, time);
             Wetness = Simulation.Weather.Wetness.Step(Wetness, Conditions.Rain, deltaTime);
+            SnowCover = Simulation.Weather.SnowCover.Step(SnowCover, Conditions.Snow, Conditions.Rain, deltaTime);
 
             var position = _camera.position;
             var forward = _camera.forward;
@@ -155,11 +165,12 @@ namespace Townscape.Runtime.Weather
 
             _storm.Step(time, deltaTime, Conditions.StrikesPerMinute, listener, facing, _newStrikes, _thunder);
             var flash = _storm.Flash(time);
-            _lighting.Weather = new WeatherLighting(flash, 0.9f + (0.3f * Conditions.Mist));
+            var conditions = Conditions;
+            _lighting.Weather = new WeatherLighting(flash, WeatherFog.Scale(conditions), WeatherFog.Whiteness(conditions), SnowCover);
 
             var key = _lighting.Current;
             var ambient = key.AmbientEquator + (key.LightColour * (key.LightIntensity * 0.2f)) + (WeatherLighting.FlashColour * (flash * 1.2f));
-            var frame = new WeatherFrame(Conditions, time, deltaTime, _lighting.CurrentHour, Wetness, flash, ambient, _camera, _newStrikes);
+            var frame = new WeatherFrame(Conditions, time, deltaTime, _lighting.CurrentHour, Wetness, SnowCover, flash, ambient, _camera, _newStrikes);
             for (var i = 0; i < _effects.Count; i++)
             {
                 var started = Stopwatch.GetTimestamp();

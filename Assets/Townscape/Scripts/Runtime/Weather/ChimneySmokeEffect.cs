@@ -115,7 +115,7 @@ namespace Townscape.Runtime.Weather
                 var top = _chimneys[i].Position;
                 var dx = top.X - camera.x;
                 var dz = top.Z - camera.z;
-                if ((dx * dx) + (dz * dz) < Range * Range && ChimneySmoke.IsBurning(_chimneys[i].Seed, frame.Hour))
+                if ((dx * dx) + (dz * dz) < Range * Range && ChimneySmoke.IsBurning(_chimneys[i].Seed, frame.Hour, frame.SnowCover))
                 {
                     _burning.Add(i);
                 }

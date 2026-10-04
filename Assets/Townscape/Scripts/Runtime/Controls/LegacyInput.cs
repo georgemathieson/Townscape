@@ -41,6 +41,7 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.ToggleMute: return Input.GetKeyDown(KeyCode.M);
                 case Shortcut.CyclePerformance: return Input.GetKeyDown(KeyCode.F);
                 case Shortcut.ToggleCoffeeShop: return Input.GetKeyDown(KeyCode.C);
+                case Shortcut.CycleWeather: return Input.GetKeyDown(KeyCode.N);
                 default: return false;
             }
         }
