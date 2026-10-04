@@ -529,11 +529,11 @@ namespace Townscape.Runtime.Security
 
             Text(198f, 166f, "MCU", _small);
             var blink = Mathf.Repeat(Time.unscaledTime, 1f) < 0.5f;
-            Light(92f, 236f, "PWR", powered ? new Color(0.2f, 0.95f, 0.3f) : Color.gray * 0.4f);
-            Light(132f, 236f, "FLT", powered && _alarm.Faults != AlarmFaults.None ? new Color(1f, 0.65f, 0.1f) : Color.gray * 0.4f);
-            Light(172f, 236f, "NET", powered && _alarm.EthernetConnected && blink ? new Color(0.3f, 0.6f, 1f) : Color.gray * 0.4f);
-            Box(318f, 86f, 26f, 14f, black);
-            Text(310f, 100f, _alarm.LidOpen ? "tamper: open" : "tamper", _tinyLight);
+            Light(130f, 244f, "PWR", powered ? new Color(0.2f, 0.95f, 0.3f) : Color.gray * 0.4f);
+            Light(165f, 244f, "FLT", powered && _alarm.Faults != AlarmFaults.None ? new Color(1f, 0.65f, 0.1f) : Color.gray * 0.4f);
+            Light(200f, 244f, "NET", powered && _alarm.EthernetConnected && blink ? new Color(0.3f, 0.6f, 1f) : Color.gray * 0.4f);
+            Box(300f, 112f, 26f, 14f, black);
+            Text(292f, 127f, _alarm.LidOpen ? "tamper: open" : "tamper", _tinyLight);
 
             // A terminal and wire for each zone, in from the top; a cut wire hangs short.
             var zones = _spec.Zones.Count;
@@ -574,9 +574,9 @@ namespace Townscape.Runtime.Security
             }
 
             Wire(yellow, 3f, new Vector2(0f, 186f), new Vector2(px + 4f, 186f));
-            Box(100f, 214f, 34f, 12f, _alarm.FuseBlown ? new Color(0.2f, 0.18f, 0.16f) : new Color(0.85f, 0.88f, 0.9f));
-            Box(102f, 219f, 30f, 2f, _alarm.FuseBlown ? black : new Color(0.6f, 0.6f, 0.6f));
-            Text(98f, 228f, _alarm.FuseBlown ? "F1 BLOWN" : "F1 bell", _tinyLight);
+            Box(100f, 208f, 34f, 12f, _alarm.FuseBlown ? new Color(0.2f, 0.18f, 0.16f) : new Color(0.85f, 0.88f, 0.9f));
+            Box(102f, 213f, 30f, 2f, _alarm.FuseBlown ? black : new Color(0.6f, 0.6f, 0.6f));
+            Text(98f, 221f, _alarm.FuseBlown ? "F1 BLOWN" : "F1 bell", _tinyLight);
 
             // The network: a blue cable from the board's socket out of the right side.
             Box(px + pw - 16f, 150f, 24f, 22f, new Color(0.75f, 0.75f, 0.78f));
@@ -591,7 +591,7 @@ namespace Townscape.Runtime.Security
                 Wire(network, 5f, new Vector2(px + pw + 40f, 161f), new Vector2(r.width, 161f));
             }
 
-            Text(px + pw + 8f, 170f, "to the internet");
+            Text(px + pw + 10f, 170f, "internet");
 
             // The mains: a supply block, its leads to the board, and its cable out of the bottom.
             Box(20f, 330f, 110f, 70f, new Color(0.55f, 0.56f, 0.58f));
