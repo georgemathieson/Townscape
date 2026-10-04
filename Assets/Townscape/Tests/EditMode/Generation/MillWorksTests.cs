@@ -10,6 +10,7 @@ using Townscape.Generation.Buildings.Parts;
 using Townscape.Generation.Buildings.Planning;
 using Townscape.Generation.Buildings.Styles;
 using Townscape.Generation.Geometry;
+using Townscape.Simulation.Security;
 using Townscape.Simulation.Walking;
 
 namespace Townscape.Tests.Generation
@@ -182,7 +183,19 @@ namespace Townscape.Tests.Generation
             var alarm = GeneratedVillage.Town.Alarms.Single(a => a.Name == MillWorks.Name);
             var door = GeneratedVillage.Town.Doors.Single(d => d.Name == MillWorks.DoorName);
 
-            Assert.That(alarm.Zones.Count(z => z.Kind == AlarmZoneKind.Motion), Is.EqualTo(5));
+            Assert.That(alarm.Zones.Where(z => z.Kind == AlarmZoneKind.Motion).Select(z => z.Name),
+                Is.EqualTo(new[] { "Office sensor", "Stairs sensor", "ARC sensor", "Meeting room sensor" }), "one sensor in each room");
+
+            // The office's one sensor sees right across the ground floor: the door, reception and the desks.
+            var space = new UnitSpace(Mill.Footprint);
+            var office = alarm.Zones.Single(z => z.Name == "Office sensor");
+            var floor = MillWorks.Floors()[0];
+            foreach (var (x, d) in new[] { (6f, 0.6f), (7.75f, 2.75f), (1.85f, 3.4f), (3.75f, 4.6f), (5f, 6.6f) })
+            {
+                var chest = space.At(x, floor + 1.2f, d);
+                Assert.That(MotionSensor.Covers(office.Position, MotionSensor.Facing(office.Facing), chest), Is.True, $"sees ({x}, {d})");
+            }
+
             Assert.That(alarm.Zones.Single(z => z.Kind == AlarmZoneKind.Door).Door, Is.EqualTo(MillWorks.DoorName));
 
             var keypad = alarm.Keypads.Single().Panel;
