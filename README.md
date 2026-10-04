@@ -63,8 +63,8 @@ The café door is on the right, in the glazed lobby; the door on the left opens 
 
 It has a burglar alarm too. Press E on the keypad in the hall, type the code (**1234**) and press
 **Set**, then you have 30 seconds to get out. Once it's set, a sensor seeing you (or a door
-opening) gives you 30 seconds to get back to the keypad and **Unset** it, or the bell rings and the
-strobe flashes.
+opening) gives you 30 seconds to get back to the keypad and **Unset** it, or the bell box's piezo
+sounder wails and its strobe flashes.
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*

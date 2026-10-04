@@ -32,8 +32,9 @@ namespace Townscape.Simulation.Security
     /// A house burglar alarm, as its control panel sees it. Putting the code in and pressing Set
     /// starts a 30 second exit time to get out; once it's set, anything a sensor sees starts a 30
     /// second entry time to reach the panel and put the code in again. If nobody does, the bell
-    /// rings and the strobe flashes. The bell stops after 20 minutes, as the law asks of an alarm
-    /// bell, but the strobe goes on flashing until the alarm is unset. The panel beeps once a second
+    /// box sounds (a piezo sounder these days, though it's still called the bell) and the strobe
+    /// flashes. The sound stops after 20 minutes, as the law asks of an alarm, but the strobe goes
+    /// on flashing until the alarm is unset. The panel beeps once a second
     /// through the exit and entry times, and twice a second for the last ten.
     /// </summary>
     public sealed class BurglarAlarm

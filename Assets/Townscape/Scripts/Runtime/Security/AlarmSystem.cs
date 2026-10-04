@@ -15,7 +15,7 @@ namespace Townscape.Runtime.Security
     /// clear line of sight, so walls and shut doors hide you) and light their LEDs when they see
     /// you move; opening a door counts too. The keypad on the hall wall sets and unsets it with
     /// the code; the panel beeps through the 30 second exit and entry times, and if the code
-    /// doesn't go in, the bell box rings and its blue strobe flashes.
+    /// doesn't go in, the bell box's sounder wails and its blue strobe flashes.
     /// </summary>
     /// <remarks>
     /// The alarm's state lives here rather than in the store, as a door's open or shut does: it's
@@ -141,7 +141,7 @@ namespace Townscape.Runtime.Security
             var bellBox = TownMeshSpawner.CreateChild("Bell Box", transform, hideFlags);
             bellBox.transform.position = ToUnity(bell.Position);
             _bell = bellBox.AddComponent<AudioSource>();
-            _bell.clip = Clip("Alarm bell", AlarmSounds.Bell(bell.Seed));
+            _bell.clip = Clip("Alarm sounder", AlarmSounds.Sounder());
             _bell.loop = true;
             Spatial(_bell, 5f, 160f);
 

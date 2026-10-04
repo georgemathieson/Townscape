@@ -3,65 +3,56 @@ using System;
 namespace Townscape.Simulation.Audio
 {
     /// <summary>
-    /// The burglar alarm's sounds, synthesised: the bell (a hammer striking a steel gong twenty
-    /// times a second, so it rings as one long, rattling "rrring") and the panel's short beep.
+    /// The burglar alarm's sounds, synthesised: the bell box's piezo sounder (a piercing,
+    /// nearly square tone sweeping up and down several times a second) and the panel's short beep.
     /// </summary>
     public static class AlarmSounds
     {
-        private const int StrikesPerSecond = 20;
+        /// <summary>The sounder sweeps between these, in hertz.</summary>
+        public const float SweepLow = 2400f;
 
-        // The gong's modes: frequency, loudness and how long each rings on, in seconds.
-        private static readonly (float Frequency, float Amplitude, float Decay)[] Modes =
-        {
-            (1180f, 1f, 0.22f),
-            (2830f, 0.55f, 0.14f),
-            (4410f, 0.3f, 0.08f),
-            (6150f, 0.14f, 0.04f),
-        };
+        public const float SweepHigh = 3600f;
+
+        /// <summary>Sweeps up and back down per second.</summary>
+        public const int SweepsPerSecond = 5;
 
         /// <summary>
-        /// The bell ringing, as a seamless loop: every strike's ring is wrapped round from the end
-        /// to the start, so the loop is exactly as loud where it joins as anywhere else.
+        /// The bell box's sounder, as a seamless loop: its pitch rises and falls in a smooth
+        /// triangle, and the loop holds a whole number of sweeps and of cycles, so it joins without
+        /// a click.
         /// </summary>
-        public static float[] Bell(int seed, float seconds = 2f, int sampleRate = ProceduralSounds.SampleRate)
+        public static float[] Sounder(float seconds = 2f, int sampleRate = ProceduralSounds.SampleRate)
         {
-            var period = sampleRate / StrikesPerSecond;
-            var strikes = Math.Max(1, (int)MathF.Round(seconds * StrikesPerSecond));
-            var count = strikes * period;
-            var samples = new float[count];
-            var random = new Random(seed);
-
-            for (var s = 0; s < strikes; s++)
+            var sweeps = Math.Max(1, (int)MathF.Round(seconds * SweepsPerSecond));
+            var count = (int)MathF.Round(sweeps * (float)sampleRate / SweepsPerSecond);
+            var frequencies = new float[count];
+            var cycles = 0.0;
+            for (var i = 0; i < count; i++)
             {
-                // The hammer doesn't hit quite evenly, or quite as hard each time.
-                var start = (s * period) + random.Next(-period / 12, (period / 12) + 1);
-                var force = 0.8f + (0.2f * (float)random.NextDouble());
-                foreach (var (frequency, amplitude, decay) in Modes)
-                {
-                    // A decaying sine by rotation: cheap, and exactly in tune.
-                    var step = 2f * MathF.PI * frequency * (1f + (0.002f * ((float)random.NextDouble() - 0.5f))) / sampleRate;
-                    var (cos, sin) = (MathF.Cos(step), MathF.Sin(step));
-                    var phase = (float)random.NextDouble() * 2f * MathF.PI;
-                    var (x, y) = (MathF.Cos(phase), MathF.Sin(phase));
-                    var fade = MathF.Exp(-1f / (decay * sampleRate));
-                    var level = amplitude * force;
-                    var length = (int)(decay * sampleRate * 5f);
-                    for (var k = 0; k < length; k++)
-                    {
-                        samples[Wrap(start + k, count)] += y * level;
-                        (x, y) = ((x * cos) - (y * sin), (x * sin) + (y * cos));
-                        level *= fade;
-                    }
-                }
-
-                // The click of the hammer itself.
-                for (var k = 0; k < sampleRate / 1000; k++)
-                {
-                    samples[Wrap(start + k, count)] += (((float)random.NextDouble() * 2f) - 1f) * 0.5f * force * (1f - (k / (sampleRate / 1000f)));
-                }
+                // A triangle sweep, rounded a little at the top and bottom as a real sounder's is.
+                var t = (float)i / count * sweeps;
+                var triangle = 1f - (2f * MathF.Abs((t - MathF.Floor(t)) - 0.5f));
+                var eased = triangle * triangle * (3f - (2f * triangle));
+                var shape = (0.6f * triangle) + (0.4f * eased);
+                frequencies[i] = SweepLow + ((SweepHigh - SweepLow) * shape);
+                cycles += frequencies[i] / sampleRate;
             }
 
-            Normalise(samples, 0.85f);
+            // Stretch the pitch a hair so the loop ends on a whole cycle.
+            var stretch = Math.Round(cycles) / cycles;
+            var samples = new float[count];
+            var phase = 0.0;
+            for (var i = 0; i < count; i++)
+            {
+                var angle = (float)(phase * 2.0 * Math.PI);
+
+                // A piezo disc driven by a square wave: strong odd harmonics, kept below the
+                // Nyquist limit so nothing folds back into a whine.
+                samples[i] = 0.62f * (MathF.Sin(angle) + (0.3f * MathF.Sin(3f * angle)));
+                phase += frequencies[i] * stretch / sampleRate;
+                phase -= Math.Floor(phase);
+            }
+
             return samples;
         }
 
@@ -83,28 +74,6 @@ namespace Townscape.Simulation.Audio
             }
 
             return samples;
-        }
-
-        private static int Wrap(int index, int count) => ((index % count) + count) % count;
-
-        private static void Normalise(float[] samples, float peak)
-        {
-            var loudest = 0f;
-            foreach (var sample in samples)
-            {
-                loudest = Math.Max(loudest, Math.Abs(sample));
-            }
-
-            if (loudest <= 0f)
-            {
-                return;
-            }
-
-            var scale = peak / loudest;
-            for (var i = 0; i < samples.Length; i++)
-            {
-                samples[i] *= scale;
-            }
         }
     }
 }

@@ -116,21 +116,30 @@ namespace Townscape.Tests.Simulation
         }
 
         [Test]
-        public void TheBell_RingsLoudly_AndLoopsWithoutAJoin()
+        public void TheSounder_WailsHighAndPiercing_AndLoopsWithoutAJoin()
         {
-            var bell = AlarmSounds.Bell(7);
-            var rms = MathF.Sqrt(bell.Average(s => s * s));
-            var steps = Enumerable.Range(1, bell.Length - 1).Select(i => MathF.Abs(bell[i] - bell[i - 1])).ToList();
-            var join = MathF.Abs(bell[0] - bell[bell.Length - 1]);
+            var rate = ProceduralSounds.SampleRate;
+            var sounder = AlarmSounds.Sounder();
+            var rms = MathF.Sqrt(sounder.Average(s => s * s));
 
-            Assert.That(bell.Length, Is.EqualTo(2 * ProceduralSounds.SampleRate));
-            Assert.That(bell.Max(MathF.Abs), Is.LessThanOrEqualTo(0.86f));
-            Assert.That(rms, Is.GreaterThan(0.12f), "a bell, not a tinkle");
-            Assert.That(join, Is.LessThan(steps.Max()), "the loop joins like any other step");
+            Assert.That(sounder.Length, Is.EqualTo(2 * rate));
+            Assert.That(sounder.Max(MathF.Abs), Is.LessThanOrEqualTo(0.9f));
+            Assert.That(rms, Is.GreaterThan(0.35f), "loud: a sounder, not a chirp");
 
-            // Twenty strikes a second: the level rises and falls with the hammer.
-            var blocks = Enumerable.Range(0, 40).Select(b => bell.Skip(b * 1600).Take(1600).Max(MathF.Abs)).ToList();
-            Assert.That(blocks.Min(), Is.GreaterThan(0.3f), "it rings on between strikes");
+            // The join is as smooth as anywhere else: the loop ends where it starts.
+            var steps = Enumerable.Range(1, sounder.Length - 1).Select(i => MathF.Abs(sounder[i] - sounder[i - 1])).Max();
+            Assert.That(MathF.Abs(sounder[0] - sounder[sounder.Length - 1]), Is.LessThanOrEqualTo(steps));
+
+            // Its pitch, from rising zero crossings in 20 ms windows, sweeps between the low and high notes.
+            var window = rate / 50;
+            var pitches = Enumerable.Range(0, sounder.Length / window).Select(w =>
+                Enumerable.Range((w * window) + 1, window - 1).Count(i => sounder[i - 1] < 0f && sounder[i] >= 0f) * 50f).ToList();
+            Assert.That(pitches.Min(), Is.InRange(AlarmSounds.SweepLow - 150f, AlarmSounds.SweepLow + 400f));
+            Assert.That(pitches.Max(), Is.InRange(AlarmSounds.SweepHigh - 400f, AlarmSounds.SweepHigh + 150f));
+
+            // Up and down five times a second: the pitch turns round twenty times in two seconds.
+            var turns = Enumerable.Range(2, pitches.Count - 2).Count(i => Math.Sign(pitches[i] - pitches[i - 1]) * Math.Sign(pitches[i - 1] - pitches[i - 2]) < 0);
+            Assert.That(turns, Is.InRange(16, 26));
         }
 
         [Test]

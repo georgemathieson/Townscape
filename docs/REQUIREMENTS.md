@@ -137,7 +137,7 @@ before work started; later changes should be recorded here too.
     room, a small keypad on the hall wall inside the flat's front door, and a white bell box with a
     blue strobe at its foot, high on the front between two second-floor windows. Use the keypad to set
     it with the code (a 30 second exit time) and unset it (a 30 second entry time once a sensor sees
-    you or a door opens); if nobody does, the bell rings and the strobe flashes. Also straightens
+    you or a door opens); if nobody does, its piezo sounder wails and the strobe flashes. Also straightens
     the back windows, which sat off to one side of their openings inside. *(this pull request)*
 
 ## Fellside Coffee

@@ -11,10 +11,12 @@ namespace Townscape.Generation.Buildings.Interiors
     /// </summary>
     public static class AlarmFittings
     {
-        /// <summary>A bell box about the size of a real one: 30 by 40 cm, 10 cm deep.</summary>
-        public const float BellBoxWidth = 0.3f;
+        /// <summary>A bell box about the size of a real one: 26 by 34 cm, 8 cm deep.</summary>
+        public const float BellBoxWidth = 0.26f;
 
-        public const float BellBoxHeight = 0.4f;
+        public const float BellBoxHeight = 0.34f;
+
+        private const float BellBoxDepth = 0.08f;
 
         public const float KeypadWidth = 0.16f;
 
@@ -76,8 +78,8 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         /// <summary>
-        /// The bell box on the outside of a wall, its top at <paramref name="top"/>: a white case
-        /// with a raised cover and a printed band, and the blue strobe across its foot.
+        /// The bell box on the outside of a wall, its top at <paramref name="top"/>: one plain
+        /// white case with the blue strobe set into its foot.
         /// </summary>
         public static void BellBox(BuildContext context, WallFrame wall, float centreX, float top)
         {
@@ -85,11 +87,9 @@ namespace Townscape.Generation.Buildings.Interiors
             var x0 = centreX - (BellBoxWidth * 0.5f);
             var x1 = centreX + (BellBoxWidth * 0.5f);
             var y0 = top - BellBoxHeight;
-            wall.Block(builder, x0, y0, x1, top, 0f, 0.085f, SurfaceMaterial.Porcelain);
-            wall.Block(builder, x0 + 0.018f, y0 + 0.075f, x1 - 0.018f, top - 0.018f, 0.085f, 0.098f, SurfaceMaterial.Porcelain);
-            wall.Quad(builder, x0 + 0.05f, y0 + 0.2f, x1 - 0.05f, y0 + 0.226f, 0.0985f, SurfaceMaterial.PaintNavy);
-            wall.Block(builder, x0 + 0.024f, y0 + 0.012f, x1 - 0.024f, y0 + 0.064f, 0.03f, 0.1f, SurfaceMaterial.AlarmStrobe);
-            context.Anchor(AnchorKind.AlarmBell, wall.Point(centreX, y0 + 0.038f, 0.1f), wall.Out, BellBoxWidth);
+            wall.Block(builder, x0, y0, x1, top, 0f, BellBoxDepth, SurfaceMaterial.Porcelain);
+            wall.Block(builder, x0 + 0.02f, y0 + 0.012f, x1 - 0.02f, y0 + 0.058f, 0.03f, BellBoxDepth + 0.004f, SurfaceMaterial.AlarmStrobe);
+            context.Anchor(AnchorKind.AlarmBell, wall.Point(centreX, y0 + 0.035f, BellBoxDepth), wall.Out, BellBoxWidth);
         }
 
         // A small white box with a pale lens and a red LED, its back standOff from the corner or wall.

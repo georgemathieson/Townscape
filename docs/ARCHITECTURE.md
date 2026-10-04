@@ -160,7 +160,7 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
   and the roof's holes are placed through `UnitSpace` (`AcrossAt`, `FractionAcross`): straight
   behind where the rooms put them, not at the same fraction of a longer wall.
 - `AlarmFittings` puts in a burglar alarm: a sensor high in a corner of every room, the keypad on
-  the hall wall inside the flat's door, and a bell box (30 by 40 cm, white, with a blue strobe
+  the hall wall inside the flat's door, and a bell box (one plain white case, 26 by 34 cm, with a blue strobe
   across its foot) high on the front between the first two second-floor windows.
 - `CafeAndFlat.Walkways` lists the ways in from each door and through each doorway; a test keeps
   every bit of furniture out of them.
@@ -332,12 +332,13 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   convex collider on a kinematic body, so a shut door blocks you and an open one stands aside.
 - **The burglar alarm.** `BurglarAlarm` (engine-free and tested) is the panel's logic: the code,
   a 30 second exit time after setting, a 30 second entry time once it's set and something is
-  seen, then the bell (which cuts out after 20 minutes) and the strobe (which flashes until it's
+  seen, then the bell box's sounder (which cuts out after 20 minutes) and the strobe (which flashes until it's
   unset), and the beeps, once a second and twice a second for the last ten. `MotionSensor` decides
   what a sensor's wide, downward-tilted cone covers. In Unity, `AlarmSystem` watches the walker
   through each sensor (a line of sight, so walls and shut doors hide you; only movement counts) and
   every door opening or shutting, lights the sensors' LEDs, flashes the strobe and a blue light,
-  and plays the bell and beeps from `AlarmSounds`. `AlarmKeypad` is the panel on the wall: E brings
+  and plays the sounder and beeps from `AlarmSounds`: a piezo tone sweeping between 2.4 and 3.6 kHz
+  five times a second, looped seamlessly. `AlarmKeypad` is the panel on the wall: E brings
   up its keypad, which pauses the walker and frees the mouse while `TownscapeShortcuts` stands
   aside so the number keys type the code. Like a door's open or shut, the alarm's state isn't in
   the store.
