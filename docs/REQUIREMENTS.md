@@ -138,7 +138,15 @@ before work started; later changes should be recorded here too.
     blue strobe at its foot, high on the front between two second-floor windows. Use either keypad to set
     it with the code (a 30 second exit time) and unset it (a 30 second entry time once a sensor sees
     you or a door opens); if nobody does, its piezo sounder wails and the strobe flashes. Also straightens
-    the back windows, which sat off to one side of their openings inside. *(this pull request)*
+    the back windows, which sat off to one side of their openings inside. *(done)*
+12. **Two alarms, and their control boxes:** the café and the flat get separate alarms, each with
+    its own keypad, sensors, door contacts and bell box (the café's red, on its sign; the flat's
+    white). Each alarm's zones are wired back to a white control box (the café's in its storeroom,
+    the flat's in the attic). With the engineer code put in first, its lid comes off without
+    setting off the tamper, to show the board: cut zones, disconnect the battery (a fault on the
+    keypad), pull the mains (ten minutes on the battery, then the panel dies and the bell box sounds
+    for two on its own), unplug the network, and wire the bell box's power backwards to blow its fuse
+    and silence it until it's put right. The strobe flashes once a cycle. *(this pull request)*
 
 ## Fellside Coffee
 

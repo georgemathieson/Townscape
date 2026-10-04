@@ -159,9 +159,14 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
 - The Copper Kettle is a little wedge-shaped (its back wider than its front), so the back windows
   and the roof's holes are placed through `UnitSpace` (`AcrossAt`, `FractionAcross`): straight
   behind where the rooms put them, not at the same fraction of a longer wall.
-- `AlarmFittings` puts in a burglar alarm: a sensor high in a corner of every room, a keypad
-  inside each front door (on the hall wall for the flat, on the side of the café's entrance lobby), and a bell box (one plain white case, 26 by 34 cm, with a blue strobe
-  across its foot) high on the front between the first two second-floor windows.
+- `CafeAndFlat` fits two burglar alarms, the café's and the flat's, out of `AlarmFittings`: a
+  sensor high in a corner of every room and a contact on every door and roof window (each a zone),
+  a keypad inside each front door, a white control box the zones are wired back to (in the
+  storeroom; in the attic), and a bell box (one plain case, 26 by 34 cm, with a blue strobe across
+  its foot): red on the right of the café's sign, which moves its lettering over to make room
+  (`ShopDefinition.BellBox`), and white high on the front between the first two second-floor
+  windows for the flat. Each alarm is a `TownAlarm` (its zones, keypads, control box and strobe)
+  in `GeneratedTown.Alarms`, collected through `BuildContext.Alarms` as doors are.
 - `CafeAndFlat.Walkways` lists the ways in from each door and through each doorway; a test keeps
   every bit of furniture out of them.
 - Hanging lights go in `BuildContext.Fittings`, a mesh of their own (`MeshCategory.Fittings`) that
@@ -198,7 +203,6 @@ Generators also leave **anchors** (`TownAnchor`) for later systems:
 - the phone box's and the petrol station's lit signs
 - the lights in the petrol station's canopy, shining down on the pumps
 - room lights inside the Copper Kettle's flat (`RoomLight`), which come on in the evening like a home's windows
-- the burglar alarm's sensors, keypad and bell box (`AlarmSensor`, `AlarmKeypad`, `AlarmBell`)
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 
@@ -330,18 +334,30 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   `IInteractable` that swings it open into the room or shut again, about the door's own axis (so it
   also opens the roof windows). In play mode the leaf gets a
   convex collider on a kinematic body, so a shut door blocks you and an open one stands aside.
-- **The burglar alarm.** `BurglarAlarm` (engine-free and tested) is the panel's logic: the code,
-  a 30 second exit time after setting, a 30 second entry time once it's set and something is
-  seen, then the bell box's sounder (which cuts out after 20 minutes) and the strobe (which flashes until it's
-  unset), and the beeps, once a second and twice a second for the last ten. `MotionSensor` decides
-  what a sensor's wide, downward-tilted cone covers. In Unity, `AlarmSystem` watches the walker
-  through each sensor (a line of sight, so walls and shut doors hide you; only movement counts) and
-  every door opening or shutting, lights the sensors' LEDs, flashes the strobe and a blue light,
-  and plays the sounder and beeps from `AlarmSounds`: a piezo tone sweeping between 2.4 and 3.6 kHz
-  five times a second, looped seamlessly. `AlarmKeypad` is a panel on the wall (there's one
-  by each front door, all on the same alarm, and all beep the countdown): E brings up the keypad, which pauses the walker and frees the mouse while `TownscapeShortcuts` stands
-  aside so the number keys type the code. Like a door's open or shut, the alarm's state isn't in
-  the store.
+- **The burglar alarms.** `BurglarAlarm` (engine-free and tested) is a control panel's logic:
+  - Setting and unsetting: the code, a 30 second exit time after setting, a 30 second entry time
+    once it's set and a zone sees something, then the bell box's sounder (which cuts out after 20
+    minutes) and the strobe (which flashes until it's unset), and the beeps, once a second and
+    twice a second for the last ten.
+  - Inside the control box: each zone's wire can be cut (that zone then sees nothing); the
+    engineer code puts it into engineer mode, without which opening the lid trips the tamper and
+    sets it off, set or not; without mains it runs ten minutes on its standby battery, then dies,
+    and the bell box, losing the panel, sounds for two minutes on its own battery; the network
+    cable and the battery each show a fault when unplugged; and wiring the bell box's power the
+    wrong way round blows its fuse, silencing it (even on its own battery) and showing a fault
+    until it's wired right and given a new fuse.
+  `MotionSensor` decides what a sensor's wide, downward-tilted cone covers. In Unity, one
+  `AlarmSystem` per `TownAlarm` watches the walker through each sensor (a line of sight, so walls
+  and shut doors hide you; only movement counts) and its doors opening or shutting; lights each
+  sensor's LED, and the keypads' power and fault lights (`AlarmGlow`, a little light of its own
+  for each); flashes the strobe and a blue light once a second; and plays the sounder and beeps
+  from `AlarmSounds` (a piezo tone sweeping between 2.4 and 3.6 kHz five times a second, looped
+  seamlessly). `AlarmKeypad` brings up the keypad (Set, Unset and Eng) and `AlarmControlBox` the
+  inside of the box, drawn: the board with its microcontroller and lights, the zone wires, the
+  mains supply, battery, network cable and the bell box's wires through fuse F1, with a button for
+  each. Either pauses the walker and frees the mouse while `TownscapeShortcuts` stands aside. Both
+  can only be reached from their own side of the wall. Like a door's open or shut, the alarms'
+  state isn't in the store.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the

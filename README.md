@@ -58,14 +58,23 @@ The café door is on the right, in the glazed lobby; the door on the left opens 
 | The flat's living room in the evening | The attic: a snug and a study under the slates |
 | ![Two roof windows over the attic's sofa](docs/images/gallery/kettle-roof-windows-day.jpg) | ![The roof windows in the back slope, from outside](docs/images/gallery/kettle-back-dusk.jpg) |
 | Roof windows over the snug: press E to tip one open | The same windows from behind the terrace at dusk |
-| ![The white bell box with its blue strobe, between two second-floor windows](docs/images/gallery/kettle-bell-box-day.jpg) | ![The alarm keypad on the hall wall inside the flat's door](docs/images/gallery/kettle-keypad-day.jpg) |
-| The burglar alarm's bell box, high between two windows | Its keypad, just inside the flat's front door (there's another inside the café's) |
+| ![The flat's white bell box with its blue strobe, between two second-floor windows](docs/images/gallery/kettle-bell-box-day.jpg) | ![The café's red bell box on the right of its sign](docs/images/gallery/kettle-sign-day.jpg) |
+| The flat's alarm: its white bell box, high between two windows | The café's own alarm: a red bell box on its sign |
+| ![The alarm keypad on the hall wall inside the flat's door](docs/images/gallery/kettle-keypad-day.jpg) | ![The flat alarm's control box on the attic wall](docs/images/gallery/kettle-control-box-day.jpg) |
+| The flat's keypad, just inside its front door | Its control box, up in the attic (the café's is in its storeroom) |
 
-It has a burglar alarm too, with a keypad inside each front door (the flat's hall and the café).
-Press E on either, type the code (**1234**) and press **Set**, then you have 30 seconds to get out.
-Once it's set, a sensor seeing you (or a door opening) gives you 30 seconds to get to a keypad and
-**Unset** it, or the bell box's piezo
-sounder wails and its strobe flashes.
+The café and the flat each have a burglar alarm of their own, with a keypad inside the front door.
+Press E on a keypad, type the code (**1234**) and press **Set**, then you have 30 seconds to get
+out. Once it's set, a sensor seeing you (or a door opening) gives you 30 seconds to get to the
+keypad and **Unset** it, or the bell box's piezo sounder wails and its strobe flashes.
+
+Each alarm's zones are wired back to a white control box (in the café's storeroom, and in the flat's
+attic). Put the engineer code (**9999**) into the keypad and press **Eng** first, or the lid's
+tamper switch sets the alarm off. Inside you'll find the board: cut a zone's wire and that sensor
+or door goes blind, unplug the network or the battery and the keypad's fault light comes on, switch
+off the mains and the panel runs on its battery for ten minutes before it dies (and the bell box
+sounds on its own battery for two). Swap the bell box's + and − and its fuse blows: it won't go off
+again, and the keypad shows a fault, until it's wired right and given a new fuse.
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*
@@ -118,8 +127,8 @@ puts them back. Everything also has a key:
 | C | Open or close Fellside Coffee |
 | V | Walk about at eye level, or go back to flying |
 | Space | Jump (walking) |
-| E or left click | Open or close what the dot in the middle is on (walking), or bring up the alarm's keypad |
-| 0–9, Enter, Esc | On the alarm keypad: type the code, set or unset, close |
+| E or left click | Open or close what the dot in the middle is on (walking), or bring up an alarm's keypad or control box |
+| 0–9, Enter, Esc | On an alarm keypad: type the code, set or unset, close |
 
 ## Fellside Coffee
 
