@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The EditMode tests, compiled against NUnit 3.5: the custom NUnit that Unity's Test Framework
+    ships (com.unity.ext.nunit). It lacks newer constraints, such as Does.Contain on a collection,
+    that the NUnit used by tools/verify/CoreTests would happily accept.
+  -->
+  <PropertyGroup>
+    <AssemblyName>Townscape.Tests.EditMode</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(ScriptsRoot)../Tests/EditMode/**/*.cs" />
+    <ProjectReference Include="State.csproj" />
+    <ProjectReference Include="Generation.csproj" />
+    <ProjectReference Include="Simulation.csproj" />
+    <ProjectReference Include="CoffeeShop.csproj" />
+    <PackageReference Include="NUnit" Version="3.5.0" />
+  </ItemGroup>
+</Project>
