@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Townscape.Generation;
+using Townscape.Generation.Buildings.Planning;
 using Townscape.Generation.Layout;
 using Townscape.Runtime.Audio;
+using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Rendering;
@@ -25,7 +27,8 @@ namespace Townscape.Runtime
     /// <remarks>
     /// In edit mode it builds a preview (geometry, the sun and the town's lights) so the Scene view
     /// shows the town.
-    /// In play mode it also creates the camera, post-processing, fog, the storm, shortcuts and help overlay.
+    /// In play mode it also creates the camera, post-processing, fog, the storm, shortcuts, the control
+    /// panel and the Fellside Coffee game.
     /// </remarks>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -77,6 +80,9 @@ namespace Townscape.Runtime
 
         /// <summary>The storm, in play mode only. Audio listens to its thunder.</summary>
         public StormSystem Storm { get; private set; }
+
+        /// <summary>The coffee shop management game, in play mode only.</summary>
+        public CoffeeShopGame CoffeeShop { get; private set; }
 
         /// <summary>Throws away everything generated and builds it again.</summary>
         public void Rebuild()
@@ -164,7 +170,8 @@ namespace Townscape.Runtime
             var input = TownscapeInput.CreateDefault();
             var ground = Town.Context.Ground;
             var waterLevel = Town.Context.Layout.WaterLevel;
-            camera.gameObject.AddComponent<FreeFlyCamera>().Initialize(
+            var flyCamera = camera.gameObject.AddComponent<FreeFlyCamera>();
+            flyCamera.Initialize(
                 input,
                 flat => Mathf.Max(ground.HeightAt(new System.Numerics.Vector2(flat.x, flat.y)), waterLevel));
 
@@ -174,12 +181,20 @@ namespace Townscape.Runtime
             var audio = TownMeshSpawner.CreateChild("Audio", _root.transform, hideFlags).AddComponent<TownAudio>();
             audio.Initialize(Store, Storm, Town.Context.Layout, camera.transform, sounds, hideFlags);
 
+            CoffeeShop = TownMeshSpawner.CreateChild("Fellside Coffee", _root.transform, hideFlags).AddComponent<CoffeeShopGame>();
+            CoffeeShop.Initialize(
+                flyCamera,
+                ShopLocator.Find(Town.Context.Buildings, VillageShops.FellsideCoffee)?.Footprint,
+                flat => ground.HeightAt(new System.Numerics.Vector2(flat.x, flat.y)),
+                logActions);
+
             var controls = TownMeshSpawner.CreateChild("Controls", _root.transform, hideFlags);
             var panel = controls.AddComponent<ControlPanel>();
-            panel.Initialize(Store, Lighting, Storm);
+            panel.Initialize(Store, Lighting, Storm, CoffeeShop);
+            controls.AddComponent<CoffeeShopPaper>().Initialize(CoffeeShop);
             var performance = controls.AddComponent<PerformanceOverlay>();
             performance.Initialize(Storm, Lights, () => BuildMilliseconds);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance);
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop);
             if (rememberSettings)
             {
                 controls.AddComponent<SettingsMemory>().Initialize(Store);
@@ -258,6 +273,7 @@ namespace Townscape.Runtime
             _owned.Clear();
             _spawned = null;
             Storm = null;
+            CoffeeShop = null;
             _materials?.Dispose();
             _materials = null;
             Lighting = null;

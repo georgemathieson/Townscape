@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Townscape.CoffeeShop</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(ScriptsRoot)CoffeeShop/**/*.cs" />
+    <ProjectReference Include="State.csproj" />
+  </ItemGroup>
+</Project>

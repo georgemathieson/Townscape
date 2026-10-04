@@ -40,6 +40,7 @@ namespace Townscape.Runtime.Controls
                 case Shortcut.StrikeLightning: return Input.GetKeyDown(KeyCode.B);
                 case Shortcut.ToggleMute: return Input.GetKeyDown(KeyCode.M);
                 case Shortcut.CyclePerformance: return Input.GetKeyDown(KeyCode.F);
+                case Shortcut.ToggleCoffeeShop: return Input.GetKeyDown(KeyCode.C);
                 default: return false;
             }
         }

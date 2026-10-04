@@ -1,3 +1,4 @@
+using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Weather;
 using Townscape.Simulation.Weather;
@@ -27,22 +28,25 @@ namespace Townscape.Runtime.UI
             "<b>1–4</b> dawn, day, dusk, night   <b>[ ]</b> an hour\n" +
             "<b>T</b> run the clock   <b>R L G</b> rain, lightning, wind\n" +
             "<b>B</b> strike   <b>M</b> mute   <b>F</b> frame rate\n" +
-            "<b>H</b> hide this panel";
+            "<b>C</b> Fellside Coffee   <b>H</b> hide this panel";
 
         private Store<TownState> _store;
         private TimeOfDayLighting _lighting;
         private StormSystem _storm;
+        private CoffeeShopGame _coffee;
+        private bool _coffeeOpen;
         private PanelSkin _skin;
         private GUIStyle _hint;
         private bool _showKeys;
 
         public bool Visible { get; set; } = true;
 
-        public void Initialize(Store<TownState> store, TimeOfDayLighting lighting, StormSystem storm)
+        public void Initialize(Store<TownState> store, TimeOfDayLighting lighting, StormSystem storm, CoffeeShopGame coffee = null)
         {
             _store = store;
             _lighting = lighting;
             _storm = storm;
+            _coffee = coffee;
         }
 
         private void OnDestroy()
@@ -52,7 +56,14 @@ namespace Townscape.Runtime.UI
 
         private void OnGUI()
         {
-            if (_store == null || _lighting == null)
+            // The coffee shop's window takes the panel's place while it's open. Decided on the
+            // layout pass so a frame never lays out one and then draws the other.
+            if (Event.current.type == EventType.Layout)
+            {
+                _coffeeOpen = _coffee != null && _coffee.IsOpen;
+            }
+
+            if (_store == null || _lighting == null || _coffeeOpen)
             {
                 return;
             }
@@ -77,6 +88,7 @@ namespace Townscape.Runtime.UI
             TimeOfDay(state.TimeOfDay);
             Weather(state.Weather);
             Sound(state.Audio);
+            CoffeeShopButton();
             Footer();
             GUILayout.EndVertical();
             GUILayout.EndArea();
@@ -187,6 +199,20 @@ namespace Townscape.Runtime.UI
             if (muted != audio.Muted)
             {
                 _store.Dispatch(new SetMuted(muted));
+            }
+        }
+
+        private void CoffeeShopButton()
+        {
+            if (_coffee == null)
+            {
+                return;
+            }
+
+            GUILayout.Label("FELLSIDE COFFEE", _skin.Heading);
+            if (GUILayout.Button("Run the coffee shop", _skin.Button))
+            {
+                _coffee.Open();
             }
         }
 

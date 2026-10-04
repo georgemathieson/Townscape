@@ -18,6 +18,7 @@ namespace Townscape.Runtime.Controls
         StrikeLightning,
         ToggleMute,
         CyclePerformance,
+        ToggleCoffeeShop,
     }
 
     /// <summary>

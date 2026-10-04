@@ -9,10 +9,12 @@ dotnet run -c Release --project tools/preview/Exporter -- tools/preview/out
 cd tools/preview && npm install && node render.mjs out
 # renders land in tools/preview/out/renders/
 node render.mjs out bridge:dusk street:night   # specific view:preset pairs
+node render.mjs out coffee:dusk                # the Fellside Coffee game's camera
 ```
 
 Views and lighting presets (`day`, `dusk`, `night`, and `flash` for night at the peak of a
-lightning strike) are defined in `page.html`. The exporter also writes `lights.json` and
+lightning strike) are defined in `page.html`; views that depend on the town, such as `coffee` (where
+the Fellside Coffee game takes the camera), are worked out by the exporter into `views.json`. The exporter also writes `lights.json` and
 `storm.json`, worked out by the same `Townscape.Simulation` code Unity uses: glowing materials and
 lamps, wet surfaces, rain, ripples, chimney smoke and bolts. Rain and smoke are frozen in a single
 moment and only approximate the particles in Unity: judge geometry, layout and colours here, and

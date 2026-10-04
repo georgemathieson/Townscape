@@ -7,15 +7,16 @@ Assets/Townscape/Scripts/
   State/        Townscape.State        engine-free: Redux-style store, actions, reducers
   Generation/   Townscape.Generation   engine-free: layout, terrain, ground, structures, markings
   Simulation/   Townscape.Simulation   engine-free: lights after dark, the storm, and its sounds
+  CoffeeShop/   Townscape.CoffeeShop   engine-free: Fellside Coffee, the management game
   Runtime/      Townscape.Runtime      Unity: bootstrap, rendering, lighting, controls, UI
   Editor/       Townscape.Editor       Unity editor: project setup, menus, inspectors
 Assets/Townscape/Shaders/              the one hand-written shader: the fog-free lightning bolt
-Assets/Townscape/Tests/EditMode/       NUnit tests for State, Generation and Simulation
+Assets/Townscape/Tests/EditMode/       NUnit tests for State, Generation, Simulation and CoffeeShop
 Assets/Scenes/Town.unity               holds a single TownscapeBootstrap
 tools/                                 checks and previews that run without Unity
 ```
 
-`State`, `Generation` and `Simulation` have `noEngineReferences: true`, so they cannot touch `UnityEngine`. That
+`State`, `Generation`, `Simulation` and `CoffeeShop` have `noEngineReferences: true`, so they cannot touch `UnityEngine`. That
 keeps the interesting logic fast to test and lets it run outside Unity: in plain `dotnet test`, and in
 the offline preview renderer. `Runtime` is a thin layer that turns their output into GameObjects and
 drives Unity's lighting.
@@ -261,6 +262,25 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   a dull roar, and thunder that cracks when close and only rumbles from afar. The loops are
   seamless, and tests hold the rain to almost no hiss and the river to a steady, unchoppy level.
 
+## Fellside Coffee
+
+A small management game in the village's coffee shop; [COFFEE_SHOP.md](COFFEE_SHOP.md) covers the
+design, the rules and the balance numbers. In outline:
+
+- **`Townscape.CoffeeShop`** is the whole game, engine-free: balance data, a seeded random number
+  generator, the prep plan, the trading day, the reducer, the JSON save, and `NewsDesk`, which
+  writes the morning paper's front page. It has its own
+  `Store<CoffeeShopState>`, separate from the town's.
+- Unlike the town's store, this one holds the whole game, because the game *is* state: trading a
+  day is a pure calculation from the state and the seed, so the reducer stays pure and every day can
+  be replayed exactly.
+- **`CoffeeShopGame`** (Runtime) creates the store, loads and saves `fellside-coffee.json` in
+  `Application.persistentDataPath`, and glides the camera to the shopfront with
+  `FreeFlyCamera.FlyTo`. When the camera arrives, **`CoffeeShopPaper`** fills the screen with the
+  game as a newspaper (IMGUI, on `PaperSkin`: newsprint, an OS serif, boxed adverts), and holds the
+  camera still while it's read. Like the panel, it only dispatches actions.
+- `ShopLocator` (Generation) finds the building a shop is in.
+
 ## Editor
 
 - `TownscapeProjectSetup` runs on editor load and is idempotent. It creates and assigns the URP
@@ -271,15 +291,17 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   the town's materials are made in code, so without these a player build would leave out
   transparent glass, glow, ripples, the weather particles and the bolt shader.
 - The **Townscape** menu has Open Town Scene, Rebuild Town, Set Up Project and Create Town Scene (which
-  rebuilds the scene from code if it is ever lost).
+  rebuilds the scene from code if it is ever lost), and **Fellside Coffee > Show Save File / Delete
+  Save File**.
 
 ## Checking work without Unity
 
 | Tool | What it does |
 |---|---|
-| `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State, Generation and Simulation) under .NET 8 |
+| `dotnet test tools/verify/CoreTests` | Runs every EditMode test (State, Generation, Simulation and CoffeeShop) under .NET 8 |
 | `dotnet build tools/verify/UnityCompile/Editor.csproj` | Compiles every assembly the way Unity splits them, against Unity reference assemblies and URP/Input System signature stubs |
 | `tools/preview` | Runs the real generator, exports glTF, the night lights and the storm, and renders PNGs with three.js in headless Chromium |
+| `dotnet run -c Release --project tools/coffee-sim` | Plays 200 seeded games of Fellside Coffee with simple players and reports profit, waste, misses, the queue and what upgrades earn |
 | `python3 tools/generate_meta.py` | Creates `.meta` files with GUIDs derived from the path, so references can be written by hand |
 
 The compile check uses an older Unity's reference assemblies, so code behind newer version checks

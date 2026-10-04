@@ -19,6 +19,37 @@ namespace Townscape.Tests.Generation
         private static IReadOnlyList<BuildingPlan> Plans => GeneratedVillage.Town.Context.Buildings;
 
         [Test]
+        public void FellsideCoffee_IsOnTheHighStreet_WithRoomInFrontToStand()
+        {
+            var shop = ShopLocator.Find(Plans, VillageShops.FellsideCoffee);
+
+            Assert.That(shop, Is.Not.Null);
+            var front = (shop.Footprint.FrontLeft + shop.Footprint.FrontRight) * 0.5f;
+            foreach (var distance in new[] { 2f, 5f, 8.5f })
+            {
+                var spot = front + (shop.Footprint.Outward * distance);
+                Assert.That(Plans.Any(plan => plan.Footprint.Contains(spot)), Is.False, $"{distance} m out from the shop is inside a building");
+            }
+
+            Assert.That(ShopLocator.Find(Plans, new ShopDefinition("NOWHERE", Townscape.Generation.Geometry.SurfaceMaterial.PaintTeal, null)), Is.Null);
+        }
+
+        [Test]
+        public void TheViewOfFellsideCoffee_StandsInTheStreet_LookingAtTheShop()
+        {
+            var shop = ShopLocator.Find(Plans, VillageShops.FellsideCoffee).Footprint;
+            var ground = GeneratedVillage.Town.Context.Ground;
+
+            var view = ShopLocator.ViewOf(shop, ground.HeightAt);
+
+            var eye = new Vector2(view.Eye.X, view.Eye.Z);
+            Assert.That(Plans.Any(plan => plan.Footprint.Contains(eye)), Is.False, "the camera stands outside every building");
+            Assert.That(view.Eye.Y - ground.HeightAt(eye), Is.EqualTo(ShopLocator.EyeHeight).Within(1e-4f));
+            var toShop = new Vector2(view.LookAt.X, view.LookAt.Z) - eye;
+            Assert.That(Vector2.Dot(Vector2.Normalize(toShop), shop.Outward), Is.LessThan(-0.9f), "looking back at the shopfront");
+        }
+
+        [Test]
         public void Buildings_KeepOffRoadsRiverAndPaths()
         {
             // Classify against the ground as it would be without any building plots.
