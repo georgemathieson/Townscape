@@ -56,6 +56,13 @@ namespace Townscape.Generation.Buildings.Interiors
 
         public Vector3 At(float x, float y, float d) => _front.Point(x, y, -d);
 
+        /// <summary>Where a point in the town is in this space: (x, y, d).</summary>
+        public Vector3 Local(Vector3 point)
+        {
+            var offset = point - _front.Origin;
+            return new Vector3(Vector3.Dot(offset, Right), offset.Y, -Vector3.Dot(offset, _front.Out));
+        }
+
         /// <summary>A level rectangle seen from above.</summary>
         public void Floor(MeshBuilder builder, float x0, float d0, float x1, float d1, float y, SurfaceMaterial material) =>
             builder.AddQuadFacing(At(x0, y, d0), At(x1, y, d0), At(x1, y, d1), At(x0, y, d1), Vector3.UnitY, material);

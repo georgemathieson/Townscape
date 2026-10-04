@@ -88,7 +88,12 @@ namespace Townscape.Generation.Buildings.Styles
             BuildSidesAndBack(context, footprint, enterable);
 
             var roof = new GableRoof(footprint, design.Eaves, design.Ridge, overhang: 0.28f, verge: 0f);
-            roof.Build(builder, SurfaceMaterial.Slate, design.Trim);
+            var roofWindows = enterable ? CafeAndFlat.RoofWindows(footprint, design) : null;
+            roof.Build(builder, SurfaceMaterial.Slate, design.Trim, roofWindows);
+            for (var i = 0; i < (roofWindows?.Length ?? 0); i++)
+            {
+                RoofWindow.Build(context, roof, roofWindows[i], $"Roof window {i + 1}");
+            }
 
             var along = System.Numerics.Vector2.Normalize(footprint.FrontRight - footprint.FrontLeft);
             if (design.ChimneyLeft)
@@ -112,13 +117,13 @@ namespace Townscape.Generation.Buildings.Styles
 
             if (enterable)
             {
-                CafeAndFlat.Build(context, footprint, design, roof, dormer);
+                CafeAndFlat.Build(context, footprint, design, roof, dormer, roofWindows);
             }
         }
 
         // The same windows with clear glass, for rooms you can look into and out of.
         private static WindowStyle Clear(WindowStyle style) =>
-            new WindowStyle(style.Frame, style.Pattern, style.Sill, style.Surround) { Glass = SurfaceMaterial.ShopGlass };
+            new WindowStyle(style.Frame, style.Pattern, style.Sill, style.Surround) { Glass = SurfaceMaterial.ClearGlass };
 
         private void BuildUpperFront(BuildContext context, WallFrame front, float upperBase, WindowStyle windows)
         {

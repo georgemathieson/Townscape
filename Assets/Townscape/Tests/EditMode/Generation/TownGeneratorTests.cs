@@ -24,6 +24,7 @@ namespace Townscape.Tests.Generation
                 MeshCategory.Markings,
                 MeshCategory.Structure,
                 MeshCategory.Building,
+                MeshCategory.Fittings,
                 MeshCategory.Furniture,
                 MeshCategory.Puddles,
                 MeshCategory.Vegetation,

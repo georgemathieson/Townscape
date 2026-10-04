@@ -7,7 +7,8 @@ namespace Townscape.Generation.Buildings
 {
     /// <summary>
     /// Builds every planned building. Buildings in the same group (a terrace) share a mesh, split
-    /// into parts if a mesh would outgrow 16-bit indices.
+    /// into parts if a mesh would outgrow 16-bit indices, and a second mesh for hanging light
+    /// fittings, which walkers pass through.
     /// </summary>
     public sealed class BuildingGenerator : IStructureGenerator
     {
@@ -32,6 +33,7 @@ namespace Townscape.Generation.Buildings
             foreach (var group in order)
             {
                 var builder = new MeshBuilder();
+                var fittings = new MeshBuilder();
                 var part = 0;
                 foreach (var plan in groups[group])
                 {
@@ -41,12 +43,17 @@ namespace Townscape.Generation.Buildings
                         builder = new MeshBuilder();
                     }
 
-                    plan.Style.Build(plan.Footprint, new BuildContext(builder, sink.Anchors, plan.Seed, sink.Doors));
+                    plan.Style.Build(plan.Footprint, new BuildContext(builder, sink.Anchors, plan.Seed, sink.Doors, fittings));
                 }
 
                 if (!builder.IsEmpty)
                 {
                     sink.AddMesh(builder.Build(part == 0 ? group : $"{group} ({part + 1})"), MeshCategory.Building);
+                }
+
+                if (!fittings.IsEmpty)
+                {
+                    sink.AddMesh(fittings.Build($"{group} fittings"), MeshCategory.Fittings);
                 }
             }
         }

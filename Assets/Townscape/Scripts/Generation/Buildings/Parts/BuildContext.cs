@@ -7,15 +7,22 @@ namespace Townscape.Generation.Buildings.Parts
     /// <summary>What a building style draws into: the mesh, anchors for later systems, and a seeded random.</summary>
     public sealed class BuildContext
     {
-        public BuildContext(MeshBuilder builder, ICollection<TownAnchor> anchors, int seed, ICollection<TownDoor> doors = null)
+        public BuildContext(MeshBuilder builder, ICollection<TownAnchor> anchors, int seed, ICollection<TownDoor> doors = null, MeshBuilder fittings = null)
         {
             Builder = builder;
             Anchors = anchors;
             Doors = doors ?? new List<TownDoor>();
+            Fittings = fittings ?? builder;
             Random = new Random(seed);
         }
 
         public MeshBuilder Builder { get; }
+
+        /// <summary>
+        /// Where hanging light fittings go: a mesh of their own that nobody bumps into (or the
+        /// building's own mesh when no separate one is given).
+        /// </summary>
+        public MeshBuilder Fittings { get; }
 
         public ICollection<TownAnchor> Anchors { get; }
 
@@ -38,7 +45,8 @@ namespace Townscape.Generation.Buildings.Parts
         /// into a builder of its own, so it can swing about <paramref name="hinge"/> instead of
         /// being fixed into the building.
         /// </summary>
-        public void Door(string name, System.Numerics.Vector3 hinge, System.Numerics.Vector3 along, System.Numerics.Vector3 inward, float width, float height, Action<BuildContext> buildLeaf)
+        /// <param name="axis">What it turns about, if not straight up (a roof window pivots across the slope).</param>
+        public void Door(string name, System.Numerics.Vector3 hinge, System.Numerics.Vector3 along, System.Numerics.Vector3 inward, float width, float height, Action<BuildContext> buildLeaf, float openDegrees = 100f, System.Numerics.Vector3? axis = null, string noun = "door")
         {
             var leaf = new BuildContext(new MeshBuilder(), Anchors, Random.Next(), Doors);
             buildLeaf(leaf);
@@ -48,7 +56,7 @@ namespace Townscape.Generation.Buildings.Parts
                 mesh.Positions[i] -= hinge;
             }
 
-            Doors.Add(new TownDoor(name, hinge, along, inward, width, height, mesh));
+            Doors.Add(new TownDoor(name, hinge, along, inward, width, height, mesh, openDegrees, axis, noun));
         }
     }
 }

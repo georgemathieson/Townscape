@@ -110,6 +110,9 @@ namespace Townscape.Generation.Geometry
         Icing,
         Chalkboard,
 
+        // Window glass you see through from both sides, faintly tinted so you can tell it's there.
+        ClearGlass,
+
         // Water that moves: the river flows and puddles ripple in the rain.
         RiverWater,
         Puddle,
