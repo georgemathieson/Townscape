@@ -197,6 +197,16 @@ long features directly (railings, dry-stone walls). The `DressingContext` gives 
 - sway heights: while a plant is built, every vertex records how high it is above the plant's base
   (`MeshData.SwayHeights`), so the wind can bend tree tops more than trunks
 
+`MillWorksStyle` builds the old mill as Mill Works: stone walls with every window and the door cut
+right through (found on each wall straight out from where the rooms inside put them), clear glass
+in black frames, and a glazed door that opens. `MillWorks` lays out the inside on `UnitSpace`: a
+stair core at the right-hand end (two straight flights, a doorway through its wall on each floor,
+the first floor's with a door), co-working on the ground floor, the alarm receiving centre on the
+first (operators' desks facing a wall of screens; a `TownAlarmCentre` in
+`GeneratedTown.AlarmCentres` records each desk's console and each screen), and a meeting room on
+the second. It fits its own alarm and broadband as the Copper Kettle does, and `MillWorks.Walkways`
+keeps its doorways clear. The centre's panel lights are `OfficeLight` anchors, on whenever it's dark.
+
 Props can have doors that open too: `PropFrame.Door` builds a leaf in its own mesh, in the prop's
 own coordinates, and records a `TownDoor` as `BuildContext.Door` does. The phone box's whole front
 is a door that swings out, and inside (clear glass both ways, so you can see in and out) are a
@@ -219,6 +229,7 @@ Generators also leave **anchors** (`TownAnchor`) for later systems:
 - the phone box's light (its signs and inside) and the petrol station's lit sign
 - the lights in the petrol station's canopy, shining down on the pumps
 - room lights inside the Copper Kettle's flat (`RoomLight`), which come on in the evening like a home's windows
+- the alarm receiving centre's panel lights (`OfficeLight`), on whenever it's dark
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 
@@ -389,8 +400,21 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   internet is up (`ConnectInternet`: a comms fault while it's down). Open the cabinet's doors
   (`SwingingDoor`) and `StreetCabinetRack` brings up its window: the rack drawn, the patch tray's
   plugs, the screen running a speed test (a ping, then the download and upload climbing) and
-  buttons to name the fault. `AlarmSystem` and `StreetCabinetSystem` are both `IScreenWindow`s, which
+  buttons to name the fault. `AlarmSystem`, `StreetCabinetSystem` and `AlarmCentreSystem` are all `IScreenWindow`s, which
   `TownscapeShortcuts` stands aside for while one is up.
+- **The alarm receiving centre.** `AlarmReceivingCentre` (engine-free and tested) is what every
+  alarm reports to. It hears a panel only while the panel has power and its building's broadband is
+  up, so it knows what each site last reported, and calls a signal path lost after a quiet spell;
+  when the path comes back it catches up. It logs setting, unsetting, faults and alarms, and an alarm
+  (or a tamper) opens an incident; a second, different zone makes it confirmed (`BurglarAlarm` keeps
+  the zones that have activated since it was set). The operator acknowledges incidents, sends a
+  guard, calls the police (refused unless the alarm is confirmed or a guard has found a break-in)
+  and closes them. Guards and police are timed for now (`TimedResponders`): there and back, and a
+  guard who finds the building secure unsets the alarm; `Arrived` and `Checked` let people walking
+  the streets drive them later. In Unity, `AlarmCentreSystem` runs it, lights the wall of screens
+  (one per site: green unset, blue set, amber for a fault or no signal, flashing red in alarm),
+  chimes while an incident waits, and each desk's `AlarmCentreConsole` brings up its window: the
+  sites, the open incidents with their buttons, and the log.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the

@@ -34,6 +34,9 @@ namespace Townscape.Generation
         /// <summary>A ceiling light in a room you can walk into; it comes on in the evening like a home window.</summary>
         RoomLight,
 
+        /// <summary>A panel light in an office that's staffed day and night (the alarm receiving centre): on whenever it's dark.</summary>
+        OfficeLight,
+
         /// <summary>The foot of a tree's trunk; <see cref="TownAnchor.Size"/> is its radius. Walkers can't pass through it.</summary>
         TreeTrunk,
     }

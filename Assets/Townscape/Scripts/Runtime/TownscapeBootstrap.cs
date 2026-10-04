@@ -221,6 +221,12 @@ namespace Townscape.Runtime
                 windows.Add(cabinet);
             }
 
+            var centre = AlarmCentreSystem.Create(Town, _materials, _root.transform, hideFlags, walking, alarms, () => Lighting.CurrentHour);
+            if (centre != null)
+            {
+                windows.Add(centre);
+            }
+
             controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, windows);
             if (rememberSettings)
             {

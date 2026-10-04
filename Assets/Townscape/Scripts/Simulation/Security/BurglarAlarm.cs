@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Townscape.Simulation.Security
 {
@@ -94,6 +95,7 @@ namespace Townscape.Simulation.Security
         private readonly string _code;
         private readonly string _engineerCode;
         private readonly bool[] _zones;
+        private readonly List<int> _activated = new List<int>();
         private float _nextBeep;
         private bool _wasPowered = true;
 
@@ -125,6 +127,13 @@ namespace Townscape.Simulation.Security
         public bool LidOpen { get; private set; }
 
         public int ZoneCount => _zones.Length;
+
+        /// <summary>
+        /// The zones that have seen someone since it was set, in the order they did (each once):
+        /// the first starts the entry time, and a second, different one is what an alarm
+        /// receiving centre counts as a confirmed alarm.
+        /// </summary>
+        public IReadOnlyList<int> ActivatedZones => _activated;
 
         public bool MainsConnected { get; private set; } = true;
 
@@ -282,7 +291,17 @@ namespace Townscape.Simulation.Security
         /// <summary>A zone has seen someone (a sensor, or a door opening). Only matters once it's set, and only through a connected zone.</summary>
         public void Detected(int zone)
         {
-            if (Powered && !EngineerMode && ZoneConnected(zone) && State == AlarmState.Set)
+            if (!Powered || EngineerMode || !ZoneConnected(zone) || State == AlarmState.Unset || State == AlarmState.Exiting)
+            {
+                return;
+            }
+
+            if (!_activated.Contains(zone))
+            {
+                _activated.Add(zone);
+            }
+
+            if (State == AlarmState.Set)
             {
                 Count(AlarmState.Entry);
             }
@@ -412,6 +431,7 @@ namespace Townscape.Simulation.Security
 
         private void Reset()
         {
+            _activated.Clear();
             State = AlarmState.Unset;
             Tampered = false;
             Remaining = 0f;

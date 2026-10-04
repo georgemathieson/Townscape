@@ -98,7 +98,6 @@ namespace Townscape.Tests.Generation
         public void EachAlarmedBuilding_HasItsFibreBoxAndRouterOnAWallInside()
         {
             var town = GeneratedVillage.Town;
-            var kettle = ShopLocator.Find(town.Context.Buildings, VillageShops.CopperKettle);
             Assert.That(town.Broadband.Select(b => b.Customer), Is.EquivalentTo(town.Alarms.Select(a => a.Name)));
 
             foreach (var broadband in town.Broadband)
@@ -107,7 +106,7 @@ namespace Townscape.Tests.Generation
                 Assert.That(broadband.RouterLeds, Has.Count.EqualTo(3));
                 foreach (var mount in new[] { broadband.Ont, broadband.Router })
                 {
-                    Assert.That(kettle.Footprint.Contains(Flat(mount.Position)), Is.True, $"{broadband.Customer}'s kit is indoors");
+                    Assert.That(town.Context.Buildings.Any(b => b.Footprint.Contains(Flat(mount.Position))), Is.True, $"{broadband.Customer}'s kit is indoors");
                 }
 
                 // Side by side, not overlapping, and within reach of each other's cable.

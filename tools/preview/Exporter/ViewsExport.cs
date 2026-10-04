@@ -80,6 +80,25 @@ internal static class ViewsExport
             views.Add(View("kettleBack", space.At(space.Width * 0.5f, f[3] + 4f, space.Depth + 9f), space.At(space.Width * 0.5f, f[3] + 1.2f, space.Depth * 0.7f), 50f));
         }
 
+        // Mill Works: from the lane, and inside on each floor.
+        var mill = town.Context.Buildings.FirstOrDefault(plan => plan.Style is MillWorksStyle);
+        if (mill != null)
+        {
+            var space = new UnitSpace(mill.Footprint);
+            var f = MillWorks.Floors();
+            void Inside(string name, float x, float y, float d, float lx, float ly, float ld) =>
+                views.Add(View(name, space.At(x, y, d), space.At(lx, ly, ld), 70f, indoor: true));
+            views.Add(View("millWorks", space.At(space.Width * 0.3f, f[0] + 2.2f, -15f), space.At(space.Width * 0.5f, f[0] + 4.6f, 0f), 60f));
+            Inside("millReception", 6.0f, f[0] + 1.65f, 0.9f, 2.8f, f[0] + 0.9f, 4.8f);
+            Inside("millDesks", 8.6f, f[0] + 1.7f, 6.9f, 2.6f, f[0] + 0.8f, 2.8f);
+            Inside("millStairs", 10.1f, f[0] + 1.6f, 0.45f, 11.3f, f[0] + 2.4f, 5.0f);
+            Inside("millComms", 10.65f, f[0] + 1.6f, 4.2f, 9.7f, f[0] + 1.45f, 5.1f);
+            Inside("millLanding", 11.4f, f[1] + 1.65f, 7.5f, 9.4f, f[1] + 1.2f, 4.2f);
+            Inside("millArc", 9.1f, f[1] + 1.75f, 7.0f, 0.4f, f[1] + 1.4f, 3.4f);
+            Inside("millArcDesk", 4.75f, f[1] + 1.35f, 4.05f, 3.1f, f[1] + 1.08f, 4.05f);
+            Inside("millMeeting", 9.0f, f[2] + 1.7f, 1.0f, 2.2f, f[2] + 0.9f, 4.6f);
+        }
+
         // The phone box and the fibre cabinet beside it: from the pavement, inside the phone box,
         // and the cabinet with its doors open.
         var phoneDoor = town.Doors.FirstOrDefault(d => d.Name == PhoneBox.DoorName);

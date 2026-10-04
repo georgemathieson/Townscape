@@ -96,6 +96,32 @@ router on the wall. Open the cabinet's doors and press E on the kit inside:
   The light level, speeds, ping, loss and port errors tell them apart (the card inside the door
   says how), and naming the fault rightly gets it fixed.
 
+### Mill Works and the alarm receiving centre
+
+| | |
+|---|---|
+| ![The old stone mill at dusk, its windows lit, with MILL WORKS over the door](docs/images/gallery/mill-works-dusk.jpg) | ![The alarm receiving centre at night: rows of operators' desks facing a wall of screens](docs/images/gallery/mill-works-arc-night.jpg) |
+| The old mill by the beck, now Mill Works | Upstairs, the alarm receiving centre, on all night |
+| ![Hot desks, a kitchenette and a sofa on the ground floor at night](docs/images/gallery/mill-works-desks-night.jpg) | ![An operator's desk with two monitors, facing the wall of screens](docs/images/gallery/mill-works-console-day.jpg) |
+| Co-working on the ground floor | An operator's console |
+
+The old mill at the bottom of Mill Lane is now Mill Works, which you can walk into (press E at the
+door). The ground floor is co-working (reception, hot desks, a sofa and a kitchenette), the first
+floor is the village's alarm receiving centre, and the top floor has a meeting room. A stair climbs
+the right-hand end. Mill Works has its own burglar alarm (keypad inside the door, a yellow bell box)
+and its own fibre line from the cabinet by the phone box (port 3).
+
+Every alarm in the village reports to the alarm receiving centre over its building's broadband.
+Press E at any operator's desk to bring up the console:
+- **Sites** shows what each alarm last reported (unset, set or in alarm, and any faults). Unplug a
+  building at the street cabinet and its signal is lost: nothing it does reaches the centre until
+  it's back. The wall of screens shows the same at a glance, flashing red for an alarm.
+- **Incidents:** an alarm opens one, and the room chimes until you acknowledge it. Send a guard,
+  who drives over, looks round and, finding the building secure, puts the code in and unsets the
+  alarm. Call the police: they only come to a confirmed alarm (two different sensors or doors), or
+  once a guard has found a break-in. Then close the incident.
+- **Log:** everything the sites have reported, with the time.
+
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*
 
@@ -149,7 +175,7 @@ puts them back. Everything also has a key:
 | Space | Jump (walking) |
 | E or left click | Open or close what the dot in the middle is on (walking), or bring up an alarm's keypad or control box, or the fibre cabinet's kit |
 | 0–9, Enter, Esc | On an alarm keypad: type the code, set or unset, close |
-| Esc | Close the fibre cabinet's window |
+| Esc | Close the fibre cabinet's window or the alarm console |
 
 ## Fellside Coffee
 

@@ -50,7 +50,7 @@ namespace Townscape.Tests.Generation
         [Test]
         public void ItsTwoFrontDoors_Open_IntoTheBuilding()
         {
-            var doors = GeneratedVillage.Town.Doors.Where(d => d.Noun == "door").ToList();
+            var doors = GeneratedVillage.Town.Doors.Where(d => d.Noun == "door" && Kettle.Footprint.Contains(new Vector2(d.Hinge.X, d.Hinge.Z), 0.5f)).ToList();
             var site = Kettle.Footprint;
             var outward = new Vector3(site.Outward.X, 0f, site.Outward.Y);
 
@@ -250,7 +250,7 @@ namespace Townscape.Tests.Generation
             var shop = Alarm(CafeAndFlat.ShopAlarm);
             var flat = Alarm(CafeAndFlat.FlatAlarm);
 
-            Assert.That(GeneratedVillage.Town.Alarms, Has.Count.EqualTo(2));
+            Assert.That(GeneratedVillage.Town.Alarms.Select(a => a.Name), Has.Member(CafeAndFlat.ShopAlarm).And.Member(CafeAndFlat.FlatAlarm));
             Assert.That(shop.Zones.Select(z => z.Name), Is.EqualTo(new[] { "Café door", "Café sensor", "Storeroom sensor" }));
             Assert.That(flat.Zones.Select(z => z.Name), Is.EqualTo(new[]
             {
@@ -273,7 +273,7 @@ namespace Townscape.Tests.Generation
         {
             var space = new UnitSpace(Kettle.Footprint);
             var floors = CafeAndFlat.Floors(Design);
-            var sensors = GeneratedVillage.Town.Alarms.SelectMany(a => a.Zones).Where(z => z.Kind == AlarmZoneKind.Motion)
+            var sensors = GeneratedVillage.Town.Alarms.Where(a => a.Name == CafeAndFlat.ShopAlarm || a.Name == CafeAndFlat.FlatAlarm).SelectMany(a => a.Zones).Where(z => z.Kind == AlarmZoneKind.Motion)
                 .Select(z => (Local: space.Local(z.Position), z.Facing, Led: space.Local(z.Led))).ToList();
 
             // The café, its storeroom and the hall; the living room and kitchen; the bedroom and bathroom; the attic.
