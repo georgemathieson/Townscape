@@ -7,9 +7,10 @@ namespace Townscape.Generation.Buildings.Parts
     /// <summary>What a building style draws into: the mesh, anchors for later systems, and a seeded random.</summary>
     public sealed class BuildContext
     {
-        public BuildContext(MeshBuilder builder, ICollection<TownAnchor> anchors, int seed, ICollection<TownDoor> doors = null, MeshBuilder fittings = null, ICollection<TownAlarm> alarms = null, ICollection<TownBroadband> broadband = null, ICollection<TownAlarmCentre> alarmCentres = null)
+        public BuildContext(MeshBuilder builder, ICollection<TownAnchor> anchors, int seed, ICollection<TownDoor> doors = null, MeshBuilder fittings = null, ICollection<TownAlarm> alarms = null, ICollection<TownBroadband> broadband = null, ICollection<TownAlarmCentre> alarmCentres = null, ICollection<TownSite> sites = null)
         {
             AlarmCentres = alarmCentres ?? new List<TownAlarmCentre>();
+            Sites = sites ?? new List<TownSite>();
             Builder = builder;
             Anchors = anchors;
             Doors = doors ?? new List<TownDoor>();
@@ -41,6 +42,9 @@ namespace Townscape.Generation.Buildings.Parts
         /// <summary>Alarm receiving centres in the building.</summary>
         public ICollection<TownAlarmCentre> AlarmCentres { get; }
 
+        /// <summary>The building's alarmed sites, with the ways through them people walk.</summary>
+        public ICollection<TownSite> Sites { get; }
+
         public Random Random { get; }
 
         public float Range(float min, float max) => min + ((float)Random.NextDouble() * (max - min));
@@ -60,7 +64,7 @@ namespace Townscape.Generation.Buildings.Parts
         /// <param name="axis">What it turns about, if not straight up (a roof window pivots across the slope).</param>
         public void Door(string name, System.Numerics.Vector3 hinge, System.Numerics.Vector3 along, System.Numerics.Vector3 inward, float width, float height, Action<BuildContext> buildLeaf, float openDegrees = 100f, System.Numerics.Vector3? axis = null, string noun = "door")
         {
-            var leaf = new BuildContext(new MeshBuilder(), Anchors, Random.Next(), Doors, alarms: Alarms, broadband: Broadband, alarmCentres: AlarmCentres);
+            var leaf = new BuildContext(new MeshBuilder(), Anchors, Random.Next(), Doors, alarms: Alarms, broadband: Broadband, alarmCentres: AlarmCentres, sites: Sites);
             buildLeaf(leaf);
             var mesh = leaf.Builder.Build(name);
             for (var i = 0; i < mesh.Positions.Length; i++)

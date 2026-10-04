@@ -44,11 +44,12 @@ namespace Townscape.Simulation.Security
     /// <summary>A building whose alarm reports to the centre, and what the centre last heard from it.</summary>
     public sealed class ArcSite
     {
-        internal ArcSite(string name, BurglarAlarm alarm, IReadOnlyList<string> zones)
+        internal ArcSite(string name, BurglarAlarm alarm, IReadOnlyList<string> zones, IReadOnlyCollection<int> doorZones)
         {
             Name = name;
             Alarm = alarm;
             Zones = zones;
+            DoorZones = doorZones ?? Array.Empty<int>();
         }
 
         public string Name { get; }
@@ -57,6 +58,9 @@ namespace Townscape.Simulation.Security
 
         /// <summary>Each zone's name, as the control box labels it.</summary>
         public IReadOnlyList<string> Zones { get; }
+
+        /// <summary>The zones that are contacts on doors (or windows), rather than motion sensors.</summary>
+        public IReadOnlyCollection<int> DoorZones { get; }
 
         /// <summary>What the centre last heard the alarm was doing (it can't hear through a broken signal path).</summary>
         public AlarmState State { get; internal set; }
@@ -141,6 +145,21 @@ namespace Townscape.Simulation.Security
         /// <summary>Someone put the code in at the keypad after the alarm.</summary>
         public bool CancelledAtKeypad { get; internal set; }
 
+        /// <summary>
+        /// A guard or the police have gone into the building: what the zones see from then on is
+        /// them, so it no longer counts towards confirming the alarm.
+        /// </summary>
+        public bool ResponderInside { get; internal set; }
+
+        /// <summary>The centre stopped hearing from the alarm while this was open.</summary>
+        public bool SignalLost { get; internal set; }
+
+        /// <summary>What the guard made of it, once they've looked round.</summary>
+        public GuardAssessment Assessment { get; internal set; }
+
+        /// <summary>The police found someone in the building and took them away.</summary>
+        public bool Arrested { get; internal set; }
+
         public bool Closed { get; internal set; }
 
         /// <summary>What it says in the incident list.</summary>
@@ -165,12 +184,14 @@ namespace Townscape.Simulation.Security
     /// when it last heard from it, and notices when a signal path goes quiet. Alarms open
     /// incidents for the operator, who acknowledges them, sends a key-holding guard to look, calls
     /// the police (who only come to a confirmed alarm, or once a guard has found a break-in) and
-    /// closes them. A guard on site who finds nothing amiss puts the code in and unsets the alarm.
+    /// closes them. The guard weighs up what they find (<see cref="GuardAssessment"/>): a false
+    /// alarm is unset with the code, and a break-in lets the police be called.
     /// </summary>
     /// <remarks>
-    /// The guard and police are timed here for now: they take a while to get there and a while to
-    /// look round. People walking the streets can take their place later through
-    /// <see cref="TimedResponders"/>, <see cref="Arrived"/> and <see cref="Checked"/>.
+    /// With <see cref="TimedResponders"/> on, the guard and police are timed here: they take a
+    /// while to get there and a while to look round, and go on what the centre knows. Otherwise
+    /// people walking the streets do it, through <see cref="Arrived"/>, <see cref="GoingIn"/>,
+    /// <see cref="GuardReported"/> and <see cref="PoliceReported"/>.
     /// </remarks>
     public sealed class AlarmReceivingCentre
     {
@@ -206,10 +227,10 @@ namespace Townscape.Simulation.Security
         /// <summary>Whether this class moves guards and police along on a timer, or something else does.</summary>
         public bool TimedResponders { get; set; } = true;
 
-        /// <summary>Signs up a building's alarm, with each zone's name.</summary>
-        public ArcSite Add(string name, BurglarAlarm alarm, IReadOnlyList<string> zones)
+        /// <summary>Signs up a building's alarm, with each zone's name, and which zones are on doors.</summary>
+        public ArcSite Add(string name, BurglarAlarm alarm, IReadOnlyList<string> zones, IReadOnlyCollection<int> doorZones = null)
         {
-            var site = new ArcSite(name, alarm, zones)
+            var site = new ArcSite(name, alarm, zones, doorZones)
             {
                 State = alarm.State,
                 Faults = Reportable(alarm.Faults),
@@ -339,36 +360,118 @@ namespace Townscape.Simulation.Security
             Write(incident.Site, guard ? "Guard on site, checking the building" : "Police on site", ArcSeverity.Response);
         }
 
+        /// <summary>How long a guard (or the police) walking the streets reckon they'll be: on the way, or looking round.</summary>
+        public void Eta(ArcIncident incident, bool guard, float seconds)
+        {
+            var responder = guard ? incident.Guard : incident.Police;
+            if (responder.Stage == ResponderStage.EnRoute || responder.Stage == ResponderStage.OnSite)
+            {
+                responder.Remaining = Math.Max(0f, seconds);
+            }
+        }
+
+        /// <summary>A guard or the police are going into the building (with a key): from now on the zones see them.</summary>
+        public void GoingIn(ArcIncident incident, bool guard)
+        {
+            if (incident.Closed || incident.ResponderInside)
+            {
+                return;
+            }
+
+            incident.ResponderInside = true;
+            Write(incident.Site, guard ? "Guard going in" : "Police going in", ArcSeverity.Response);
+        }
+
         /// <summary>
-        /// A guard (or the police) has looked round. A guard who finds nothing amiss unsets the
-        /// alarm with the code; one who finds a break-in says so, and the police can be called.
+        /// A guard (or the police) has looked round, with only what the centre knows to go on: the
+        /// timed responders' report. People walking the streets report with
+        /// <see cref="GuardReported"/> and <see cref="PoliceReported"/> instead.
         /// </summary>
         public void Checked(ArcIncident incident, bool guard)
         {
-            var responder = guard ? incident.Guard : incident.Police;
+            if (guard)
+            {
+                GuardReported(incident, GuardAssessment.Assess(Evidence(incident)));
+            }
+            else
+            {
+                PoliceReported(incident, _breakIns.Contains(incident.Site.Name));
+            }
+        }
+
+        /// <summary>
+        /// What the centre and the panel can tell a guard about an incident: the zones it
+        /// reported before anyone went in, tampering, the panel's health, cut wires, the signal
+        /// path and the keypad. The guard adds what they find on site.
+        /// </summary>
+        public SiteEvidence Evidence(ArcIncident incident)
+        {
+            var site = incident.Site;
+            var alarm = site.Alarm;
+            var firstDoor = incident.Zones.FindIndex(z => site.DoorZones.Contains(z));
+            var cut = new List<string>();
+            for (var zone = 0; zone < alarm.ZoneCount; zone++)
+            {
+                if (!alarm.ZoneConnected(zone))
+                {
+                    cut.Add(site.ZoneName(zone));
+                }
+            }
+
+            return new SiteEvidence
+            {
+                Zones = incident.Zones.Select(site.ZoneName).ToList(),
+                DoorThenMotion = firstDoor >= 0 && incident.Zones.Skip(firstDoor + 1).Any(z => !site.DoorZones.Contains(z)),
+                Tamper = incident.Tamper,
+                LidOpen = alarm.LidOpen,
+                Powered = alarm.Powered,
+                Faults = Reportable(alarm.Faults),
+                CutZones = cut,
+                SignalLost = incident.SignalLost,
+                CodeEntered = incident.CancelledAtKeypad,
+                BreakInReported = _breakIns.Contains(site.Name),
+            };
+        }
+
+        /// <summary>
+        /// The guard's report. A break-in lets the police be called; a false alarm is unset with
+        /// the code (if nobody has already), and the guard's done.
+        /// </summary>
+        public void GuardReported(ArcIncident incident, GuardAssessment assessment)
+        {
+            var responder = incident.Guard;
             if (responder.Stage != ResponderStage.OnSite)
             {
                 return;
             }
 
             responder.Stage = ResponderStage.Done;
+            incident.Assessment = assessment;
             var site = incident.Site;
-            var brokenInto = _breakIns.Contains(site.Name);
-            if (!guard)
-            {
-                Write(site, brokenInto ? "Police: intruder dealt with, building secured" : "Police: building searched, no one found", ArcSeverity.Response);
-                return;
-            }
-
-            if (brokenInto)
+            if (assessment.BreakIn)
             {
                 incident.BreakInFound = true;
-                Write(site, "Guard: signs of a break-in! Call the police", ArcSeverity.Alarm);
+                Write(site, $"Guard: signs of a break-in (suspicion {assessment.Score})! Call the police", ArcSeverity.Alarm);
                 return;
             }
 
             var unset = site.Alarm.Armed && site.Alarm.Unset(BurglarAlarm.DefaultCode) == KeypadResult.Done;
-            Write(site, unset ? "Guard: building secure, alarm unset" : site.Alarm.Powered ? "Guard: building secure" : "Guard: building secure, but the alarm has no power", ArcSeverity.Response);
+            var how = unset ? "building secure, alarm unset" : site.Alarm.Powered ? "building secure" : "building secure, but the alarm has no power";
+            Write(site, $"Guard: false alarm (suspicion {assessment.Score}), {how}", ArcSeverity.Response);
+        }
+
+        /// <summary>The police have searched the building, and found someone (<paramref name="arrested"/>) or not.</summary>
+        public void PoliceReported(ArcIncident incident, bool arrested)
+        {
+            var responder = incident.Police;
+            if (responder.Stage != ResponderStage.OnSite)
+            {
+                return;
+            }
+
+            responder.Stage = ResponderStage.Done;
+            incident.Arrested = arrested;
+            Write(incident.Site, arrested ? "Police: intruder arrested, building secured" : "Police: building searched, no one found", ArcSeverity.Response);
         }
 
         private void Move(ArcIncident incident, Responder responder, float deltaTime, bool guard)
@@ -406,6 +509,11 @@ namespace Townscape.Simulation.Security
                 if (site.Online && site.Silent >= LostAfterSeconds)
                 {
                     site.Online = false;
+                    if (OpenIncident(site) is { } open)
+                    {
+                        open.SignalLost = true;
+                    }
+
                     Write(site, "Signal path lost: can't reach the alarm", ArcSeverity.Warning);
                 }
 
@@ -438,12 +546,13 @@ namespace Townscape.Simulation.Security
                     site.ReportedZones = 0;
                     site.Tampered = false;
                     var incident = OpenIncident(site);
-                    if (was == AlarmState.Sounding && incident != null)
+                    var responder = incident != null && (incident.ResponderInside || incident.Guard.Stage == ResponderStage.Done);
+                    if (was == AlarmState.Sounding && incident != null && !responder)
                     {
-                        incident.CancelledAtKeypad = incident.Guard.Stage != ResponderStage.Done;
+                        incident.CancelledAtKeypad = true;
                     }
 
-                    Write(site, was == AlarmState.Sounding ? "Unset after an alarm" : "Unset", ArcSeverity.Info);
+                    Write(site, was != AlarmState.Sounding ? "Unset" : responder ? "Unset by the guard" : "Unset after an alarm", ArcSeverity.Info);
                 }
                 else if (state == AlarmState.Sounding)
                 {
@@ -455,13 +564,14 @@ namespace Townscape.Simulation.Security
                 Raise(site, tamper: true);
             }
 
-            // Zones reported while it's in alarm count towards confirming it.
+            // Zones reported while it's in alarm count towards confirming it, until a guard or the
+            // police go in: from then on it's them the zones see.
             if (site.State == AlarmState.Sounding && activated.Count > site.ReportedZones)
             {
                 var incident = OpenIncident(site);
                 for (var i = site.ReportedZones; i < activated.Count; i++)
                 {
-                    if (incident != null && !incident.Zones.Contains(activated[i]))
+                    if (incident != null && !incident.ResponderInside && !incident.Zones.Contains(activated[i]))
                     {
                         incident.Zones.Add(activated[i]);
                         Write(site, $"Zone activated: {site.ZoneName(activated[i])}", ArcSeverity.Alarm);

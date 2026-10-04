@@ -166,8 +166,17 @@ before work started; later changes should be recorded here too.
     its signal). At any operator's console: each site's state and faults, the incidents its alarms
     open (the room chimes until one's acknowledged), sending a guard (who unsets the alarm if all's
     well), calling the police (who only come to a confirmed alarm, or once a guard has found a
-    break-in), closing incidents, and a log. The guard and police are timed for now, ready for
-    people to walk the streets later. *(this pull request)*
+    break-in), closing incidents, and a log. *(done)*
+15. **People: the guard, the police and a burglar:** the guard waits at their post in the ARC and,
+    sent to an alarm, walks there through the village, checks the outside, lets themselves in,
+    puts the code in and looks round. They judge it with a suspicion score (doors and windows left
+    open, the zones that went off with the two-zone rule, tampering, cut wires, the signal path,
+    whether the panel's working, the right code put in, anyone seen) and either set the alarm again
+    and go back, or wait outside for the police. The police drive in with blue lights and a siren,
+    search the building and catch anyone still there. A burglar, sent from the menu, breaks in and
+    runs off once the alarm's been going a while. The alarms' sensors see everyone. People find
+    their way along pavements, lanes, footpaths and through buildings by a route network of our own
+    (no NavMesh package). *(this pull request)*
 
 ## Fellside Coffee
 

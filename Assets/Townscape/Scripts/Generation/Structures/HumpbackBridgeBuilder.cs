@@ -58,6 +58,17 @@ namespace Townscape.Generation.Structures
             return _spec.HumpHeight * c * c;
         }
 
+        /// <summary>Whether <paramref name="p"/> (on the ground) is within <paramref name="margin"/> of one of the pillars at the bridge's ends.</summary>
+        public static bool NearPillar(BridgeSpec spec, Vector2 p, float margin)
+        {
+            var offset = p - spec.Centre;
+            var u = MathF.Abs(Vector2.Dot(offset, spec.Direction));
+            var v = MathF.Abs(Vector2.Dot(offset, GeoMath.Left(spec.Direction)));
+            var halfAcross = (spec.ParapetThickness * 0.5f) + 0.08f;
+            var centreAcross = spec.RoadHalfWidth + (spec.ParapetThickness * 0.5f);
+            return MathF.Abs(u - (spec.HalfLength - 0.3f)) < PillarHalfLength + margin && MathF.Abs(v - centreAcross) < halfAcross + margin;
+        }
+
         /// <summary>Height of the underside of the arch at <paramref name="u"/> (only meaningful within the span).</summary>
         public float ArchHeight(float u)
         {

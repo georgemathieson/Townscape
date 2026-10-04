@@ -115,7 +115,8 @@ namespace Townscape.Tests.Simulation
             Run(arc, alarm, AlarmReceivingCentre.CheckSeconds + 1f);
             Assert.That(incident.Guard.Stage, Is.EqualTo(ResponderStage.Done));
             Assert.That(alarm.State, Is.EqualTo(AlarmState.Unset), "the guard put the code in");
-            Assert.That(Logged(arc, "Guard: building secure, alarm unset"), Is.True);
+            Assert.That(Logged(arc, "Guard: false alarm (suspicion 10), building secure, alarm unset"), Is.True);
+            Assert.That(incident.Assessment.Verdict, Is.EqualTo(GuardVerdict.FalseAlarm));
             Assert.That(incident.CancelledAtKeypad, Is.False, "the guard did it, not a stranger");
 
             arc.Close(incident);
@@ -137,6 +138,7 @@ namespace Townscape.Tests.Simulation
             Run(arc, alarm, AlarmReceivingCentre.CheckSeconds + 1f);
             Assert.That(incident.Police.Stage, Is.EqualTo(ResponderStage.Done));
             Assert.That(Logged(arc, "Police: building searched"), Is.True);
+            Assert.That(incident.Arrested, Is.False);
         }
 
         [Test]
@@ -152,6 +154,7 @@ namespace Townscape.Tests.Simulation
             Run(arc, alarm, AlarmReceivingCentre.GuardTravelSeconds + AlarmReceivingCentre.CheckSeconds + 2f);
 
             Assert.That(incident.BreakInFound, Is.True);
+            Assert.That(incident.Assessment.Score, Is.GreaterThanOrEqualTo(GuardAssessment.BreakInScore));
             Assert.That(alarm.State, Is.EqualTo(AlarmState.Sounding), "the guard leaves it for the police");
             Assert.That(arc.CallPolice(incident), Is.True);
         }
@@ -212,6 +215,81 @@ namespace Townscape.Tests.Simulation
 
             Assert.That(arc.Log.Last().Text, Is.EqualTo("Unset after an alarm"));
             Assert.That(arc.OpenIncident(site).CancelledAtKeypad, Is.True, "it stays open until the operator closes it");
+        }
+
+        [Test]
+        public void OnceSomeoneHasGoneIn_TheZonesTheyTripDontConfirmTheAlarm()
+        {
+            var (arc, alarm, site) = Centre();
+            arc.TimedResponders = false;
+            SetAndLeave(arc, alarm);
+            BreakIn(arc, alarm, 0);
+            var incident = arc.OpenIncident(site);
+            arc.DispatchGuard(incident);
+            arc.Arrived(incident, guard: true);
+
+            arc.GoingIn(incident, guard: true);
+            alarm.Detected(1);
+            Run(arc, alarm, 1f);
+            Assert.That(incident.Confirmed, Is.False, "that was the guard walking in");
+            Assert.That(incident.Zones, Is.EqualTo(new[] { 0 }));
+
+            alarm.Unset(Code);
+            Run(arc, alarm, 1f);
+            Assert.That(incident.CancelledAtKeypad, Is.False);
+            Assert.That(arc.Log.Last().Text, Is.EqualTo("Unset by the guard"));
+        }
+
+        [Test]
+        public void TheCentre_GivesTheGuardEverythingItKnows()
+        {
+            var arc = new AlarmReceivingCentre();
+            var alarm = new BurglarAlarm(Zones.Length);
+            var site = arc.Add("The flat", alarm, Zones, doorZones: new[] { 0 });
+            SetAndLeave(arc, alarm);
+            alarm.ConnectZone(2, false);
+            BreakIn(arc, alarm, 0, 1);
+            alarm.ConnectMains(false);
+            Run(arc, alarm, 1f);
+
+            var evidence = arc.Evidence(arc.OpenIncident(site));
+
+            Assert.That(evidence.Zones, Is.EqualTo(new[] { "Front door", "Hall sensor" }));
+            Assert.That(evidence.DoorThenMotion, Is.True);
+            Assert.That(evidence.CutZones, Is.EqualTo(new[] { "Kitchen sensor" }));
+            Assert.That(evidence.Faults, Is.EqualTo(AlarmFaults.Mains));
+            Assert.That(evidence.Tamper, Is.False);
+            Assert.That(evidence.CodeEntered, Is.False);
+        }
+
+        [Test]
+        public void ThePolice_SayWhetherTheyFoundAnyone()
+        {
+            var (arc, alarm, site) = Centre();
+            arc.TimedResponders = false;
+            SetAndLeave(arc, alarm);
+            BreakIn(arc, alarm, 0, 1);
+            var incident = arc.OpenIncident(site);
+            arc.CallPolice(incident);
+            arc.Arrived(incident, guard: false);
+
+            arc.PoliceReported(incident, arrested: true);
+
+            Assert.That(incident.Police.Stage, Is.EqualTo(ResponderStage.Done));
+            Assert.That(incident.Arrested, Is.True);
+            Assert.That(Logged(arc, "Police: intruder arrested"), Is.True);
+        }
+
+        [Test]
+        public void LosingTheSignal_DuringAnIncident_IsRemembered()
+        {
+            var (arc, alarm, site) = Centre();
+            SetAndLeave(arc, alarm);
+            BreakIn(arc, alarm, 1);
+            alarm.ConnectInternet(false);
+            Run(arc, alarm, AlarmReceivingCentre.LostAfterSeconds + 1f);
+
+            Assert.That(arc.OpenIncident(site).SignalLost, Is.True);
         }
     }
 }

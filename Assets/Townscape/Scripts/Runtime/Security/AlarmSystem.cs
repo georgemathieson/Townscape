@@ -40,6 +40,7 @@ namespace Townscape.Runtime.Security
         private readonly List<DoorContact> _contacts = new List<DoorContact>();
         private readonly List<Keypad> _keypads = new List<Keypad>();
         private readonly List<Object> _owned = new List<Object>();
+        private readonly List<Vector3> _moving = new List<Vector3>();
 
         private TownAlarm _spec;
         private BurglarAlarm _alarm;
@@ -57,6 +58,9 @@ namespace Townscape.Runtime.Security
 
         /// <summary>The alarm as generation described it: its zones, keypads, control box and bell box.</summary>
         public TownAlarm Spec => _spec;
+
+        /// <summary>Everyone else the sensors can see besides the walker (the guard, the police, a burglar): the middle of each, and whether they're moving.</summary>
+        public System.Func<IEnumerable<(Vector3 Chest, bool Moving)>> Others { get; set; }
 
         /// <summary>Puts every building's alarm into the town.</summary>
         public static IReadOnlyList<AlarmSystem> CreateAll(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors)
@@ -213,7 +217,8 @@ namespace Townscape.Runtime.Security
         }
 
         // What the zones see this frame: the doors that moved, and the sensors with a clear view
-        // of the walker moving (if their wire's whole and the panel's on, their LED lights).
+        // of someone moving, the walker or anyone else about (if their wire's whole and the
+        // panel's on, their LED lights).
         private void Watch()
         {
             foreach (var contact in _contacts)
@@ -226,41 +231,58 @@ namespace Townscape.Runtime.Security
                 }
             }
 
-            if (_walking == null || !_walking.Active)
+            _moving.Clear();
+            if (_walking != null && _walking.Active)
+            {
+                var feet = _walking.transform.position;
+                if (Time.deltaTime > 0f && (feet - _lastWalker).magnitude / Time.deltaTime > MovingSpeed)
+                {
+                    _moving.Add(feet + (Vector3.up * ChestHeight));
+                }
+
+                _lastWalker = feet;
+            }
+
+            if (Others != null)
+            {
+                foreach (var (chest, moving) in Others())
+                {
+                    if (moving)
+                    {
+                        _moving.Add(chest);
+                    }
+                }
+            }
+
+            if (_moving.Count == 0 || !_alarm.Powered)
             {
                 return;
             }
 
-            var feet = _walking.transform.position;
-            var moving = Time.deltaTime > 0f && (feet - _lastWalker).magnitude / Time.deltaTime > MovingSpeed;
-            _lastWalker = feet;
-            if (!moving || !_alarm.Powered)
+            foreach (var chest in _moving)
             {
-                return;
-            }
-
-            var chest = feet + (Vector3.up * ChestHeight);
-            var target = new System.Numerics.Vector3(chest.x, chest.y, chest.z);
-            foreach (var sensor in _sensors)
-            {
-                if (!_alarm.ZoneConnected(sensor.Zone))
+                var target = new System.Numerics.Vector3(chest.x, chest.y, chest.z);
+                foreach (var sensor in _sensors)
                 {
-                    continue;
-                }
+                    if (!_alarm.ZoneConnected(sensor.Zone))
+                    {
+                        continue;
+                    }
 
-                var position = new System.Numerics.Vector3(sensor.Position.x, sensor.Position.y, sensor.Position.z);
-                var look = new System.Numerics.Vector3(sensor.Facing.x, sensor.Facing.y, sensor.Facing.z);
-                if (!MotionSensor.Covers(position, look, target))
-                {
-                    continue;
-                }
+                    var position = new System.Numerics.Vector3(sensor.Position.x, sensor.Position.y, sensor.Position.z);
+                    var look = new System.Numerics.Vector3(sensor.Facing.x, sensor.Facing.y, sensor.Facing.z);
+                    if (!MotionSensor.Covers(position, look, target))
+                    {
+                        continue;
+                    }
 
-                // The walker is on the Ignore Raycast layer, so only walls and doors get in the way.
-                var from = sensor.Position + (new Vector3(sensor.Facing.x, 0f, sensor.Facing.z).normalized * 0.06f);
-                if (!Physics.Linecast(from, chest, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-                {
-                    sensor.LitUntil = Time.time + LedHoldSeconds;
-                    _alarm.Detected(sensor.Zone);
+                    // People are on the Ignore Raycast layer, so only walls and doors get in the way.
+                    var from = sensor.Position + (new Vector3(sensor.Facing.x, 0f, sensor.Facing.z).normalized * 0.06f);
+                    if (!Physics.Linecast(from, chest, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                    {
+                        sensor.LitUntil = Time.time + LedHoldSeconds;
+                        _alarm.Detected(sensor.Zone);
+                    }
                 }
             }
         }

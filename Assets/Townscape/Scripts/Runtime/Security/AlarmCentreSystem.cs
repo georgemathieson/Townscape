@@ -21,9 +21,8 @@ namespace Townscape.Runtime.Security
     /// and close them, with the log of everything the sites have reported.
     /// </summary>
     /// <remarks>
-    /// Like the alarms' own state, the centre's lives here rather than in the store. For now the
-    /// guard and police are timed by <see cref="AlarmReceivingCentre"/>; people walking the
-    /// streets can take their place later.
+    /// Like the alarms' own state, the centre's lives here rather than in the store. The guard
+    /// and the police it sends walk (and drive) the streets: see <c>PeopleSystem</c>.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed partial class AlarmCentreSystem : MonoBehaviour, IScreenWindow

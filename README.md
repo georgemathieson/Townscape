@@ -116,11 +116,56 @@ Press E at any operator's desk to bring up the console:
 - **Sites** shows what each alarm last reported (unset, set or in alarm, and any faults). Unplug a
   building at the street cabinet and its signal is lost: nothing it does reaches the centre until
   it's back. The wall of screens shows the same at a glance, flashing red for an alarm.
-- **Incidents:** an alarm opens one, and the room chimes until you acknowledge it. Send a guard,
-  who drives over, looks round and, finding the building secure, puts the code in and unsets the
-  alarm. Call the police: they only come to a confirmed alarm (two different sensors or doors), or
-  once a guard has found a break-in. Then close the incident.
+- **Incidents:** an alarm opens one, and the room chimes until you acknowledge it. Send a guard
+  (see below) or call the police: they only come to a confirmed alarm (two different sensors or
+  doors), or once a guard has found a break-in. Then close the incident.
 - **Log:** everything the sites have reported, with the time.
+
+### The guard, the police and a burglar
+
+| | |
+|---|---|
+| ![A police car stopped outside the Copper Kettle at dusk, two officers heading for the door, the guard waiting on the pavement and a burglar making off with a sack](docs/images/gallery/people-callout-dusk.jpg) | ![The guard in hi-vis and a cap, a police constable in a helmet, and a burglar in a striped jumper with a mask and a sack](docs/images/gallery/people-lineup-day.jpg) |
+| A call-out at the Copper Kettle | The guard, a constable and a burglar |
+| ![The guard waiting at their post in the alarm receiving centre at night](docs/images/gallery/guard-post-night.jpg) | ![A masked burglar behind the café's counter, at the till](docs/images/gallery/burglar-till-night.jpg) |
+| The guard at their post in the ARC | At the till |
+
+The alarm receiving centre has a key-holding guard, who waits at their post by the ARC's door.
+Send them to an incident and they walk there through the village (to the Copper Kettle, along the
+riverside path and over the bridge), opening and shutting the doors as they go. They check the outside first; if the door's shut
+and nobody's in sight they let themselves in, put the code in at the keypad and look round every
+room. Then they weigh it all up as a **suspicion score**, and the console shows their reasoning:
+
+| What the guard finds | Points |
+|---|---|
+| Someone in the building | +100 |
+| An outside door left open | +40 |
+| A window left open | +25 |
+| Three or more zones went off | +45 |
+| Two zones went off (the police's rule) | +35 |
+| One zone went off | +10 |
+| A door opened, then something moved inside | +10 |
+| The control box was tampered with | +25 |
+| Its lid is still off | +15 |
+| A zone's wire has been cut (each, up to two) | +20 |
+| The alarm stopped reporting while it was going off | +15 |
+| The panel has no power | -20 |
+| The panel has a fault (mains, battery or bell box) | -15 |
+| Someone put the right code in after it went off | -30 |
+
+Fifty or more is a break-in: so two sensors alone (which you can set off yourself) aren't enough,
+but two sensors and a door left open are. A false alarm, they set the alarm again on the way out and
+walk back to the centre. A break-in, they come out and wait on the pavement for the police (and the
+police can now be called). The police drive in from the edge of the village with blue lights and a
+two-tone siren and stop outside; one officer keeps the door while the other searches room by room,
+and anyone still inside is arrested and driven away.
+
+To see it all, send a burglar: the panel's **Burglars** section sends one to the Copper Kettle, the
+flat or Mill Works (set its alarm first, or nobody will know). They walk in from the edge of the
+village, force the door (setting off the door's contact, and then the sensors as they go round),
+head for the till or the telly, and run off once the alarm's been going a while, leaving the door
+open. Some are bolder than others. The alarms' sensors see the guard, the police and the burglar
+just as they see you, and the guard's own footsteps don't count once they've gone in.
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*
@@ -149,7 +194,8 @@ list) for macOS or Windows.
 
 The panel in the top-left corner has everything: the time of day (presets, a time slider, and a
 clock you can run at any speed), the weather (a thunderstorm or a snowstorm; rain or snow, lightning
-and wind sliders; and a button for a lightning strike) and the volume. Your settings are remembered between sessions; **Reset all**
+and wind sliders; and a button for a lightning strike), the volume, and a burglar to send to any
+building with an alarm (with what the guard and the police are up to). Your settings are remembered between sessions; **Reset all**
 puts them back. Everything also has a key:
 
 | Input | Action |

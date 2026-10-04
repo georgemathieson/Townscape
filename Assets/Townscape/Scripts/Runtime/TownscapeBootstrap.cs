@@ -9,6 +9,7 @@ using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Network;
+using Townscape.Runtime.People;
 using Townscape.Runtime.Rendering;
 using Townscape.Runtime.Security;
 using Townscape.Runtime.UI;
@@ -225,6 +226,18 @@ namespace Townscape.Runtime
             if (centre != null)
             {
                 windows.Add(centre);
+            }
+
+            // The guard, the police and any burglar, whom the alarms' sensors see as they see you.
+            var people = PeopleSystem.Create(Town, _materials, _root.transform, hideFlags, walking, _doors, centre);
+            if (people != null)
+            {
+                foreach (var alarm in alarms)
+                {
+                    alarm.Others = () => people.Bodies;
+                }
+
+                panel.People = people;
             }
 
             controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, windows);

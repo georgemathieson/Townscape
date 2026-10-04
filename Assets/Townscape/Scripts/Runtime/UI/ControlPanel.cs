@@ -1,5 +1,7 @@
+using System.Linq;
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
+using Townscape.Runtime.People;
 using Townscape.Runtime.Walking;
 using Townscape.Runtime.Weather;
 using Townscape.Simulation.Weather;
@@ -46,6 +48,9 @@ namespace Townscape.Runtime.UI
 
         /// <summary>Walking mode, for the panel's walk button; set once both exist.</summary>
         public WalkingController Walking { get; set; }
+
+        /// <summary>The guard, the police and the burglar, for sending a burglar; set once both exist.</summary>
+        public PeopleSystem People { get; set; }
 
         public void Initialize(Store<TownState> store, TimeOfDayLighting lighting, StormSystem storm, CoffeeShopGame coffee = null)
         {
@@ -95,6 +100,7 @@ namespace Townscape.Runtime.UI
             Weather(state.Weather);
             Sound(state.Audio);
             CoffeeShopButton();
+            Burglars();
             Footer();
             GUILayout.EndVertical();
             GUILayout.EndArea();
@@ -255,6 +261,49 @@ namespace Townscape.Runtime.UI
 
             GUILayout.EndHorizontal();
         }
+
+        // Send a burglar to one of the alarmed buildings, and see what everyone's up to.
+        private void Burglars()
+        {
+            var people = People?.People;
+            if (people == null)
+            {
+                return;
+            }
+
+            GUILayout.Label("BURGLARS", _skin.Heading);
+            var burglar = people.Burglar;
+            if (burglar == null)
+            {
+                GUILayout.Label("Send a burglar to break in (set its alarm first, or nobody will know):", _skin.Status);
+                GUILayout.BeginHorizontal();
+                foreach (var site in people.Sites.OrderBy(s => s))
+                {
+                    if (GUILayout.Button(Short(site), _skin.Button))
+                    {
+                        people.SendBurglar(site);
+                    }
+                }
+
+                GUILayout.EndHorizontal();
+            }
+            else
+            {
+                GUILayout.Label($"A burglar is {burglar.Doing}.", _skin.Status);
+            }
+
+            if (people.Guard != null)
+            {
+                GUILayout.Label($"The guard is {people.Guard.Doing}.", _skin.Status);
+            }
+
+            if (people.Car != null)
+            {
+                GUILayout.Label(people.Car.Siren ? "A police car is on its way, blue lights and siren." : "The police are here.", _skin.Status);
+            }
+        }
+
+        private static string Short(string site) => site.StartsWith("The ") ? char.ToUpperInvariant(site[4]) + site.Substring(5) : site;
 
         private void Footer()
         {
