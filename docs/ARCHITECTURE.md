@@ -64,7 +64,7 @@ data.
 | `ISurfaceRegion` | flat, terrain-following, open ground, river bed and bank | puddles |
 | `IRoadMarking` | centre line, double yellows, give way, zebra crossing | bus stop, "SLOW" |
 | `IStructureGenerator` | `BridgeGenerator`, `BuildingGenerator` | street furniture, trees |
-| `IBuildingStyle` | terraced unit, detached house (cottages, the mill, a detached shop), church | chapel, barn |
+| `IBuildingStyle` | terraced unit, detached house (cottages, the mill, a detached shop), church, petrol station | chapel, barn |
 | `IGroundFloorStyle` | traditional shopfront, inn, house front | bay-windowed shop |
 | `IShopDisplay` | books, coffee, computers, newsagent, bakery, chippy, florist, gallery, generic shelves | anything new a shop needs |
 | `IDressingRule` | street lamps, Belisha beacons, river railings, placed props, dry-stone walls, churchyard, trees, ground cover, flower beds, puddles | hedges, parked cars |
@@ -112,7 +112,8 @@ Buildings are **planned before the ground is generated**:
    normals, so units are slightly wedge-shaped on curves and neighbours share walls exactly.
    `TerraceDesigner` picks each unit's look: wall finish, floors, windows, dormer, door colour.
 2. Each footprint becomes a `PlotFeature`: flat flagstones at pavement height with a 0.6 m apron,
-   so hummocks never poke through a floor.
+   so hummocks never poke through a floor. A style that also implements `IYardFinish` picks another
+   surface: the petrol station's forecourt is concrete.
 3. `BuildingGenerator` builds each plan with its `IBuildingStyle`, one mesh per terrace or building.
 
 Styles are assembled from small parts in `Buildings/Parts`:
@@ -125,6 +126,13 @@ Styles are assembled from small parts in `Buildings/Parts`:
   look the same.
 
 Shop windows use transparent glass in front of a shallow display box that an `IShopDisplay` dresses.
+
+`PetrolStationStyle` takes a whole plot (at least 22 by 17.5 m) and places everything in site metres
+from the plot's front-left corner: the garage at the back (a shop and a gabled workshop whose roof
+runs back into the main one), the pump island and canopy in front of it, a price sign by the road,
+string lights behind the shop glass and bunting strung from the canopy's corners. Its name, colours,
+prices, flag and bulb colours come from a `PetrolStationDesign`. Its footprint is the whole plot, so
+dressing keeps lamps and trees off the forecourt.
 
 ### Dressing
 
@@ -147,7 +155,8 @@ Generators also leave **anchors** (`TownAnchor`) for later systems:
 - windows, fanlights and shop windows
 - the inn's lanterns and the street lamps
 - Belisha beacons, which flash
-- the phone box's lit sign
+- the phone box's and the petrol station's lit signs
+- the lights in the petrol station's canopy, shining down on the pumps
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 
@@ -191,13 +200,17 @@ renderer uses them too. `TownLights` (Runtime) only applies them to Unity.
   - Street lamps each switch on at a slightly different darkness and stutter as they come on.
   - Shops are lit during opening hours and dimly after closing. The inn stays lit until 11.30pm.
   - Belisha beacons flash about once a second.
+  - The petrol station's canopy lights are dimly on all day and full on after dark. The string
+    lights in its shop windows brighten at dusk, and each colour breathes at its own pace.
 - **`NightLights`** decides *how*: the glow colour of each emissive material, and a `LightSpec`
-  (colour, range, intensity) for each kind of anchor that casts real light.
+  (colour, range, intensity) for each kind of anchor that casts real light. The string-light bulbs
+  (`BulbRed` to `BulbBlue`) glow in nearly pure colours at a modest strength, because ACES tone
+  mapping turns a bright, slightly impure colour into a pastel.
 - **Window groups.** Generation gives every home window one of eight glass materials, `Window0` to
   `Window7`, picked at random. A whole group lights together, so the village lights up window by
   window while `TownLights` only updates eight materials a frame and needs no object per window.
 - **`TownLights`** puts an unshadowed point light at every street lamp, shop window, inn lantern,
-  beacon and the phone box (Forward+ copes with many small lights), and each frame sets the
+  beacon, lit sign and petrol station canopy light (Forward+ copes with many small lights), and each frame sets the
   emission of every glowing material. Lights fade rather than snap, except the beacons, and are
   disabled when they are off.
 
