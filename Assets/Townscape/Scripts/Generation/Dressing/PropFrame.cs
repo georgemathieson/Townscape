@@ -12,10 +12,13 @@ namespace Townscape.Generation.Dressing
     /// </summary>
     public sealed class PropFrame
     {
-        public PropFrame(MeshBuilder builder, ICollection<TownAnchor> anchors, Random random, Vector3 origin, Vector2 facing)
+        public PropFrame(MeshBuilder builder, ICollection<TownAnchor> anchors, Random random, Vector3 origin, Vector2 facing, ICollection<TownDoor> doors = null, ICollection<TownCabinet> cabinets = null)
         {
             Builder = builder;
             Anchors = anchors;
+            Doors = doors ?? new List<TownDoor>();
+            Cabinets = cabinets ?? new List<TownCabinet>();
+            Facing = facing;
             Random = random;
             Origin = origin;
             var forward = GeoMath.SafeNormalize(facing, Vector2.UnitY);
@@ -27,9 +30,17 @@ namespace Townscape.Generation.Dressing
 
         public ICollection<TownAnchor> Anchors { get; }
 
+        /// <summary>Doors that open, each built as its own mesh.</summary>
+        public ICollection<TownDoor> Doors { get; }
+
+        /// <summary>Street cabinets for the fibre broadband.</summary>
+        public ICollection<TownCabinet> Cabinets { get; }
+
         public Random Random { get; }
 
         public Vector3 Origin { get; }
+
+        private Vector2 Facing { get; }
 
         public Vector3 Right { get; }
 
@@ -75,6 +86,27 @@ namespace Townscape.Generation.Dressing
         public void Anchor(AnchorKind kind, float x, float y, float z, float size)
         {
             Anchors.Add(new TownAnchor(kind, Point(x, y, z), Forward, size, Random.Next()));
+        }
+
+        /// <summary>
+        /// A door that opens, hung at (<paramref name="hingeX"/>, <paramref name="y"/>,
+        /// <paramref name="hingeZ"/>) with its latch edge <paramref name="width"/> along
+        /// <paramref name="alongX"/> (+1 to the right, -1 to the left). <paramref name="buildLeaf"/>
+        /// draws the shut leaf in this frame's coordinates, into a mesh of its own, so it can swing
+        /// out towards the front (or in, with <paramref name="outward"/> false).
+        /// </summary>
+        public void Door(string name, float hingeX, float y, float hingeZ, float alongX, float width, float height, Action<PropFrame> buildLeaf, bool outward = true, float openDegrees = 100f, string noun = "door")
+        {
+            var leaf = new PropFrame(new MeshBuilder(), Anchors, new Random(Random.Next()), Origin, Facing, Doors, Cabinets);
+            buildLeaf(leaf);
+            var hinge = Point(hingeX, y, hingeZ);
+            var mesh = leaf.Builder.Build(name);
+            for (var i = 0; i < mesh.Positions.Length; i++)
+            {
+                mesh.Positions[i] -= hinge;
+            }
+
+            Doors.Add(new TownDoor(name, hinge, Right * MathF.Sign(alongX), outward ? Forward : -Forward, width, height, mesh, openDegrees, noun: noun));
         }
     }
 }

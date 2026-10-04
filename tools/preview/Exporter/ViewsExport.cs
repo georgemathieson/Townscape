@@ -8,6 +8,7 @@ using Townscape.Generation.Buildings.Interiors;
 using Townscape.Generation.Buildings.Planning;
 using Townscape.Generation.Buildings.Shops;
 using Townscape.Generation.Buildings.Styles;
+using Townscape.Generation.Dressing.Props;
 using Townscape.Generation.Layout;
 
 /// <summary>
@@ -74,7 +75,34 @@ internal static class ViewsExport
             var sign = TraditionalShopfront.FasciaBellBox(space.Width);
             views.Add(View("kettleSign", space.At(sign.CentreX - 2.5f, f[0] + 1.7f, -5.5f), space.At(sign.CentreX - 0.8f, f[0] + 2.9f, 0f), 45f));
             views.Add(View("kettleBellBox", space.At((space.Width / 3f) + 2f, f[0] + 1.7f, -7f), space.At(space.Width / 3f, f[2] + 1.6f, 0f), 35f));
+            Inside("kettleShopBroadband", 2.7f, f[0] + 1.65f, 7.35f, 1.5f, f[0] + 1.5f, 7.6f);
+            Inside("kettleFlatBroadband", 3.7f, f[1] + 1.55f, 2.95f, 2.55f, f[1] + 1.3f, 2.95f);
             views.Add(View("kettleBack", space.At(space.Width * 0.5f, f[3] + 4f, space.Depth + 9f), space.At(space.Width * 0.5f, f[3] + 1.2f, space.Depth * 0.7f), 50f));
+        }
+
+        // The phone box and the fibre cabinet beside it: from the pavement, inside the phone box,
+        // and the cabinet with its doors open.
+        var phoneDoor = town.Doors.FirstOrDefault(d => d.Name == PhoneBox.DoorName);
+        if (phoneDoor != null)
+        {
+            var box = phoneDoor.Hinge + (phoneDoor.Along * (phoneDoor.Width * 0.5f)) - (phoneDoor.Inward * PhoneBox.Half);
+            var ground = phoneDoor.Hinge.Y - 0.1f;
+            var front = phoneDoor.Inward;
+            var right = phoneDoor.Along;
+            var level = new Vector3(box.X, ground, box.Z);
+            views.Add(View("phoneBox", level + (front * 4.2f) + (right * 1.4f) + (Vector3.UnitY * 1.65f), level + (right * 0.75f) + (Vector3.UnitY * 1.1f), 55f));
+            views.Add(View("phoneBoxOpen", level + (front * 2.4f) - (right * 1.3f) + (Vector3.UnitY * 1.7f), level + (Vector3.UnitY * 1.2f), 60f, open: new[] { PhoneBox.DoorName }));
+            views.Add(View("phoneBoxInside", level + (front * 0.12f) + (Vector3.UnitY * 1.72f), level - (front * 0.5f) + (Vector3.UnitY * 1.2f), 75f, indoor: true, open: new[] { PhoneBox.DoorName }));
+        }
+
+        var cabinet = town.Cabinets.FirstOrDefault();
+        if (cabinet != null)
+        {
+            var rack = cabinet.Rack.Position;
+            var right = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, cabinet.Facing));
+            var doors = new[] { "Cabinet left door", "Cabinet right door" };
+            views.Add(View("cabinetOpen", rack + (cabinet.Facing * 1.5f) + (right * 0.5f) + (Vector3.UnitY * 0.95f), rack + (Vector3.UnitY * 0.05f), 55f, open: doors));
+            views.Add(View("cabinetRack", rack + (cabinet.Facing * 0.7f) + (Vector3.UnitY * 0.35f), rack + (Vector3.UnitY * 0.15f), 55f, open: doors));
         }
 
         File.WriteAllText(path, "{" + string.Join(",", views) + "}\n");
@@ -82,8 +110,8 @@ internal static class ViewsExport
 
     private static Vector3 At(Vector2 groundPoint, float y) => new Vector3(groundPoint.X, y, groundPoint.Y);
 
-    private static string View(string name, Vector3 eye, Vector3 lookAt, float fov, bool indoor = false) =>
-        $"\"{name}\":{{\"position\":{Vector(eye)},\"target\":{Vector(lookAt)},\"fov\":{F(fov)}{(indoor ? ",\"indoor\":true" : string.Empty)}}}";
+    private static string View(string name, Vector3 eye, Vector3 lookAt, float fov, bool indoor = false, string[] open = null) =>
+        $"\"{name}\":{{\"position\":{Vector(eye)},\"target\":{Vector(lookAt)},\"fov\":{F(fov)}{(indoor ? ",\"indoor\":true" : string.Empty)}{(open != null ? ",\"open\":[" + string.Join(",", open.Select(d => $"\"{d}\"")) + "]" : string.Empty)}}}";
 
     private static string Vector(Vector3 v) => $"[{F(v.X)},{F(v.Y)},{F(v.Z)}]";
 

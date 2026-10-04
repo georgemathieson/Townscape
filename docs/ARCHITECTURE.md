@@ -167,6 +167,12 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
   (`ShopDefinition.BellBox`), and white high on the front between the first two second-floor
   windows for the flat. Each alarm is a `TownAlarm` (its zones, keypads, control box and strobe)
   in `GeneratedTown.Alarms`, collected through `BuildContext.Alarms` as doors are.
+- `CafeAndFlat` also fits each its fibre broadband out of `BroadbandFittings`: a white ONT with
+  four lights and a black router with three, side by side on a wall with a network cable between
+  them (the café's in its storeroom, cabled across to its alarm's control box; the flat's in the
+  living room). Each is a `TownBroadband` (customer, plan speed, both boxes and their lights) in
+  `GeneratedTown.Broadband`, collected through `BuildContext.Broadband`; its customer is named as
+  the building's alarm is, so the alarm can report through it.
 - `CafeAndFlat.Walkways` lists the ways in from each door and through each doorway; a test keeps
   every bit of furniture out of them.
 - Hanging lights go in `BuildContext.Fittings`, a mesh of their own (`MeshCategory.Fittings`) that
@@ -191,6 +197,16 @@ long features directly (railings, dry-stone walls). The `DressingContext` gives 
 - sway heights: while a plant is built, every vertex records how high it is above the plant's base
   (`MeshData.SwayHeights`), so the wind can bend tree tops more than trunks
 
+Props can have doors that open too: `PropFrame.Door` builds a leaf in its own mesh, in the prop's
+own coordinates, and records a `TownDoor` as `BuildContext.Door` does. The phone box's whole front
+is a door that swings out, and inside (clear glass both ways, so you can see in and out) are a
+payphone, a 999 card, a shelf of directories and a ceiling light; it's a shade roomier than a real
+K6 so there's room to stand. Beside it, `FibreCabinet` is the street cabinet: a dark green case on
+a concrete plinth with double doors, and inside a 19 inch rack (patch tray, fibre switch, edge
+router, splice shelf, power strip, UPS and battery) and a little computer and screen. It records a
+`TownCabinet` (`GeneratedTown.Cabinets`): the front of the rack, the screen, and where each light on
+the kit is.
+
 Rules lean on the ground model, so placement stays sensible without hand-tuning. For example,
 dry-stone walls break wherever they would cross a road, path or yard, which leaves gateways at
 every cottage and junction.
@@ -200,7 +216,7 @@ Generators also leave **anchors** (`TownAnchor`) for later systems:
 - windows, fanlights and shop windows
 - the inn's lanterns and the street lamps
 - Belisha beacons, which flash
-- the phone box's and the petrol station's lit signs
+- the phone box's light (its signs and inside) and the petrol station's lit sign
 - the lights in the petrol station's canopy, shining down on the pumps
 - room lights inside the Copper Kettle's flat (`RoomLight`), which come on in the evening like a home's windows
 
@@ -358,6 +374,23 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   each. Either pauses the walker and frees the mouse while `TownscapeShortcuts` stands aside. Both
   can only be reached from their own side of the wall. Like a door's open or shut, the alarms'
   state isn't in the store.
+- **Fibre broadband.** `StreetCabinet` (engine-free and tested) is the cabinet's logic: a line per
+  customer on its own switch port, plugged in or out at the patch tray; a line plugged back in
+  takes eight seconds to get in sync. After a quiet minute, faults turn up at random (about every
+  four minutes, one at a time): a dirty connector (weaker light, slower, a little loss), a fibre
+  bent too tight (so little light that it keeps dropping, with heavy loss and jitter), a failing
+  switch port (good light, but errors climbing and packets lost) or an overloaded uplink (every
+  line slow, long pings). `RunTest` gives what a speed test finds (light in dBm, speeds, ping,
+  jitter, loss, port errors) and `Diagnose` fixes the fault if it's named rightly. `Ont` and
+  `Router` say what each customer's lights show: the ONT's loss-of-signal light and the router's
+  internet light blink red with no light, and the fibre light blinks green and the internet light
+  amber while it gets in sync. In Unity, `StreetCabinetSystem` runs it, lights the ONTs, routers and
+  the kit in the cabinet (`AlarmGlow`), and tells each building's `BurglarAlarm` whether its
+  internet is up (`ConnectInternet`: a comms fault while it's down). Open the cabinet's doors
+  (`SwingingDoor`) and `StreetCabinetRack` brings up its window: the rack drawn, the patch tray's
+  plugs, the screen running a speed test (a ping, then the download and upload climbing) and
+  buttons to name the fault. `AlarmSystem` and `StreetCabinetSystem` are both `IScreenWindow`s, which
+  `TownscapeShortcuts` stands aside for while one is up.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the

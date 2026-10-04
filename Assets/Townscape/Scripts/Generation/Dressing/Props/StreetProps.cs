@@ -49,70 +49,153 @@ namespace Townscape.Generation.Dressing.Props
         }
     }
 
-    /// <summary>The red K6 telephone kiosk: glazed on all sides, with lit TELEPHONE signs and a domed roof.</summary>
+    /// <summary>
+    /// The red K6 telephone kiosk: glazed on all sides, with lit TELEPHONE signs and a domed roof.
+    /// Its front is a door that swings out, and inside is a payphone on the back wall, a shelf of
+    /// directories and a light in the ceiling.
+    /// </summary>
     public sealed class PhoneBox : IProp
     {
-        private const float Half = 0.45f;
+        public const string DoorName = "Phone box door";
+
+        /// <summary>Half its width: a shade roomier than a real K6, so there's space to step inside.</summary>
+        public const float Half = 0.48f;
+
+        // The corner posts, and the glazed panels between them.
+        private const float Post = 0.05f;
+        private const float Panel = Half - (2f * Post);
+        private const float Depth = 0.04f;
+        private const float Floor = 0.1f;
+        private const float DoorTop = 2.2f;
+        private const float Inside = Half - Depth;
 
         public void Build(PropFrame f)
         {
-            f.Box(0f, 0.05f, 0f, Half + 0.05f, 0.05f, Half + 0.05f, SurfaceMaterial.PaintRed);
+            f.Box(0f, Floor * 0.5f, 0f, Half + 0.05f, Floor * 0.5f, Half + 0.05f, SurfaceMaterial.PaintRed);
             foreach (var (x, z) in new[] { (-1f, -1f), (1f, -1f), (1f, 1f), (-1f, 1f) })
             {
-                f.Box(x * (Half - 0.05f), 1.2f, z * (Half - 0.05f), 0.06f, 1.1f, 0.06f, SurfaceMaterial.PaintRed);
+                f.Box(x * (Half - Post), 1.2f, z * (Half - Post), Post, 1.1f, Post, SurfaceMaterial.PaintRed);
             }
 
-            var centre = GeoMath.Flat(f.Origin);
-            var forward = GeoMath.Flat(f.Forward);
             for (var side = 0; side < 4; side++)
             {
-                var outward = Rotate(forward, side);
-                var right = GeoMath.Left(outward);
-                var faceCentre = centre + (outward * Half);
-                var wall = WallFrame.FromBase(faceCentre - (right * (Half - 0.1f)), faceCentre + (right * (Half - 0.1f)));
-                Face(f, wall, f.Origin.Y);
+                var wall = FaceOf(f, side);
+                Sign(f.Builder, wall, f.Origin.Y);
+                if (side > 0)
+                {
+                    Glazing(f.Builder, wall, f.Origin.Y);
+                }
             }
+
+            // The door: the whole front, hung on its left and swinging out to the pavement.
+            f.Door(DoorName, -Panel, Floor, Half, 1f, 2f * Panel, DoorTop - Floor, leaf =>
+            {
+                Glazing(leaf.Builder, FaceOf(leaf, 0), leaf.Origin.Y);
+                leaf.Span(Panel - 0.1f, 0.95f, Half, Panel - 0.07f, 1.3f, Half + 0.025f, SurfaceMaterial.PaintGold);
+                leaf.Span(Panel - 0.1f, 0.95f, Inside - 0.025f, Panel - 0.07f, 1.3f, Inside, SurfaceMaterial.PaintGold);
+            }, openDegrees: 95f, noun: "phone box door");
 
             // Cornice, sign band roof and dome.
             f.Box(0f, 2.48f, 0f, Half + 0.06f, 0.05f, Half + 0.06f, SurfaceMaterial.PaintRed, bottom: true);
             f.Builder.AddPyramid(f.Point(0f, 2.53f, 0f), f.Right, f.Forward, new Vector2(Half + 0.04f, Half + 0.04f), 0.22f, Vector3.UnitY, SurfaceMaterial.PaintRed);
-            f.Anchor(AnchorKind.LitSign, 0f, 2.32f, 0f, 0.9f);
+            f.Anchor(AnchorKind.LitSign, 0f, 2.12f, 0f, 0.9f);
+
+            Interior(f);
         }
 
-        private static void Face(PropFrame f, WallFrame wall, float y)
+        // The face on one side (0 the front, then round to the right), from post to post, facing out.
+        private static WallFrame FaceOf(PropFrame f, int side)
         {
-            var b = f.Builder;
-            var width = wall.Width;
-            wall.Quad(b, 0f, y + 0.1f, width, y + 0.55f, 0f, SurfaceMaterial.PaintRed);
-            wall.Quad(b, 0f, y + 0.55f, width, y + 2.05f, -0.02f, SurfaceMaterial.SignGlass);
-            wall.Quad(b, 0f, y + 2.05f, width, y + 2.2f, 0f, SurfaceMaterial.PaintRed);
+            var outward = GeoMath.Flat(f.Forward);
+            for (var i = 0; i < side; i++)
+            {
+                outward = GeoMath.Left(outward);
+            }
 
-            // Glazing bars: three columns, eight rows of small panes.
+            var right = GeoMath.Left(outward);
+            var faceCentre = GeoMath.Flat(f.Origin) + (outward * Half);
+            return WallFrame.FromBase(faceCentre - (right * Panel), faceCentre + (right * Panel));
+        }
+
+        // A glazed panel, solid enough to see from inside as well as out: a kick panel, eight rows
+        // of three small panes of clear glass, and a rail along the top.
+        private static void Glazing(MeshBuilder b, WallFrame wall, float y)
+        {
+            var width = wall.Width;
+            wall.Block(b, 0f, y + Floor, width, y + 0.55f, -Depth, 0f, SurfaceMaterial.PaintRed);
+            wall.QuadInward(b, 0f, y + Floor, width, y + 0.55f, -Depth, SurfaceMaterial.PaintRed);
+            wall.Quad(b, 0f, y + 0.55f, width, y + 2.05f, -0.02f, SurfaceMaterial.ClearGlass);
+            wall.QuadInward(b, 0f, y + 0.55f, width, y + 2.05f, -0.02f, SurfaceMaterial.ClearGlass);
+            wall.Block(b, 0f, y + 2.05f, width, y + DoorTop, -Depth, 0f, SurfaceMaterial.PaintRed);
+            wall.QuadInward(b, 0f, y + 2.05f, width, y + DoorTop, -Depth, SurfaceMaterial.PaintRed);
+
             for (var i = 1; i < 3; i++)
             {
                 var x = width * i / 3f;
-                wall.Block(b, x - 0.015f, y + 0.55f, x + 0.015f, y + 2.05f, -0.02f, 0.01f, SurfaceMaterial.PaintRed);
+                wall.Block(b, x - 0.015f, y + 0.55f, x + 0.015f, y + 2.05f, -Depth, 0f, SurfaceMaterial.PaintRed);
+                wall.QuadInward(b, x - 0.015f, y + 0.55f, x + 0.015f, y + 2.05f, -Depth, SurfaceMaterial.PaintRed);
             }
 
             for (var j = 0; j <= 8; j++)
             {
                 var row = y + 0.55f + (1.5f * j / 8f);
-                wall.Block(b, 0f, row - 0.015f, width, row + 0.015f, -0.02f, 0.01f, SurfaceMaterial.PaintRed);
+                wall.Block(b, 0f, row - 0.015f, width, row + 0.015f, -Depth, 0f, SurfaceMaterial.PaintRed);
+                wall.QuadInward(b, 0f, row - 0.015f, width, row + 0.015f, -Depth, SurfaceMaterial.PaintRed);
             }
+        }
 
-            // Back-lit sign.
-            wall.Quad(b, 0f, y + 2.2f, width, y + 2.43f, 0.005f, SurfaceMaterial.SignGlass);
+        // The back-lit sign over each face.
+        private static void Sign(MeshBuilder b, WallFrame wall, float y)
+        {
+            var width = wall.Width;
+            wall.Quad(b, 0f, y + DoorTop, width, y + 2.43f, 0.005f, SurfaceMaterial.SignGlass);
             PixelFont.Write(b, wall, "TELEPHONE", width * 0.5f, y + 2.315f, 0.02f, width - 0.08f, 0.01f, SurfaceMaterial.PaintBlack);
         }
 
-        private static Vector2 Rotate(Vector2 v, int quarterTurns)
+        // A concrete floor, a red ceiling with a light, the payphone on the back wall and a shelf
+        // of directories on the left.
+        private static void Interior(PropFrame f)
         {
-            for (var i = 0; i < quarterTurns; i++)
+            f.Builder.AddQuadFacing(f.Point(-Inside, Floor + 0.002f, -Inside), f.Point(Inside, Floor + 0.002f, -Inside), f.Point(Inside, Floor + 0.002f, Inside), f.Point(-Inside, Floor + 0.002f, Inside), Vector3.UnitY, SurfaceMaterial.Concrete);
+            f.Builder.AddQuadFacing(f.Point(-Half, DoorTop, -Half), f.Point(Half, DoorTop, -Half), f.Point(Half, DoorTop, Half), f.Point(-Half, DoorTop, Half), -Vector3.UnitY, SurfaceMaterial.PaintRed);
+            f.Span(-0.09f, DoorTop - 0.035f, -0.09f, 0.09f, DoorTop, 0.09f, SurfaceMaterial.SignGlass);
+
+            // The payphone: a black board on the back glass, a steel case with a little screen,
+            // a keypad and a coin slot, and the handset in its cradle on the left.
+            var back = -Inside;
+            f.Span(-0.23f, 0.85f, back, 0.23f, 1.85f, back + 0.015f, SurfaceMaterial.PaintBlack);
+            var front = back + 0.11f;
+            f.Span(-0.11f, 1.05f, back + 0.015f, 0.14f, 1.58f, front, SurfaceMaterial.Chrome);
+            f.Span(-0.06f, 1.44f, front, 0.1f, 1.53f, front + 0.004f, SurfaceMaterial.Screen);
+            for (var row = 0; row < 4; row++)
             {
-                v = GeoMath.Left(v);
+                for (var column = 0; column < 3; column++)
+                {
+                    var x = -0.035f + (column * 0.045f);
+                    var y = 1.37f - (row * 0.045f);
+                    f.Span(x, y, front, x + 0.032f, y + 0.032f, front + 0.008f, SurfaceMaterial.PaintBlack);
+                }
             }
 
-            return v;
+            f.Span(0.095f, 1.3f, front, 0.11f, 1.38f, front + 0.006f, SurfaceMaterial.PaintBlack);
+            f.Span(-0.06f, 1.08f, front, 0.1f, 1.13f, front + 0.01f, SurfaceMaterial.PaintBlack);
+
+            f.Span(-0.19f, 1.22f, back + 0.015f, -0.11f, 1.5f, back + 0.06f, SurfaceMaterial.PaintBlack);
+            f.Span(-0.175f, 1.18f, back + 0.06f, -0.125f, 1.54f, back + 0.095f, SurfaceMaterial.PaintBlack);
+            f.Span(-0.18f, 1.48f, back + 0.06f, -0.12f, 1.56f, back + 0.105f, SurfaceMaterial.PaintBlack);
+            f.Span(-0.18f, 1.16f, back + 0.06f, -0.12f, 1.24f, back + 0.105f, SurfaceMaterial.PaintBlack);
+            f.Span(-0.155f, 0.98f, back + 0.07f, -0.145f, 1.18f, back + 0.08f, SurfaceMaterial.PaintBlack);
+
+            // A white card above it: the emergency number.
+            f.Span(-0.15f, 1.64f, back + 0.015f, 0.15f, 1.76f, back + 0.02f, SurfaceMaterial.PaintWhite);
+            var card = WallFrame.FromBase(GeoMath.Flat(f.Point(-0.15f, 0f, back + 0.02f)), GeoMath.Flat(f.Point(0.15f, 0f, back + 0.02f)));
+            PixelFont.Write(f.Builder, card, "999", 0.15f, f.Origin.Y + 1.7f, 0.012f, 0.26f, 0.002f, SurfaceMaterial.PaintRed);
+
+            // The directories on a shelf: the Yellow Pages and the phone book.
+            var side = -Inside;
+            f.Span(side, 0.92f, -0.3f, side + 0.11f, 0.95f, 0.05f, SurfaceMaterial.PaintBlack);
+            f.Span(side + 0.01f, 0.95f, -0.27f, side + 0.1f, 1.0f, -0.05f, SurfaceMaterial.PaintButter);
+            f.Span(side + 0.015f, 1.0f, -0.25f, side + 0.095f, 1.035f, -0.06f, SurfaceMaterial.PaintWhite);
         }
     }
 

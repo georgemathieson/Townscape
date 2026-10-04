@@ -29,10 +29,12 @@ namespace Townscape.Generation.Dressing
         private readonly List<(DressingLayer Layer, bool Far, int X, int Z)> _order = new List<(DressingLayer, bool, int, int)>();
         private readonly Dictionary<(int X, int Z), List<(Vector2 Centre, float Radius)>> _occupied = new Dictionary<(int, int), List<(Vector2, float)>>();
 
-        public DressingContext(TownContext town, ICollection<TownAnchor> anchors)
+        public DressingContext(TownContext town, ICollection<TownAnchor> anchors, ICollection<TownDoor> doors = null, ICollection<TownCabinet> cabinets = null)
         {
             Town = town;
             Anchors = anchors;
+            Doors = doors ?? new List<TownDoor>();
+            Cabinets = cabinets ?? new List<TownCabinet>();
         }
 
         public TownContext Town { get; }
@@ -40,6 +42,12 @@ namespace Townscape.Generation.Dressing
         public GroundModel Ground => Town.Ground;
 
         public ICollection<TownAnchor> Anchors { get; }
+
+        /// <summary>Doors that open on props (a phone box's, a cabinet's), each with its own leaf mesh.</summary>
+        public ICollection<TownDoor> Doors { get; }
+
+        /// <summary>Street cabinets for the fibre broadband.</summary>
+        public ICollection<TownCabinet> Cabinets { get; }
 
         public bool InCore(Vector2 p) => GeoMath.ChebyshevLength(p) < Town.Settings.CoreHalfExtent - 0.5f;
 
@@ -148,7 +156,7 @@ namespace Townscape.Generation.Dressing
 
             // Plants remember how high each vertex is above their base, so the wind can bend them.
             builder.SwayBase = layer == DressingLayer.Vegetation ? origin.Y : (float?)null;
-            prop.Build(new PropFrame(builder, Anchors, random, origin, facing));
+            prop.Build(new PropFrame(builder, Anchors, random, origin, facing, Doors, Cabinets));
             builder.SwayBase = null;
             Occupy(position, footprint);
         }

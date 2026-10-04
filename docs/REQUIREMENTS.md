@@ -146,7 +146,18 @@ before work started; later changes should be recorded here too.
     setting off the tamper, to show the board: cut zones, disconnect the battery (a fault on the
     keypad), pull the mains (ten minutes on the battery, then the panel dies and the bell box sounds
     for two on its own), unplug the network, and wire the bell box's power backwards to blow its fuse
-    and silence it until it's put right. The strobe flashes once a cycle. *(this pull request)*
+    and silence it until it's put right. The strobe flashes once a cycle. *(done)*
+13. **Fibre broadband, and inside the phone box:** a dark green street cabinet next to the phone
+    box carries fibre to the two buildings we can go inside (the café and the flat). Behind its
+    double doors is a rack: a power strip, a UPS and its battery, a fibre switch, an edge router and
+    a patch tray, with a little computer and screen beside it. Each building has an ONT (where the
+    fibre ends) and a router on the wall. Unplug a customer at the patch tray and their ONT's
+    loss-of-signal light and their router's internet light blink red (and their burglar alarm shows
+    a comms fault); plug them back in and the lights blink while it gets back in sync. Faults turn up
+    now and then, one at a time (a dirty connector, a fibre bent too tight, a failing switch port, an
+    overloaded uplink): speed tests from the screen show the light level, speeds, ping, loss and port
+    errors, and naming the fault rightly gets it fixed. The phone box's door opens and you can step
+    inside, where there's a payphone, a 999 card and the directories, lit at night. *(this pull request)*
 
 ## Fellside Coffee
 

@@ -8,6 +8,7 @@ using Townscape.Runtime.Audio;
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Controls;
 using Townscape.Runtime.Lighting;
+using Townscape.Runtime.Network;
 using Townscape.Runtime.Rendering;
 using Townscape.Runtime.Security;
 using Townscape.Runtime.UI;
@@ -213,7 +214,14 @@ namespace Townscape.Runtime
             panel.Walking = walking;
             controls.AddComponent<WalkingHud>().Initialize(walking);
             var alarms = AlarmSystem.CreateAll(Town, _materials, _root.transform, hideFlags, walking, _doors);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, alarms);
+            var windows = new List<IScreenWindow>(alarms);
+            var cabinet = StreetCabinetSystem.Create(Town, _materials, _root.transform, hideFlags, walking, alarms);
+            if (cabinet != null)
+            {
+                windows.Add(cabinet);
+            }
+
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, windows);
             if (rememberSettings)
             {
                 controls.AddComponent<SettingsMemory>().Initialize(Store);

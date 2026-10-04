@@ -56,9 +56,11 @@ namespace Townscape.Generation
     /// <summary>Everything generation produced, plus the ground model for runtime queries.</summary>
     public sealed class GeneratedTown
     {
-        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, IReadOnlyList<TownAnchor> anchors, GroundMeshStats groundStats, IReadOnlyList<TownDoor> doors = null, IReadOnlyList<TownAlarm> alarms = null)
+        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, IReadOnlyList<TownAnchor> anchors, GroundMeshStats groundStats, IReadOnlyList<TownDoor> doors = null, IReadOnlyList<TownAlarm> alarms = null, IReadOnlyList<TownBroadband> broadband = null, IReadOnlyList<TownCabinet> cabinets = null)
         {
             Alarms = alarms ?? System.Array.Empty<TownAlarm>();
+            Broadband = broadband ?? System.Array.Empty<TownBroadband>();
+            Cabinets = cabinets ?? System.Array.Empty<TownCabinet>();
             Context = context;
             Meshes = meshes;
             Anchors = anchors;
@@ -80,6 +82,12 @@ namespace Townscape.Generation
 
         /// <summary>Burglar alarms fitted to buildings.</summary>
         public IReadOnlyList<TownAlarm> Alarms { get; }
+
+        /// <summary>Where each customer's fibre broadband comes into their building.</summary>
+        public IReadOnlyList<TownBroadband> Broadband { get; }
+
+        /// <summary>Street cabinets the fibre runs back to.</summary>
+        public IReadOnlyList<TownCabinet> Cabinets { get; }
     }
 
     /// <summary>
@@ -176,7 +184,7 @@ namespace Townscape.Generation
             }
 
             meshes.AddRange(sink.Meshes);
-            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats, sink.DoorList, sink.AlarmList);
+            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats, sink.DoorList, sink.AlarmList, sink.BroadbandList, sink.CabinetList);
         }
     }
 }

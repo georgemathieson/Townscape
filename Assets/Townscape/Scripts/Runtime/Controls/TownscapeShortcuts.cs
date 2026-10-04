@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
-using Townscape.Runtime.Security;
 using Townscape.Runtime.UI;
 using Townscape.Runtime.Walking;
 using Townscape.State;
@@ -20,11 +19,11 @@ namespace Townscape.Runtime.Controls
         private PerformanceOverlay _performance;
         private CoffeeShopGame _coffee;
         private WalkingController _walking;
-        private IReadOnlyList<AlarmSystem> _alarms;
+        private IReadOnlyList<IScreenWindow> _windows;
 
-        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null, IReadOnlyList<AlarmSystem> alarms = null)
+        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null, IReadOnlyList<IScreenWindow> windows = null)
         {
-            _alarms = alarms;
+            _windows = windows;
             _coffee = coffee;
             _walking = walking;
             _store = store;
@@ -41,12 +40,12 @@ namespace Townscape.Runtime.Controls
                 return;
             }
 
-            // While an alarm's keypad or control box is up, the keys are for it.
-            if (_alarms != null)
+            // While an alarm's keypad or a cabinet's screen is up, the keys are for it.
+            if (_windows != null)
             {
-                foreach (var alarm in _alarms)
+                foreach (var window in _windows)
                 {
-                    if (alarm != null && alarm.WindowOpen)
+                    if (window != null && window.WindowOpen)
                     {
                         return;
                     }

@@ -13,6 +13,7 @@ node render.mjs out coffee:dusk                # the Fellside Coffee game's came
 node render.mjs out petrol:dusk petrolWindow:night   # Fell View Garage, and its shop window
 node render.mjs out village:day:snow street:night:snow  # in the snowstorm
 node render.mjs out kettle:dusk kettleCafe:night kettleAttic:day  # the Copper Kettle, inside and out
+node render.mjs out phoneBox:dusk phoneBoxInside:night cabinetOpen:day  # the phone box and the fibre cabinet
 ```
 
 Views and lighting presets (`day`, `dusk`, `night`, and `flash` for night at the peak of a
@@ -22,7 +23,7 @@ the Fellside Coffee game takes the camera) and the petrol station's `petrol`, `p
 `petrolNear` and `petrolWindow`, are worked out by the exporter into `views.json`, as are the
 Copper Kettle's (`kettle` from the street, then inside: `kettleCafe`, `kettleCounter`, `kettleStore`,
 `kettleHall`, `kettleLanding`, `kettleLiving`, `kettleKitchen`, `kettleBedroom`, `kettleBathroom` and
-`kettleAttic`, `kettleSnug` and `kettleRoofWindows`, the alarms' `kettleKeypad`, `kettleCafeKeypad`, `kettleSensor`, `kettleShopControlBox` and `kettleFlatControlBox`, `kettleSign` with the café's bell box, and `kettleBack` from behind the terrace and `kettleBellBox` from the street), which are drawn without rain or snow. The exporter also writes `lights.json` and
+`kettleAttic`, `kettleSnug` and `kettleRoofWindows`, the alarms' `kettleKeypad`, `kettleCafeKeypad`, `kettleSensor`, `kettleShopControlBox` and `kettleFlatControlBox`, `kettleSign` with the café's bell box, the ONT and router in the café's storeroom and the flat's living room, `kettleShopBroadband` and `kettleFlatBroadband`, and `kettleBack` from behind the terrace and `kettleBellBox` from the street), which are drawn without rain or snow, and the phone box and fibre cabinet (`phoneBox` from the street, `phoneBoxOpen` with its door open and `phoneBoxInside`, and the cabinet with its doors open, `cabinetOpen` and close up at the rack, `cabinetRack`). Doors are exported both shut and open, and a view lists the ones it wants open. The exporter also writes `lights.json` and
 `storm.json`, worked out by the same `Townscape.Simulation` code Unity uses: glowing materials and
 lamps, wet surfaces, rain, ripples, chimney smoke and bolts. Rain and smoke are frozen in a single
 moment and only approximate the particles in Unity: judge geometry, layout and colours here, and
