@@ -134,8 +134,8 @@ before work started; later changes should be recorded here too.
       inside and faintly tinted glass, doorways kept clear of furniture, and ceiling lights you can't
       catch your head on. *(done)*
 11. **Burglar alarm:** the Copper Kettle gets an alarm: a motion sensor high in the corner of every
-    room, a small keypad on the hall wall inside the flat's front door, and a white bell box with a
-    blue strobe at its foot, high on the front between two second-floor windows. Use the keypad to set
+    room, a small keypad inside each front door (the flat's hall and the café), and a white bell box with a
+    blue strobe at its foot, high on the front between two second-floor windows. Use either keypad to set
     it with the code (a 30 second exit time) and unset it (a 30 second entry time once a sensor sees
     you or a door opens); if nobody does, its piezo sounder wails and the strobe flashes. Also straightens
     the back windows, which sat off to one side of their openings inside. *(this pull request)*

@@ -274,22 +274,35 @@ namespace Townscape.Tests.Generation
         }
 
         [Test]
-        public void TheAlarmPanel_IsInsideTheFlatsFrontDoor_AtHandHeight()
+        public void TheAlarmHasAKeypad_InsideEachFrontDoor_AtHandHeight()
         {
             var (_, anchors, doors) = BuildAlone();
-            var keypad = anchors.Single(a => a.Kind == AnchorKind.AlarmKeypad);
-            var door = doors.Single(d => d.Name == "Flat door");
+            var keypads = anchors.Where(a => a.Kind == AnchorKind.AlarmKeypad).ToList();
             var site = Kettle.Footprint;
             var outward = new Vector3(site.Outward.X, 0f, site.Outward.Y);
 
-            Assert.That(Vector3.Dot(keypad.Position - door.Hinge, outward), Is.LessThan(-0.3f), "inside");
-            Assert.That(Vector3.Distance(keypad.Position, door.Hinge), Is.LessThan(2f), "by the door");
-            Assert.That(keypad.Position.Y - door.Hinge.Y, Is.InRange(1.2f, 1.7f));
-            Assert.That(keypad.Size, Is.InRange(0.1f, 0.2f), "small");
+            Assert.That(keypads, Has.Count.EqualTo(2));
+            foreach (var name in new[] { "Flat door", "Shop door" })
+            {
+                var door = doors.Single(d => d.Name == name);
+                float Apart(TownAnchor k) => new Vector2(k.Position.X - door.Hinge.X, k.Position.Z - door.Hinge.Z).Length();
+                var keypad = keypads.OrderBy(Apart).First();
 
-            // Clear of the door as it swings.
-            var reach = new Vector2(keypad.Position.X - door.Hinge.X, keypad.Position.Z - door.Hinge.Z).Length();
-            Assert.That(reach, Is.GreaterThan(door.Width + 0.1f));
+                Assert.That(Apart(keypad), Is.LessThan(1.4f), $"by the {name}");
+                Assert.That(Vector3.Dot(keypad.Position - site.FrontWall.Origin, outward), Is.LessThan(-0.15f), $"inside the {name}");
+                Assert.That(keypad.Position.Y - door.Hinge.Y, Is.InRange(1.2f, 1.7f));
+                Assert.That(keypad.Size, Is.InRange(0.1f, 0.2f), "small");
+
+                // Clear of the door as it swings open.
+                for (var a = 0f; a <= door.OpenDegrees; a += 5f)
+                {
+                    var edge = door.LatchAt(a);
+                    var toKeypad = new Vector2(keypad.Position.X - door.Hinge.X, keypad.Position.Z - door.Hinge.Z);
+                    var toEdge = new Vector2(edge.X - door.Hinge.X, edge.Z - door.Hinge.Z);
+                    var along = Math.Clamp(Vector2.Dot(toKeypad, toEdge) / toEdge.LengthSquared(), 0f, 1f);
+                    Assert.That(Vector2.Distance(toKeypad, toEdge * along), Is.GreaterThan(0.05f), $"{name} at {a}°");
+                }
+            }
         }
 
         [Test]

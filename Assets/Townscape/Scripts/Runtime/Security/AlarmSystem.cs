@@ -13,8 +13,8 @@ namespace Townscape.Runtime.Security
     /// <summary>
     /// The Copper Kettle's burglar alarm, in play. The sensors watch for the walker (each needs a
     /// clear line of sight, so walls and shut doors hide you) and light their LEDs when they see
-    /// you move; opening a door counts too. The keypad on the hall wall sets and unsets it with
-    /// the code; the panel beeps through the 30 second exit and entry times, and if the code
+    /// you move; opening a door counts too. A keypad inside each front door sets and unsets it
+    /// with the code; the panels beep through the 30 second exit and entry times, and if the code
     /// doesn't go in, the bell box's sounder wails and its blue strobe flashes.
     /// </summary>
     /// <remarks>
@@ -41,6 +41,7 @@ namespace Townscape.Runtime.Security
         private IReadOnlyList<SwingingDoor> _doors;
         private bool[] _doorWasOpen;
         private AudioSource _bell;
+        private readonly List<AudioSource> _beepers = new List<AudioSource>();
         private AudioSource _beeper;
         private AudioClip _beep;
         private Light _strobe;
@@ -63,13 +64,13 @@ namespace Townscape.Runtime.Security
         /// <summary>Puts the alarm into the town if a building has its fittings; otherwise returns null.</summary>
         public static AlarmSystem Create(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors)
         {
-            TownAnchor? keypad = null;
+            var keypads = new List<TownAnchor>();
             TownAnchor? bell = null;
             foreach (var anchor in town.Anchors)
             {
                 if (anchor.Kind == AnchorKind.AlarmKeypad)
                 {
-                    keypad = anchor;
+                    keypads.Add(anchor);
                 }
                 else if (anchor.Kind == AnchorKind.AlarmBell)
                 {
@@ -77,19 +78,20 @@ namespace Townscape.Runtime.Security
                 }
             }
 
-            if (keypad == null || bell == null)
+            if (keypads.Count == 0 || bell == null)
             {
                 return null;
             }
 
             var system = TownMeshSpawner.CreateChild("Burglar Alarm", parent, hideFlags).AddComponent<AlarmSystem>();
-            system.Initialize(town, materials, hideFlags, walking, doors, keypad.Value, bell.Value);
+            system.Initialize(town, materials, hideFlags, walking, doors, keypads, bell.Value);
             return system;
         }
 
-        /// <summary>Brings up the keypad and frees the pointer to use it.</summary>
-        public void OpenPanel()
+        /// <summary>Brings up the keypad and frees the pointer to use it; its beeps come from the panel you used.</summary>
+        public void OpenPanel(AlarmKeypad at)
         {
+            _beeper = at.Beeper;
             PanelOpen = true;
             _openedAt = Time.unscaledTime;
             _typed = string.Empty;
@@ -109,7 +111,7 @@ namespace Townscape.Runtime.Security
             }
         }
 
-        private void Initialize(GeneratedTown town, MaterialLibrary materials, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors, TownAnchor keypad, TownAnchor bell)
+        private void Initialize(GeneratedTown town, MaterialLibrary materials, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors, IReadOnlyList<TownAnchor> keypads, TownAnchor bell)
         {
             _materials = materials;
             _walking = walking;
@@ -126,17 +128,22 @@ namespace Townscape.Runtime.Security
             materials.EnableEmission(SurfaceMaterial.AlarmLed);
             materials.EnableEmission(SurfaceMaterial.AlarmStrobe);
 
-            // Something to look at and press E on, just proud of the panel.
-            var panel = TownMeshSpawner.CreateChild("Keypad", transform, hideFlags);
-            var outOfWall = ToUnity(keypad.Facing);
-            panel.transform.SetPositionAndRotation(ToUnity(keypad.Position), Quaternion.LookRotation(outOfWall, Vector3.up));
-            var box = panel.AddComponent<BoxCollider>();
-            box.size = new Vector3(keypad.Size + 0.02f, 0.24f, 0.06f);
-            panel.AddComponent<AlarmKeypad>().Initialize(this);
-
+            // Each keypad: something to look at and press E on, just proud of the panel, and its buzzer.
             _beep = Clip("Alarm beep", AlarmSounds.Beep());
-            _beeper = panel.AddComponent<AudioSource>();
-            Spatial(_beeper, 3f, 35f);
+            for (var i = 0; i < keypads.Count; i++)
+            {
+                var keypad = keypads[i];
+                var panel = TownMeshSpawner.CreateChild($"Keypad {i + 1}", transform, hideFlags);
+                panel.transform.SetPositionAndRotation(ToUnity(keypad.Position), Quaternion.LookRotation(ToUnity(keypad.Facing), Vector3.up));
+                var box = panel.AddComponent<BoxCollider>();
+                box.size = new Vector3(keypad.Size + 0.02f, 0.24f, 0.06f);
+                var beeper = panel.AddComponent<AudioSource>();
+                Spatial(beeper, 3f, 35f);
+                _beepers.Add(beeper);
+                panel.AddComponent<AlarmKeypad>().Initialize(this, beeper);
+            }
+
+            _beeper = _beepers[0];
 
             var bellBox = TownMeshSpawner.CreateChild("Bell Box", transform, hideFlags);
             bellBox.transform.position = ToUnity(bell.Position);
@@ -163,10 +170,14 @@ namespace Townscape.Runtime.Security
                 _alarm.Detected();
             }
 
+            // Every panel in the building beeps the countdown.
             if (_alarm.Tick(deltaTime) > 0)
             {
-                _beeper.pitch = 1f;
-                _beeper.PlayOneShot(_beep, 0.8f);
+                foreach (var beeper in _beepers)
+                {
+                    beeper.pitch = 1f;
+                    beeper.PlayOneShot(_beep, 0.8f);
+                }
             }
 
             if (_alarm.BellRinging && !_bell.isPlaying)

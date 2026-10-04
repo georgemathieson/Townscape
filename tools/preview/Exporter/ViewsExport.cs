@@ -6,6 +6,7 @@ using System.Numerics;
 using Townscape.Generation;
 using Townscape.Generation.Buildings.Interiors;
 using Townscape.Generation.Buildings.Planning;
+using Townscape.Generation.Buildings.Shops;
 using Townscape.Generation.Buildings.Styles;
 using Townscape.Generation.Layout;
 
@@ -66,6 +67,8 @@ internal static class ViewsExport
             Inside("kettleRoofWindows", 4.3f, f[3] + 1.5f, 5.4f, 4.3f, f[3] + 1.7f, 8.4f);
             Inside("kettleKeypad", 0.6f, f[0] + 1.62f, 1.3f, 1.45f, f[0] + 1.45f, 0.72f);
             Inside("kettleSensor", 5.2f, f[1] + 1.7f, 1.6f, 6.9f, f[1] + 2.4f, 0.2f);
+            var lobbyLeft = TraditionalShopfront.Layout(space.Width).DoorLeft;
+            Inside("kettleCafeKeypad", lobbyLeft - 1.3f, f[0] + 1.62f, 1.5f, lobbyLeft, f[0] + 1.4f, 0.35f);
             views.Add(View("kettleBellBox", space.At((space.Width / 3f) + 2f, f[0] + 1.7f, -7f), space.At(space.Width / 3f, f[2] + 1.6f, 0f), 35f));
             views.Add(View("kettleBack", space.At(space.Width * 0.5f, f[3] + 4f, space.Depth + 9f), space.At(space.Width * 0.5f, f[3] + 1.2f, space.Depth * 0.7f), 50f));
         }

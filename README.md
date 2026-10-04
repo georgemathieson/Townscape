@@ -59,11 +59,12 @@ The café door is on the right, in the glazed lobby; the door on the left opens 
 | ![Two roof windows over the attic's sofa](docs/images/gallery/kettle-roof-windows-day.jpg) | ![The roof windows in the back slope, from outside](docs/images/gallery/kettle-back-dusk.jpg) |
 | Roof windows over the snug: press E to tip one open | The same windows from behind the terrace at dusk |
 | ![The white bell box with its blue strobe, between two second-floor windows](docs/images/gallery/kettle-bell-box-day.jpg) | ![The alarm keypad on the hall wall inside the flat's door](docs/images/gallery/kettle-keypad-day.jpg) |
-| The burglar alarm's bell box, high between two windows | Its keypad, just inside the flat's front door |
+| The burglar alarm's bell box, high between two windows | Its keypad, just inside the flat's front door (there's another inside the café's) |
 
-It has a burglar alarm too. Press E on the keypad in the hall, type the code (**1234**) and press
-**Set**, then you have 30 seconds to get out. Once it's set, a sensor seeing you (or a door
-opening) gives you 30 seconds to get back to the keypad and **Unset** it, or the bell box's piezo
+It has a burglar alarm too, with a keypad inside each front door (the flat's hall and the café).
+Press E on either, type the code (**1234**) and press **Set**, then you have 30 seconds to get out.
+Once it's set, a sensor seeing you (or a door opening) gives you 30 seconds to get to a keypad and
+**Unset** it, or the bell box's piezo
 sounder wails and its strobe flashes.
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js

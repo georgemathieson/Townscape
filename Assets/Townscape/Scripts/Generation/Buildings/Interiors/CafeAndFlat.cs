@@ -757,14 +757,16 @@ namespace Townscape.Generation.Buildings.Interiors
 
         // ---- The burglar alarm ----------------------------------------------------------------
 
-        /// <summary>The control panel's place on the hall wall, back from the flat's front door, and its height.</summary>
+        /// <summary>The flat's keypad's place on the hall wall, back from its front door, and both keypads' height.</summary>
         public const float KeypadD = 0.72f;
 
         public const float KeypadHeight = 1.5f;
 
         // A sensor high in a corner of every room, looking across it (in the attic, on the gable,
-        // under the chimney breast); the panel on the hall wall just inside the flat's front door;
-        // and the bell box out on the front, high up between the second floor's first two windows.
+        // under the chimney breast); a keypad inside each front door, on the hall wall for the
+        // flat and on the side of the café's entrance lobby, on your left as you come in, clear of
+        // the door's swing; and the bell box out on the front, high up between the second floor's
+        // first two windows.
         private static void Alarm(BuildContext context, UnitSpace space, Footprint footprint, float[] f, float[] top)
         {
             var right = space.Width - Side;
@@ -780,6 +782,8 @@ namespace Townscape.Generation.Buildings.Interiors
 
             AlarmFittings.WallSensor(context, space, Side, f[3] + 2.4f, space.Depth * 0.5f, 1f, 0f);
             AlarmFittings.Keypad(context, space, HallWall, -1f, KeypadD, f[0] + KeypadHeight);
+            var lobby = TraditionalShopfront.Layout(space.Width);
+            AlarmFittings.Keypad(context, space, lobby.DoorLeft, -1f, (FrontFace + TraditionalShopfront.LobbyDepth) * 0.5f, f[0] + KeypadHeight);
 
             var front = footprint.FrontWall;
             var windowTop = f[2] + 0.8f + 1.3f;

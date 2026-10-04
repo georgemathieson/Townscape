@@ -159,8 +159,8 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
 - The Copper Kettle is a little wedge-shaped (its back wider than its front), so the back windows
   and the roof's holes are placed through `UnitSpace` (`AcrossAt`, `FractionAcross`): straight
   behind where the rooms put them, not at the same fraction of a longer wall.
-- `AlarmFittings` puts in a burglar alarm: a sensor high in a corner of every room, the keypad on
-  the hall wall inside the flat's door, and a bell box (one plain white case, 26 by 34 cm, with a blue strobe
+- `AlarmFittings` puts in a burglar alarm: a sensor high in a corner of every room, a keypad
+  inside each front door (on the hall wall for the flat, on the side of the café's entrance lobby), and a bell box (one plain white case, 26 by 34 cm, with a blue strobe
   across its foot) high on the front between the first two second-floor windows.
 - `CafeAndFlat.Walkways` lists the ways in from each door and through each doorway; a test keeps
   every bit of furniture out of them.
@@ -338,8 +338,8 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   through each sensor (a line of sight, so walls and shut doors hide you; only movement counts) and
   every door opening or shutting, lights the sensors' LEDs, flashes the strobe and a blue light,
   and plays the sounder and beeps from `AlarmSounds`: a piezo tone sweeping between 2.4 and 3.6 kHz
-  five times a second, looped seamlessly. `AlarmKeypad` is the panel on the wall: E brings
-  up its keypad, which pauses the walker and frees the mouse while `TownscapeShortcuts` stands
+  five times a second, looped seamlessly. `AlarmKeypad` is a panel on the wall (there's one
+  by each front door, all on the same alarm, and all beep the countdown): E brings up the keypad, which pauses the walker and frees the mouse while `TownscapeShortcuts` stands
   aside so the number keys type the code. Like a door's open or shut, the alarm's state isn't in
   the store.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
