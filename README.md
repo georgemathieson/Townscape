@@ -86,6 +86,9 @@ puts them back. Everything also has a key:
 | F | Frame rate readout: off, frame rate, or a breakdown of where the time goes |
 | H | Hide or show the panel |
 | C | Open or close Fellside Coffee |
+| V | Walk about at eye level, or go back to flying |
+| Space | Jump (walking) |
+| E or left click | Open or close what the dot in the middle is on (walking) |
 
 ## Fellside Coffee
 

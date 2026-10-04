@@ -258,6 +258,15 @@ applies them. Everything is driven from code on stock URP materials, apart from 
 
 ## Controls and sound
 
+- **Walking.** V swaps the free-fly camera for `WalkingController`: a Unity character controller
+  at eye height, moved by `WalkMotion` (engine-free and tested: an adult's size, walking and
+  jogging pace, a small jump, steps up kerbs and stairs). `TownColliders` makes the town solid as
+  soon as it is built: it cooks a mesh collider for every mesh whose `MeshCategory` is solid
+  (ground, fells, structures, buildings, street furniture) on worker threads with
+  `Physics.BakeMesh`, and puts a capsule round every tree from its `TreeTrunk` anchor; plants,
+  water and markings stay soft. Walking starts on the nearest open, dry ground below the camera
+  and the river's edge turns you back. Anything implementing `IInteractable` that the crosshair
+  is on within reach shows its prompt in `WalkingHud` and is used with E or a click.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. The time slider dispatches

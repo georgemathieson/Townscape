@@ -141,7 +141,6 @@ before work started; later changes should be recorded here too.
 - Wind sway on the GPU (a vertex shader) if the CPU version shows up in the profiler.
 - People and traffic: a few walkers with umbrellas, a bus that stops at the bus stop.
 - A pelican crossing with lights on another road.
-- A first-person walking camera alongside the free-fly one.
 - Fellside Coffee beyond the slice: more upgrades (a faster machine, cold drinks, seating and music, a
   second milk, a pop-up at another site), syrups, more segments, regulars who remember their usual
   order, and footfall that follows the town's weather. See [COFFEE_SHOP.md](COFFEE_SHOP.md).
