@@ -11,10 +11,12 @@ cd tools/preview && npm install && node render.mjs out
 node render.mjs out bridge:dusk street:night   # specific view:preset pairs
 node render.mjs out coffee:dusk                # the Fellside Coffee game's camera
 node render.mjs out petrol:dusk petrolWindow:night   # Fell View Garage, and its shop window
+node render.mjs out village:day:snow street:night:snow  # in the snowstorm
 ```
 
 Views and lighting presets (`day`, `dusk`, `night`, and `flash` for night at the peak of a
-lightning strike) are defined in `page.html`; views that depend on the town, such as `coffee` (where
+lightning strike) are defined in `page.html`, and a third part, `:snow`, renders the snowstorm with
+the snow lying deep instead of the thunderstorm; views that depend on the town, such as `coffee` (where
 the Fellside Coffee game takes the camera) and the petrol station's `petrol`, `petrolAbove`,
 `petrolNear` and `petrolWindow`, are worked out by the exporter into `views.json`. The exporter also writes `lights.json` and
 `storm.json`, worked out by the same `Townscape.Simulation` code Unity uses: glowing materials and
