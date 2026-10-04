@@ -120,5 +120,11 @@ namespace Townscape.Generation.Geometry
         // Water that moves: the river flows and puddles ripple in the rain.
         RiverWater,
         Puddle,
+
+        // The people about the town, and the police car.
+        Skin,
+        HiVis,
+        ClothDark,
+        Tyre,
     }
 }

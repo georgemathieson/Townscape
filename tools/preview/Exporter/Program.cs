@@ -74,7 +74,16 @@ foreach (var door in town.Doors)
     }
 }
 
-foreach (var generated in town.Meshes.Concat(leaves))
+// The people and the police car, in scenes of their own that only some views show.
+var castMeshes = new Dictionary<MeshData, string>();
+var cast = new List<GeneratedMesh>();
+foreach (var (mesh, scene) in CastExport.Meshes(town))
+{
+    castMeshes[mesh] = scene;
+    cast.Add(new GeneratedMesh(mesh, MeshCategory.Furniture));
+}
+
+foreach (var generated in town.Meshes.Concat(leaves).Concat(cast))
 {
     var mesh = generated.Mesh;
     var positions = new float[mesh.VertexCount * 3];
@@ -144,6 +153,7 @@ foreach (var generated in town.Meshes.Concat(leaves))
 
     meshes.Add($"{{\"name\":\"{mesh.Name}\",\"primitives\":[{string.Join(",", primitives)}]}}");
     var door = doorMeshes.TryGetValue(mesh, out var leafOf) ? $",\"door\":\"{leafOf.Door}\",\"open\":{(leafOf.Open ? "true" : "false")}" : string.Empty;
+    door += castMeshes.TryGetValue(mesh, out var scene) ? $",\"cast\":\"{scene}\"" : string.Empty;
     nodes.Add($"{{\"name\":\"{mesh.Name}\",\"mesh\":{meshes.Count - 1},\"extras\":{{\"category\":\"{generated.Category}\"{door}}}}}");
 }
 

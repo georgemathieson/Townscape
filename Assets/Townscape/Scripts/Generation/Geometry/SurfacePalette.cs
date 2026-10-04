@@ -139,6 +139,11 @@ namespace Townscape.Generation.Geometry
 
                 [SurfaceMaterial.RiverWater] = new SurfaceAppearance(0.09f, 0.15f, 0.17f, 0.92f),
                 [SurfaceMaterial.Puddle] = new SurfaceAppearance(0.14f, 0.16f, 0.18f, 0.97f, 0.85f),
+
+                [SurfaceMaterial.Skin] = new SurfaceAppearance(0.86f, 0.67f, 0.55f, 0.25f),
+                [SurfaceMaterial.HiVis] = new SurfaceAppearance(0.86f, 0.95f, 0.12f, 0.35f),
+                [SurfaceMaterial.ClothDark] = new SurfaceAppearance(0.13f, 0.14f, 0.16f, 0.12f),
+                [SurfaceMaterial.Tyre] = new SurfaceAppearance(0.06f, 0.06f, 0.06f, 0.25f),
             };
 
         public static SurfaceAppearance Get(SurfaceMaterial material) =>

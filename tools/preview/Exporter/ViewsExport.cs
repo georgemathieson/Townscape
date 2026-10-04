@@ -125,13 +125,36 @@ internal static class ViewsExport
             views.Add(View("cabinetRack", rack + (cabinet.Facing * 0.7f) + (Vector3.UnitY * 0.35f), rack + (Vector3.UnitY * 0.15f), 55f, open: doors));
         }
 
+        // The people: a call-out at the Copper Kettle, the three of them up close, the guard at
+        // their post, and a burglar at the till.
+        var walking = town.Walking;
+        if (walking.Find($"{CafeAndFlat.ShopAlarm}: outside") >= 0)
+        {
+            Vector3 Stop(string name) => walking.Point(walking.Find(name));
+            var outside = Stop($"{CafeAndFlat.ShopAlarm}: outside");
+            var inward = CastExport.Inward(walking, $"{CafeAndFlat.ShopAlarm}: outside");
+            var along = new Vector3(inward.Z, 0f, -inward.X);
+            var up = Vector3.UnitY;
+            views.Add(View("peopleCallout", outside - (inward * 8.2f) - (along * 9f) + (up * 4.5f), outside - (inward * 2.5f) + (along * 2f) + (up * 0.8f), 55f, open: new[] { "Shop door" }, cast: "callout"));
+            views.Add(View("peopleLineup", outside - (along * 6f) - (inward * 4.2f) + (up * 1.4f), outside - (along * 6f) + (up * 1.0f), 40f, cast: "lineup"));
+            views.Add(View("policeCar", outside - (inward * 7f) + (along * 5.5f) + (up * 2.2f), outside - (inward * 3.6f) + (up * 0.7f), 50f, cast: "callout"));
+            views.Add(View("burglarTill", Stop($"{CafeAndFlat.ShopAlarm}: café") + (up * 1.65f), Stop($"{CafeAndFlat.ShopAlarm}: till") + (up * 1.0f), 65f, indoor: true, open: new[] { "Shop door" }, cast: "till"));
+            var centre = town.AlarmCentres.FirstOrDefault();
+            if (centre?.GuardPost != null)
+            {
+                var post = Stop(centre.GuardPost);
+                var towards = Vector3.Normalize(new Vector3(centre.Room.X - post.X, 0f, centre.Room.Z - post.Z));
+                views.Add(View("guardPost", post + (towards * 3.2f) + (up * 1.6f), post + (up * 1.0f), 60f, indoor: true, cast: "post"));
+            }
+        }
+
         File.WriteAllText(path, "{" + string.Join(",", views) + "}\n");
     }
 
     private static Vector3 At(Vector2 groundPoint, float y) => new Vector3(groundPoint.X, y, groundPoint.Y);
 
-    private static string View(string name, Vector3 eye, Vector3 lookAt, float fov, bool indoor = false, string[] open = null) =>
-        $"\"{name}\":{{\"position\":{Vector(eye)},\"target\":{Vector(lookAt)},\"fov\":{F(fov)}{(indoor ? ",\"indoor\":true" : string.Empty)}{(open != null ? ",\"open\":[" + string.Join(",", open.Select(d => $"\"{d}\"")) + "]" : string.Empty)}}}";
+    private static string View(string name, Vector3 eye, Vector3 lookAt, float fov, bool indoor = false, string[] open = null, string cast = null) =>
+        $"\"{name}\":{{\"position\":{Vector(eye)},\"target\":{Vector(lookAt)},\"fov\":{F(fov)}{(indoor ? ",\"indoor\":true" : string.Empty)}{(open != null ? ",\"open\":[" + string.Join(",", open.Select(d => $"\"{d}\"")) + "]" : string.Empty)}{(cast != null ? $",\"cast\":\"{cast}\"" : string.Empty)}}}";
 
     private static string Vector(Vector3 v) => $"[{F(v.X)},{F(v.Y)},{F(v.Z)}]";
 

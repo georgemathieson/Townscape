@@ -377,11 +377,15 @@ window.renderView = (viewName, presetName, weather = 'storm') => {
     camera.lookAt(unity(view.target));
   }
 
-  // Doors hang shut unless the view opens them.
+  // Doors hang shut unless the view opens them, and nobody's about unless it says who.
   const opened = new Set(view.open ?? []);
   gltf.scene.traverse((object) => {
     const door = object.userData?.door;
     if (door !== undefined) object.visible = object.userData.open === opened.has(door);
+
+    // The people and the police car only turn up in the views that cast them.
+    const cast = object.userData?.cast;
+    if (cast !== undefined) object.visible = cast === view.cast;
   });
 
   // Indoors the roof keeps the rain and snow off (Unity stops them on the rain catch map).
