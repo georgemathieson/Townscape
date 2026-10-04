@@ -377,7 +377,8 @@ window.renderView = (viewName, presetName, weather = 'storm') => {
     camera.lookAt(unity(view.target));
   }
 
-  const showWeather = viewName !== 'map';
+  // Indoors the roof keeps the rain and snow off (Unity stops them on the rain catch map).
+  const showWeather = viewName !== 'map' && !view.indoor;
   smokeGroup.visible = showWeather;
   rainGroup.visible = showWeather && !snowing;
   snowGroup.visible = showWeather && snowing;

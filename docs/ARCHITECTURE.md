@@ -134,6 +134,27 @@ string lights behind the shop glass and bunting strung from the canopy's corners
 prices, flag and bulb colours come from a `PetrolStationDesign`. Its footprint is the whole plot, so
 dressing keeps lamps and trees off the forecourt.
 
+#### Going inside: the Copper Kettle
+
+A shop marked `Enterable` (only the Copper Kettle) is built inside as well as out, by
+`TerracedUnitStyle` and the parts in `Buildings/Interiors`:
+- `UnitSpace` measures a unit the way you'd pace it out: x across from the left of the front, d back
+  from the front wall, y up. It builds floors, ceilings, walls with doorways and windows cut out,
+  and boxes and round things for furniture, every surface facing into its room.
+- `StairFlight` is a straight flight of solid steps. Risers are kept under the walker's step height.
+- `CafeAndFlat` lays out the rooms: the café (counter and till, cake cabinet, espresso machine,
+  chalkboard, tables, window bar) and its storeroom on the ground floor, a hall from the flat's
+  door up a dog-leg stair on the left, a living room and kitchen on the first floor, a bedroom and
+  bathroom on the second, and an attic bedroom under the roof, lit through the dormer.
+- Its windows are real openings with clear glass, front and back, and the dormer is built
+  see-through (`Dormer.Build(seeThrough: true)`), so you can look in and out. Interior surfaces use
+  their own materials (tiles, fabrics, linen) so the weather never wets or snows on them.
+
+Doors that open are not part of the building's mesh. `BuildContext.Door` builds the leaf in its own
+mesh around its hinge and records a `TownDoor` (hinge, the way it closes across, the way it opens,
+size), which `GeneratedTown.Doors` hands to the runtime. The shopfront makes two: the café door in
+the glazed lobby on the right and the flat's door on the left.
+
 ### Dressing
 
 After the buildings, the layout's `IDressingRule`s run in order through `DressingGenerator`. Rules
@@ -157,6 +178,7 @@ Generators also leave **anchors** (`TownAnchor`) for later systems:
 - Belisha beacons, which flash
 - the phone box's and the petrol station's lit signs
 - the lights in the petrol station's canopy, shining down on the pumps
+- room lights inside the Copper Kettle's flat (`RoomLight`), which come on in the evening like a home's windows
 
 Generation is deterministic (seeded noise, no `UnityEngine.Random`) and takes well under a second.
 
@@ -284,6 +306,9 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   water and markings stay soft. Walking starts on the nearest open, dry ground below the camera
   and the river's edge turns you back. Anything implementing `IInteractable` that the crosshair
   is on within reach shows its prompt in `WalkingHud` and is used with E or a click.
+- **Doors.** `SwingingDoor` turns each `TownDoor` into a hinge with the leaf under it, and is the
+  `IInteractable` that swings it open into the room or shut again. In play mode the leaf gets a
+  convex collider on a kinematic body, so a shut door blocks you and an open one stands aside.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the

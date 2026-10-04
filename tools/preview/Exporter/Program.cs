@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Townscape.Generation;
 using Townscape.Generation.Geometry;
@@ -59,7 +60,8 @@ int MaterialFor(SurfaceMaterial material)
     return materials.Count - 1;
 }
 
-foreach (var generated in town.Meshes)
+// Doors that open are built apart from their buildings; show them hanging shut.
+foreach (var generated in town.Meshes.Concat(town.Doors.Select(door => new GeneratedMesh(door.ClosedLeaf(), MeshCategory.Building))))
 {
     var mesh = generated.Mesh;
     var positions = new float[mesh.VertexCount * 3];
