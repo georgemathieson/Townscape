@@ -24,6 +24,9 @@ namespace Townscape.Runtime.Walking
 
         public bool IsOpen => _open;
 
+        /// <summary>The door this swings, as generation described it.</summary>
+        public TownDoor Door => _door;
+
         /// <summary>Creates every door in the town, hung shut. In play mode each gets a collider that swings with it.</summary>
         public static IReadOnlyList<SwingingDoor> SpawnAll(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, ICollection<Object> owned, bool solid)
         {

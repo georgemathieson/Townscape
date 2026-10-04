@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Townscape.Generation;
+using Townscape.Generation.Buildings.Interiors;
 using Townscape.Generation.Geometry;
 using Townscape.Runtime.Rendering;
-using Townscape.Runtime.UI;
 using Townscape.Runtime.Walking;
 using Townscape.Simulation.Audio;
 using Townscape.Simulation.Security;
@@ -11,204 +11,192 @@ using UnityEngine;
 namespace Townscape.Runtime.Security
 {
     /// <summary>
-    /// The Copper Kettle's burglar alarm, in play. The sensors watch for the walker (each needs a
-    /// clear line of sight, so walls and shut doors hide you) and light their LEDs when they see
-    /// you move; opening a door counts too. A keypad inside each front door sets and unsets it
-    /// with the code; the panels beep through the 30 second exit and entry times, and if the code
-    /// doesn't go in, the bell box's sounder wails and its blue strobe flashes.
+    /// One building's burglar alarm, in play (the Copper Kettle has two: the café's and the
+    /// flat's). Its zones watch for the walker: each sensor needs a clear line of sight (walls
+    /// and shut doors hide you, and only movement counts) and lights its LED when it sees you,
+    /// and each door's contact trips when the door moves. The keypads set and unset it; the
+    /// control box opens to show the board the zones are wired to, where wires can be cut and
+    /// power pulled. The bell box sounds and its strobe flashes when <see cref="BurglarAlarm"/>
+    /// says so.
     /// </summary>
     /// <remarks>
     /// The alarm's state lives here rather than in the store, as a door's open or shut does: it's
     /// something you do inside the town, not a setting.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed class AlarmSystem : MonoBehaviour
+    public sealed partial class AlarmSystem : MonoBehaviour
     {
         private const float ChestHeight = 1.2f;
         private const float MovingSpeed = 0.25f;
         private const float LedHoldSeconds = 1.2f;
-        private const float MessageSeconds = 1.6f;
-        private const int MaxDigits = 8;
 
         private static readonly Color StrobeBlue = new Color(0.25f, 0.45f, 1f);
+        private static readonly Color LedRed = new Color(4f, 0.15f, 0.1f);
+        private static readonly Color LedGreen = new Color(0.2f, 3f, 0.4f);
+        private static readonly Color LedAmber = new Color(3.5f, 1.6f, 0.1f);
 
-        private readonly BurglarAlarm _alarm = new BurglarAlarm();
-        private readonly List<(Vector3 Position, Vector3 Facing)> _sensors = new List<(Vector3, Vector3)>();
+        private readonly List<Sensor> _sensors = new List<Sensor>();
+        private readonly List<DoorContact> _contacts = new List<DoorContact>();
+        private readonly List<Keypad> _keypads = new List<Keypad>();
         private readonly List<Object> _owned = new List<Object>();
 
-        private MaterialLibrary _materials;
+        private TownAlarm _spec;
+        private BurglarAlarm _alarm;
         private WalkingController _walking;
-        private IReadOnlyList<SwingingDoor> _doors;
-        private bool[] _doorWasOpen;
-        private AudioSource _bell;
-        private readonly List<AudioSource> _beepers = new List<AudioSource>();
-        private AudioSource _beeper;
+        private AudioSource _sounder;
         private AudioClip _beep;
-        private Light _strobe;
+        private AlarmGlow _strobe;
+        private Light _strobeLight;
         private Vector3 _lastWalker;
-        private float _ledUntil;
-        private string _typed = string.Empty;
-        private string _message;
-        private float _messageUntil;
-        private float _openedAt;
-        private PanelSkin _skin;
-        private Texture2D _white;
-        private GUIStyle _lcd;
-        private GUIStyle _lcdSmall;
-
-        /// <summary>True while the keypad is up on screen.</summary>
-        public bool PanelOpen { get; private set; }
 
         public BurglarAlarm Alarm => _alarm;
 
-        /// <summary>Puts the alarm into the town if a building has its fittings; otherwise returns null.</summary>
-        public static AlarmSystem Create(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors)
+        /// <summary>Whose alarm it is: "The Copper Kettle", "The flat".</summary>
+        public string Name => _spec?.Name;
+
+        /// <summary>Puts every building's alarm into the town.</summary>
+        public static IReadOnlyList<AlarmSystem> CreateAll(GeneratedTown town, MaterialLibrary materials, Transform parent, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors)
         {
-            var keypads = new List<TownAnchor>();
-            TownAnchor? bell = null;
-            foreach (var anchor in town.Anchors)
+            var systems = new List<AlarmSystem>();
+            foreach (var spec in town.Alarms)
             {
-                if (anchor.Kind == AnchorKind.AlarmKeypad)
-                {
-                    keypads.Add(anchor);
-                }
-                else if (anchor.Kind == AnchorKind.AlarmBell)
-                {
-                    bell = anchor;
-                }
+                var system = TownMeshSpawner.CreateChild($"Alarm: {spec.Name}", parent, hideFlags).AddComponent<AlarmSystem>();
+                system.Initialize(spec, materials, hideFlags, walking, doors);
+                systems.Add(system);
             }
 
-            if (keypads.Count == 0 || bell == null)
-            {
-                return null;
-            }
-
-            var system = TownMeshSpawner.CreateChild("Burglar Alarm", parent, hideFlags).AddComponent<AlarmSystem>();
-            system.Initialize(town, materials, hideFlags, walking, doors, keypads, bell.Value);
-            return system;
+            return systems;
         }
 
-        /// <summary>Brings up the keypad and frees the pointer to use it; its beeps come from the panel you used.</summary>
-        public void OpenPanel(AlarmKeypad at)
+        private void Initialize(TownAlarm spec, MaterialLibrary materials, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors)
         {
-            _beeper = at.Beeper;
-            PanelOpen = true;
-            _openedAt = Time.unscaledTime;
-            _typed = string.Empty;
-            if (_walking != null)
-            {
-                _walking.Paused = true;
-            }
-        }
-
-        public void ClosePanel()
-        {
-            PanelOpen = false;
-            _typed = string.Empty;
-            if (_walking != null)
-            {
-                _walking.Paused = false;
-            }
-        }
-
-        private void Initialize(GeneratedTown town, MaterialLibrary materials, HideFlags hideFlags, WalkingController walking, IReadOnlyList<SwingingDoor> doors, IReadOnlyList<TownAnchor> keypads, TownAnchor bell)
-        {
-            _materials = materials;
+            _spec = spec;
             _walking = walking;
-            _doors = doors ?? new List<SwingingDoor>();
-            _doorWasOpen = new bool[_doors.Count];
-            foreach (var anchor in town.Anchors)
+            _alarm = new BurglarAlarm(spec.Zones.Count);
+            _beep = Clip("Alarm beep", AlarmSounds.Beep());
+            var led = materials.Get(SurfaceMaterial.AlarmLed);
+
+            // The zones: sensors with their LEDs, and the doors' contacts.
+            for (var zone = 0; zone < spec.Zones.Count; zone++)
             {
-                if (anchor.Kind == AnchorKind.AlarmSensor)
+                var z = spec.Zones[zone];
+                if (z.Kind == AlarmZoneKind.Motion)
                 {
-                    _sensors.Add((ToUnity(anchor.Position), ToUnity(MotionSensor.Facing(anchor.Facing))));
+                    var glow = new AlarmGlow($"{z.Name} LED", transform, hideFlags, led, new Color(0.35f, 0.04f, 0.03f), ToUnity(z.Led), ToUnity(z.Facing), Vector3.one * 0.011f, _owned);
+                    _sensors.Add(new Sensor(zone, ToUnity(z.Position), ToUnity(MotionSensor.Facing(z.Facing)), glow));
+                    continue;
+                }
+
+                foreach (var door in doors ?? new List<SwingingDoor>())
+                {
+                    if (door != null && door.Door != null && door.Door.Name == z.Door)
+                    {
+                        _contacts.Add(new DoorContact(zone, door));
+                    }
                 }
             }
 
-            materials.EnableEmission(SurfaceMaterial.AlarmLed);
-            materials.EnableEmission(SurfaceMaterial.AlarmStrobe);
-
-            // Each keypad: something to look at and press E on, just proud of the panel, and its buzzer.
-            _beep = Clip("Alarm beep", AlarmSounds.Beep());
-            for (var i = 0; i < keypads.Count; i++)
+            // The keypads: something to look at and press E on, its buzzer and its two lights.
+            for (var i = 0; i < spec.Keypads.Count; i++)
             {
-                var keypad = keypads[i];
-                var panel = TownMeshSpawner.CreateChild($"Keypad {i + 1}", transform, hideFlags);
-                panel.transform.SetPositionAndRotation(ToUnity(keypad.Position), Quaternion.LookRotation(ToUnity(keypad.Facing), Vector3.up));
-                var box = panel.AddComponent<BoxCollider>();
-                box.size = new Vector3(keypad.Size + 0.02f, 0.24f, 0.06f);
-                var beeper = panel.AddComponent<AudioSource>();
+                var mount = spec.Keypads[i];
+                var panel = mount.Panel;
+                var facing = ToUnity(panel.Facing);
+                var keypad = TownMeshSpawner.CreateChild($"Keypad {i + 1}", transform, hideFlags);
+                keypad.transform.SetPositionAndRotation(ToUnity(panel.Position), Quaternion.LookRotation(facing, Vector3.up));
+                Reachable(keypad, panel, AlarmFittings.KeypadDepth);
+                var beeper = keypad.AddComponent<AudioSource>();
                 Spatial(beeper, 3f, 35f);
-                _beepers.Add(beeper);
-                panel.AddComponent<AlarmKeypad>().Initialize(this, beeper);
+                var component = keypad.AddComponent<AlarmKeypad>();
+                component.Initialize(this, beeper);
+                _keypads.Add(new Keypad(
+                    component,
+                    new AlarmGlow("Power light", keypad.transform, hideFlags, led, new Color(0.05f, 0.25f, 0.08f), ToUnity(mount.PowerLed), facing, Vector3.one * 0.009f, _owned),
+                    new AlarmGlow("Fault light", keypad.transform, hideFlags, led, new Color(0.3f, 0.17f, 0.03f), ToUnity(mount.FaultLed), facing, Vector3.one * 0.009f, _owned)));
             }
 
-            _beeper = _beepers[0];
+            var box = TownMeshSpawner.CreateChild("Control Box", transform, hideFlags);
+            box.transform.SetPositionAndRotation(ToUnity(spec.ControlBox.Position), Quaternion.LookRotation(ToUnity(spec.ControlBox.Facing), Vector3.up));
+            Reachable(box, spec.ControlBox, AlarmFittings.ControlBoxDepth);
+            box.AddComponent<AlarmControlBox>().Initialize(this);
 
-            var bellBox = TownMeshSpawner.CreateChild("Bell Box", transform, hideFlags);
-            bellBox.transform.position = ToUnity(bell.Position);
-            _bell = bellBox.AddComponent<AudioSource>();
-            _bell.clip = Clip("Alarm sounder", AlarmSounds.Sounder());
-            _bell.loop = true;
-            Spatial(_bell, 5f, 160f);
-
-            _strobe = TownMeshSpawner.CreateChild("Strobe", bellBox.transform, hideFlags).AddComponent<Light>();
-            _strobe.transform.position = ToUnity(bell.Position + (bell.Facing * 0.4f));
-            _strobe.type = LightType.Point;
-            _strobe.color = StrobeBlue;
-            _strobe.range = 9f;
-            _strobe.intensity = 0f;
-            _strobe.shadows = LightShadows.None;
-            _strobe.enabled = false;
+            // The bell box: its sounder, its strobe, and the blue light the strobe throws.
+            var strobe = spec.BellStrobe;
+            var bell = TownMeshSpawner.CreateChild("Bell Box", transform, hideFlags);
+            bell.transform.position = ToUnity(strobe.Position);
+            _sounder = bell.AddComponent<AudioSource>();
+            _sounder.clip = Clip("Alarm sounder", AlarmSounds.Sounder());
+            _sounder.loop = true;
+            Spatial(_sounder, 5f, 160f);
+            _strobe = new AlarmGlow("Strobe", bell.transform, hideFlags, materials.Get(SurfaceMaterial.AlarmStrobe), new Color(0.16f, 0.32f, 0.78f), ToUnity(strobe.Position), ToUnity(strobe.Facing), new Vector3(strobe.Width, strobe.Height, 0.004f), _owned);
+            _strobeLight = TownMeshSpawner.CreateChild("Strobe Light", bell.transform, hideFlags).AddComponent<Light>();
+            _strobeLight.transform.position = ToUnity(strobe.Position + (strobe.Facing * 0.4f));
+            _strobeLight.type = LightType.Point;
+            _strobeLight.color = StrobeBlue;
+            _strobeLight.range = 9f;
+            _strobeLight.shadows = LightShadows.None;
+            _strobeLight.enabled = false;
         }
 
         private void Update()
         {
-            var deltaTime = Time.deltaTime;
-            if (Sees() || DoorMoved())
+            if (_alarm == null)
             {
-                _alarm.Detected();
+                return;
             }
 
-            // Every panel in the building beeps the countdown.
-            if (_alarm.Tick(deltaTime) > 0)
+            Watch();
+            if (_alarm.Tick(Time.deltaTime) > 0)
             {
-                foreach (var beeper in _beepers)
+                // Every keypad in the building beeps the countdown.
+                foreach (var keypad in _keypads)
                 {
-                    beeper.pitch = 1f;
-                    beeper.PlayOneShot(_beep, 0.8f);
+                    keypad.Component.Beeper.pitch = 1f;
+                    keypad.Component.Beeper.PlayOneShot(_beep, 0.8f);
                 }
             }
 
-            if (_alarm.BellRinging && !_bell.isPlaying)
+            if (_alarm.BellRinging && !_sounder.isPlaying)
             {
-                _bell.Play();
+                _sounder.Play();
             }
-            else if (!_alarm.BellRinging && _bell.isPlaying)
+            else if (!_alarm.BellRinging && _sounder.isPlaying)
             {
-                _bell.Stop();
+                _sounder.Stop();
             }
 
-            // The strobe: two quick flashes a second.
-            var phase = Mathf.Repeat(Time.time, 1f);
-            var flash = _alarm.StrobeFlashing && (phase < 0.05f || (phase > 0.13f && phase < 0.18f));
-            _materials.SetEmission(SurfaceMaterial.AlarmStrobe, flash ? StrobeBlue.linear * 12f : Color.black);
-            _strobe.enabled = flash;
-            _strobe.intensity = flash ? 8f : 0f;
+            // The strobe: one bright flash a second.
+            var flash = _alarm.StrobeFlashing && Mathf.Repeat(Time.time, 1f) < 0.07f;
+            _strobe.Set(flash ? StrobeBlue.linear * 14f : Color.black);
+            _strobeLight.enabled = flash;
+            _strobeLight.intensity = flash ? 8f : 0f;
 
-            _materials.SetEmission(SurfaceMaterial.AlarmLed, Time.time < _ledUntil ? new Color(4f, 0.15f, 0.1f) : Color.black);
-
-            if (PanelOpen && (_walking == null || !_walking.Active))
+            // The keypads' lights: power (blinking while it runs on its battery) and faults.
+            var onBattery = _alarm.Powered && !_alarm.MainsConnected;
+            var power = _alarm.Powered && (!onBattery || Mathf.Repeat(Time.time, 1f) < 0.5f);
+            var fault = _alarm.Faults != AlarmFaults.None;
+            foreach (var keypad in _keypads)
             {
-                ClosePanel();
+                keypad.Power.Set(power ? LedGreen : Color.black);
+                keypad.Fault.Set(fault ? LedAmber : Color.black);
+            }
+
+            foreach (var sensor in _sensors)
+            {
+                sensor.Led.Set(Time.time < sensor.LitUntil ? LedRed : Color.black);
+            }
+
+            if (WindowOpen && (_walking == null || !_walking.Active))
+            {
+                CloseWindows();
             }
         }
 
         private void OnDestroy()
         {
-            if (PanelOpen)
+            if (WindowOpen)
             {
-                ClosePanel();
+                CloseWindows();
             }
 
             _skin?.Dispose();
@@ -220,273 +208,68 @@ namespace Townscape.Runtime.Security
             _owned.Clear();
         }
 
-        // Whether any sensor sees the walker moving, with nothing solid in between.
-        private bool Sees()
+        // What the zones see this frame: the doors that moved, and the sensors with a clear view
+        // of the walker moving (if their wire's whole and the panel's on, their LED lights).
+        private void Watch()
         {
+            foreach (var contact in _contacts)
+            {
+                var open = contact.Door != null && contact.Door.IsOpen;
+                if (open != contact.WasOpen)
+                {
+                    contact.WasOpen = open;
+                    _alarm.Detected(contact.Zone);
+                }
+            }
+
             if (_walking == null || !_walking.Active)
             {
-                return false;
+                return;
             }
 
             var feet = _walking.transform.position;
             var moving = Time.deltaTime > 0f && (feet - _lastWalker).magnitude / Time.deltaTime > MovingSpeed;
             _lastWalker = feet;
-            if (!moving)
+            if (!moving || !_alarm.Powered)
             {
-                return false;
+                return;
             }
 
             var chest = feet + (Vector3.up * ChestHeight);
-            foreach (var (position, facing) in _sensors)
+            var target = new System.Numerics.Vector3(chest.x, chest.y, chest.z);
+            foreach (var sensor in _sensors)
             {
-                var sensor = new System.Numerics.Vector3(position.x, position.y, position.z);
-                var target = new System.Numerics.Vector3(chest.x, chest.y, chest.z);
-                var look = new System.Numerics.Vector3(facing.x, facing.y, facing.z);
-                if (!MotionSensor.Covers(sensor, look, target))
+                if (!_alarm.ZoneConnected(sensor.Zone))
+                {
+                    continue;
+                }
+
+                var position = new System.Numerics.Vector3(sensor.Position.x, sensor.Position.y, sensor.Position.z);
+                var look = new System.Numerics.Vector3(sensor.Facing.x, sensor.Facing.y, sensor.Facing.z);
+                if (!MotionSensor.Covers(position, look, target))
                 {
                     continue;
                 }
 
                 // The walker is on the Ignore Raycast layer, so only walls and doors get in the way.
-                var from = position + (new Vector3(facing.x, 0f, facing.z).normalized * 0.06f);
+                var from = sensor.Position + (new Vector3(sensor.Facing.x, 0f, sensor.Facing.z).normalized * 0.06f);
                 if (!Physics.Linecast(from, chest, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                 {
-                    _ledUntil = Time.time + LedHoldSeconds;
-                    return true;
+                    sensor.LitUntil = Time.time + LedHoldSeconds;
+                    _alarm.Detected(sensor.Zone);
                 }
             }
-
-            return false;
         }
 
-        // Opening or shutting any door counts as being seen.
-        private bool DoorMoved()
+        // Something to look at and press E on: from just off the wall (not through it, so it can't
+        // be reached from the other side) to just proud of the face.
+        private static void Reachable(GameObject target, WallMount mount, float depth)
         {
-            var moved = false;
-            for (var i = 0; i < _doors.Count; i++)
-            {
-                var open = _doors[i] != null && _doors[i].IsOpen;
-                moved |= open != _doorWasOpen[i];
-                _doorWasOpen[i] = open;
-            }
-
-            return moved;
-        }
-
-        private void OnGUI()
-        {
-            if (!PanelOpen)
-            {
-                return;
-            }
-
-            CreateStyles();
-            var scale = Mathf.Clamp(Screen.height / 900f, 1f, 2.5f);
-            GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            HandleKeys();
-            if (!PanelOpen)
-            {
-                return;
-            }
-
-            const float width = 250f;
-            const float height = 360f;
-            var area = new Rect((Screen.width / scale * 0.5f) + 60f, (Screen.height / scale * 0.5f) - (height * 0.5f), width, height);
-            GUILayout.BeginArea(area, _skin.Panel);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Alarm", _skin.Title);
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("×", _skin.Button, GUILayout.Width(32f)))
-            {
-                ClosePanel();
-            }
-
-            GUILayout.EndHorizontal();
-
-            // The screen: the state, then the code as you type it (or what the panel has to say).
-            var screen = GUILayoutUtility.GetRect(width - 32f, 62f);
-            var previous = GUI.color;
-            GUI.color = _alarm.StrobeFlashing ? new Color(0.45f, 0.12f, 0.1f) : new Color(0.16f, 0.27f, 0.25f);
-            GUI.DrawTexture(screen, _white);
-            GUI.color = previous;
-            GUI.Label(new Rect(screen.x + 10f, screen.y + 6f, screen.width - 20f, 26f), Headline(), _lcd);
-            var detail = Time.unscaledTime < _messageUntil ? _message : (_typed.Length > 0 ? new string('*', _typed.Length) : Hint());
-            GUI.Label(new Rect(screen.x + 10f, screen.y + 34f, screen.width - 20f, 22f), detail, _lcdSmall);
-
-            GUILayout.Space(8f);
-            for (var row = 0; row < 3; row++)
-            {
-                GUILayout.BeginHorizontal();
-                for (var column = 1; column <= 3; column++)
-                {
-                    Digit((char)('0' + (row * 3) + column));
-                }
-
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Clear", _skin.Button))
-            {
-                Press();
-                _typed = string.Empty;
-            }
-
-            Digit('0');
-            if (GUILayout.Button("Del", _skin.Button) && _typed.Length > 0)
-            {
-                Press();
-                _typed = _typed.Substring(0, _typed.Length - 1);
-            }
-
-            GUILayout.EndHorizontal();
-            GUILayout.Space(6f);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Set", _skin.Button))
-            {
-                Submit(set: true);
-            }
-
-            if (GUILayout.Button("Unset", _skin.Button))
-            {
-                Submit(set: false);
-            }
-
-            GUILayout.EndHorizontal();
-            GUILayout.Label($"The code is {BurglarAlarm.DefaultCode}. Type it, then Set or Unset (Enter does whichever fits). Esc closes.", _skin.Status);
-            GUILayout.EndArea();
-        }
-
-        private void Digit(char digit)
-        {
-            if (GUILayout.Button(digit.ToString(), _skin.Button))
-            {
-                Type(digit);
-            }
-        }
-
-        private void Type(char digit)
-        {
-            Press();
-            if (_typed.Length < MaxDigits)
-            {
-                _typed += digit;
-            }
-        }
-
-        // Enter sets the alarm when it's off and unsets it otherwise.
-        private void Submit(bool set)
-        {
-            var code = _typed;
-            _typed = string.Empty;
-            var result = set ? _alarm.Set(code) : _alarm.Unset(code);
-            switch (result)
-            {
-                case KeypadResult.WrongCode:
-                    Say("WRONG CODE");
-                    _beeper.pitch = 0.6f;
-                    _beeper.PlayOneShot(_beep, 1f);
-                    break;
-                case KeypadResult.NothingToDo:
-                    Say(set ? "ALREADY SET" : "ALREADY UNSET");
-                    break;
-                default:
-                    Say(set ? "SETTING" : "UNSET");
-                    _beeper.pitch = 1f;
-                    _beeper.PlayOneShot(_beep, 1f);
-                    break;
-            }
-        }
-
-        private void HandleKeys()
-        {
-            var e = Event.current;
-            if (e.type != EventType.KeyDown)
-            {
-                return;
-            }
-
-            var key = e.keyCode;
-            if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9)
-            {
-                Type((char)('0' + (key - KeyCode.Alpha0)));
-            }
-            else if (key >= KeyCode.Keypad0 && key <= KeyCode.Keypad9)
-            {
-                Type((char)('0' + (key - KeyCode.Keypad0)));
-            }
-            else if (key == KeyCode.Backspace && _typed.Length > 0)
-            {
-                _typed = _typed.Substring(0, _typed.Length - 1);
-            }
-            else if (key == KeyCode.Return || key == KeyCode.KeypadEnter)
-            {
-                Submit(set: !_alarm.Armed);
-            }
-            else if (key == KeyCode.Escape || (key == KeyCode.E && Time.unscaledTime - _openedAt > 0.3f))
-            {
-                ClosePanel();
-            }
-            else
-            {
-                return;
-            }
-
-            e.Use();
-        }
-
-        private string Headline()
-        {
-            switch (_alarm.State)
-            {
-                case AlarmState.Exiting: return $"EXIT   {Mathf.CeilToInt(_alarm.Remaining)}";
-                case AlarmState.Set: return "SET";
-                case AlarmState.Entry: return $"ENTRY  {Mathf.CeilToInt(_alarm.Remaining)}";
-                case AlarmState.Sounding: return "ALARM";
-                default: return "UNSET";
-            }
-        }
-
-        private string Hint()
-        {
-            switch (_alarm.State)
-            {
-                case AlarmState.Exiting: return "Leave now";
-                case AlarmState.Set: return "Code then Unset";
-                case AlarmState.Entry: return "Code then Unset";
-                case AlarmState.Sounding: return "Code to silence";
-                default: return "Code then Set";
-            }
-        }
-
-        private void Say(string message)
-        {
-            _message = message;
-            _messageUntil = Time.unscaledTime + MessageSeconds;
-        }
-
-        // A key's click.
-        private void Press()
-        {
-            _beeper.pitch = 0.85f;
-            _beeper.PlayOneShot(_beep, 0.35f);
-        }
-
-        private void CreateStyles()
-        {
-            if (_skin != null)
-            {
-                return;
-            }
-
-            _skin = new PanelSkin();
-            _white = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-            _white.SetPixel(0, 0, Color.white);
-            _white.Apply();
-            _owned.Add(_white);
-            var glow = new Color(0.75f, 1f, 0.85f);
-            _lcd = new GUIStyle { fontSize = 22, fontStyle = FontStyle.Bold, normal = { textColor = glow } };
-            _lcdSmall = new GUIStyle { fontSize = 15, normal = { textColor = new Color(glow.r, glow.g, glow.b, 0.8f) } };
+            var box = target.AddComponent<BoxCollider>();
+            var back = -depth + 0.004f;
+            const float front = 0.03f;
+            box.center = new Vector3(0f, 0f, (back + front) * 0.5f);
+            box.size = new Vector3(mount.Width + 0.02f, mount.Height + 0.02f, front - back);
         }
 
         private AudioClip Clip(string name, float[] samples)
@@ -508,5 +291,57 @@ namespace Townscape.Runtime.Security
         }
 
         private static Vector3 ToUnity(System.Numerics.Vector3 v) => new Vector3(v.X, v.Y, v.Z);
+
+        private sealed class Sensor
+        {
+            public Sensor(int zone, Vector3 position, Vector3 facing, AlarmGlow led)
+            {
+                Zone = zone;
+                Position = position;
+                Facing = facing;
+                Led = led;
+            }
+
+            public int Zone { get; }
+
+            public Vector3 Position { get; }
+
+            public Vector3 Facing { get; }
+
+            public AlarmGlow Led { get; }
+
+            public float LitUntil { get; set; }
+        }
+
+        private sealed class DoorContact
+        {
+            public DoorContact(int zone, SwingingDoor door)
+            {
+                Zone = zone;
+                Door = door;
+            }
+
+            public int Zone { get; }
+
+            public SwingingDoor Door { get; }
+
+            public bool WasOpen { get; set; }
+        }
+
+        private sealed class Keypad
+        {
+            public Keypad(AlarmKeypad component, AlarmGlow power, AlarmGlow fault)
+            {
+                Component = component;
+                Power = power;
+                Fault = fault;
+            }
+
+            public AlarmKeypad Component { get; }
+
+            public AlarmGlow Power { get; }
+
+            public AlarmGlow Fault { get; }
+        }
     }
 }

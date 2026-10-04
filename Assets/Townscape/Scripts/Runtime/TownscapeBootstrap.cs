@@ -212,8 +212,8 @@ namespace Townscape.Runtime
             walking.Initialize(camera.transform, flyCamera, input, colliders, panel, CoffeeShop, GroundHeight, waterLevel);
             panel.Walking = walking;
             controls.AddComponent<WalkingHud>().Initialize(walking);
-            var alarm = AlarmSystem.Create(Town, _materials, _root.transform, hideFlags, walking, _doors);
-            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, alarm);
+            var alarms = AlarmSystem.CreateAll(Town, _materials, _root.transform, hideFlags, walking, _doors);
+            controls.AddComponent<TownscapeShortcuts>().Initialize(Store, input, Lighting, panel, performance, CoffeeShop, walking, alarms);
             if (rememberSettings)
             {
                 controls.AddComponent<SettingsMemory>().Initialize(Store);

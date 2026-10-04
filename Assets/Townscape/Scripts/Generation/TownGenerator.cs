@@ -56,8 +56,9 @@ namespace Townscape.Generation
     /// <summary>Everything generation produced, plus the ground model for runtime queries.</summary>
     public sealed class GeneratedTown
     {
-        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, IReadOnlyList<TownAnchor> anchors, GroundMeshStats groundStats, IReadOnlyList<TownDoor> doors = null)
+        public GeneratedTown(TownContext context, IReadOnlyList<GeneratedMesh> meshes, IReadOnlyList<TownAnchor> anchors, GroundMeshStats groundStats, IReadOnlyList<TownDoor> doors = null, IReadOnlyList<TownAlarm> alarms = null)
         {
+            Alarms = alarms ?? System.Array.Empty<TownAlarm>();
             Context = context;
             Meshes = meshes;
             Anchors = anchors;
@@ -76,6 +77,9 @@ namespace Townscape.Generation
 
         /// <summary>Doors that open, built apart from their buildings so they can swing.</summary>
         public IReadOnlyList<TownDoor> Doors { get; }
+
+        /// <summary>Burglar alarms fitted to buildings.</summary>
+        public IReadOnlyList<TownAlarm> Alarms { get; }
     }
 
     /// <summary>
@@ -172,7 +176,7 @@ namespace Townscape.Generation
             }
 
             meshes.AddRange(sink.Meshes);
-            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats, sink.DoorList);
+            return new GeneratedTown(context, meshes, sink.AnchorList, groundGenerator.Stats, sink.DoorList, sink.AlarmList);
         }
     }
 }

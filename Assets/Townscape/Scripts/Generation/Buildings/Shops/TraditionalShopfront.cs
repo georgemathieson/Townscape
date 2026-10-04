@@ -23,8 +23,18 @@ namespace Townscape.Generation.Buildings.Shops
         public const float DoorHeight = 2.35f;
         public const float FlatDoorDepth = 0.16f;
         private const float FasciaTop = 3.22f;
+
+        /// <summary>How far the fascia stands out from the wall.</summary>
+        public const float FasciaDepth = 0.12f;
         private const float DisplayDepth = 1.35f;
         private const float DoorWidth = 0.95f;
+
+        /// <summary>
+        /// Where a bell box goes on the sign of a shop with one: at the right-hand end of the
+        /// fascia, over the door, its top just under the cornice (heights from the floor).
+        /// </summary>
+        public static (float CentreX, float Top) FasciaBellBox(float width) =>
+            (width - Pilaster - 0.12f - (Interiors.AlarmFittings.BellBoxWidth * 0.5f), FasciaTop - 0.05f);
 
         /// <summary>Where things go across a shopfront <paramref name="width"/> wide.</summary>
         public static ShopfrontLayout Layout(float width)
@@ -234,8 +244,11 @@ namespace Townscape.Generation.Buildings.Shops
             }
 
             // Fascia with lettering, and the cornice above it.
-            wall.Block(builder, Pilaster, f + OpeningTop + 0.03f, width - Pilaster, f + FasciaTop - 0.02f, 0f, 0.12f, paint);
-            PixelFont.Write(builder, wall, shop.Name, width * 0.5f, f + ((OpeningTop + FasciaTop) * 0.5f) + 0.005f, 0.045f, width - (2f * Pilaster) - 0.4f, 0.124f, shop.Lettering);
+            // A bell box on the sign takes its right-hand end; the name moves over to make room.
+            var letterLeft = Pilaster + 0.2f;
+            var letterRight = shop.BellBox ? FasciaBellBox(width).CentreX - (Interiors.AlarmFittings.BellBoxWidth * 0.5f) - 0.15f : width - Pilaster - 0.2f;
+            wall.Block(builder, Pilaster, f + OpeningTop + 0.03f, width - Pilaster, f + FasciaTop - 0.02f, 0f, FasciaDepth, paint);
+            PixelFont.Write(builder, wall, shop.Name, (letterLeft + letterRight) * 0.5f, f + ((OpeningTop + FasciaTop) * 0.5f) + 0.005f, 0.045f, letterRight - letterLeft, FasciaDepth + 0.004f, shop.Lettering);
             wall.Block(builder, -0.04f, f + FasciaTop, width + 0.04f, f + FasciaTop + 0.1f, 0f, 0.24f, paint);
         }
 

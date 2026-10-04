@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Townscape.Runtime.CoffeeShop;
 using Townscape.Runtime.Lighting;
 using Townscape.Runtime.Security;
@@ -19,11 +20,11 @@ namespace Townscape.Runtime.Controls
         private PerformanceOverlay _performance;
         private CoffeeShopGame _coffee;
         private WalkingController _walking;
-        private AlarmSystem _alarm;
+        private IReadOnlyList<AlarmSystem> _alarms;
 
-        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null, AlarmSystem alarm = null)
+        public void Initialize(Store<TownState> store, ITownscapeInput input, TimeOfDayLighting lighting, ControlPanel panel, PerformanceOverlay performance, CoffeeShopGame coffee = null, WalkingController walking = null, IReadOnlyList<AlarmSystem> alarms = null)
         {
-            _alarm = alarm;
+            _alarms = alarms;
             _coffee = coffee;
             _walking = walking;
             _store = store;
@@ -40,10 +41,16 @@ namespace Townscape.Runtime.Controls
                 return;
             }
 
-            // While the alarm's keypad is up, the keys are for typing the code.
-            if (_alarm != null && _alarm.PanelOpen)
+            // While an alarm's keypad or control box is up, the keys are for it.
+            if (_alarms != null)
             {
-                return;
+                foreach (var alarm in _alarms)
+                {
+                    if (alarm != null && alarm.WindowOpen)
+                    {
+                        return;
+                    }
+                }
             }
 
             SelectPresetOnPress(Shortcut.Dawn, TimePreset.Dawn);

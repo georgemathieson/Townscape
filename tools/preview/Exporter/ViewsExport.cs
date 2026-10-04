@@ -69,6 +69,10 @@ internal static class ViewsExport
             Inside("kettleSensor", 5.2f, f[1] + 1.7f, 1.6f, 6.9f, f[1] + 2.4f, 0.2f);
             var lobbyLeft = TraditionalShopfront.Layout(space.Width).DoorLeft;
             Inside("kettleCafeKeypad", lobbyLeft - 1.3f, f[0] + 1.62f, 1.5f, lobbyLeft, f[0] + 1.4f, 0.35f);
+            Inside("kettleShopControlBox", 4.0f, f[0] + 1.65f, 7.4f, 1.5f, f[0] + 1.5f, 8.05f);
+            Inside("kettleFlatControlBox", 4.6f, f[3] + 1.5f, 3.2f, space.Width - 0.15f, f[3] + 1.1f, 2.0f);
+            var sign = TraditionalShopfront.FasciaBellBox(space.Width);
+            views.Add(View("kettleSign", space.At(sign.CentreX - 2.5f, f[0] + 1.7f, -5.5f), space.At(sign.CentreX - 0.8f, f[0] + 2.9f, 0f), 45f));
             views.Add(View("kettleBellBox", space.At((space.Width / 3f) + 2f, f[0] + 1.7f, -7f), space.At(space.Width / 3f, f[2] + 1.6f, 0f), 35f));
             views.Add(View("kettleBack", space.At(space.Width * 0.5f, f[3] + 4f, space.Depth + 9f), space.At(space.Width * 0.5f, f[3] + 1.2f, space.Depth * 0.7f), 50f));
         }

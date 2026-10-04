@@ -43,6 +43,9 @@ namespace Townscape.Generation.Buildings.Shops
         /// </summary>
         public bool Enterable { get; init; }
 
+        /// <summary>The sign leaves room at its right-hand end for a burglar alarm's bell box.</summary>
+        public bool BellBox { get; init; }
+
         /// <summary>How the ground floor is laid out. Null means a traditional shopfront.</summary>
         public IGroundFloorStyle Frontage { get; init; }
     }
