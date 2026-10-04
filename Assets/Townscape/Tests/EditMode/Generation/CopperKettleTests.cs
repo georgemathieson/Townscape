@@ -48,7 +48,7 @@ namespace Townscape.Tests.Generation
         [Test]
         public void ItsTwoFrontDoors_Open_IntoTheBuilding()
         {
-            var doors = GeneratedVillage.Town.Doors;
+            var doors = GeneratedVillage.Town.Doors.Where(d => d.Noun == "door").ToList();
             var site = Kettle.Footprint;
             var outward = new Vector3(site.Outward.X, 0f, site.Outward.Y);
 
@@ -77,14 +77,15 @@ namespace Townscape.Tests.Generation
         {
             foreach (var door in GeneratedVillage.Town.Doors)
             {
+                // A door hangs on one edge; a roof window pivots about its middle.
                 var leaf = door.ClosedLeaf();
+                var from = door.Noun == "window" ? -door.Width : 0f;
                 Assert.That(leaf.Positions, Is.Not.Empty);
                 foreach (var p in leaf.Positions)
                 {
                     var offset = p - door.Hinge;
-                    var across = Vector3.Dot(offset, door.Along);
-                    Assert.That(across, Is.InRange(-0.01f, door.Width + 0.01f), door.Name);
-                    Assert.That(offset.Y, Is.InRange(-0.01f, door.Height + 0.01f), door.Name);
+                    Assert.That(Vector3.Dot(offset, door.Along), Is.InRange(from - 0.01f, door.Width + 0.01f), door.Name);
+                    Assert.That(Vector3.Dot(offset, door.Axis), Is.InRange(-0.01f, door.Height + 0.01f), door.Name);
                 }
             }
         }
@@ -123,7 +124,7 @@ namespace Townscape.Tests.Generation
             // Only the fanlight over the flat's door keeps glowing home-window glass.
             Assert.That(Triangles(mesh, m => NightLights_IsHomeWindow(m)), Is.LessThanOrEqualTo(2));
             Assert.That(anchors.Count(a => a.Kind == AnchorKind.Window), Is.EqualTo(10), "six at the front, three at the back and the dormer");
-            Assert.That(Triangles(mesh, m => m == SurfaceMaterial.ShopGlass), Is.GreaterThan(20));
+            Assert.That(Triangles(mesh, m => m == SurfaceMaterial.ClearGlass), Is.GreaterThan(40), "glass seen from both sides");
         }
 
         [Test]
@@ -148,6 +149,76 @@ namespace Townscape.Tests.Generation
                 Assert.That(Kettle.Footprint.Contains(new Vector2(light.Position.X, light.Position.Z)), Is.True);
                 Assert.That(light.Position.Y, Is.LessThan(Design.Ridge));
             }
+        }
+
+        [Test]
+        public void Doorways_AndTheWaysIn_AreKeptClearOfFurniture()
+        {
+            var (mesh, _, _) = BuildAlone();
+            var space = new UnitSpace(Kettle.Footprint);
+            var architecture = new[] { SurfaceMaterial.Interior, SurfaceMaterial.InteriorFloor, SurfaceMaterial.TileLight, SurfaceMaterial.TileDark, SurfaceMaterial.Slate, Design.Wall };
+            var walkways = CafeAndFlat.Walkways(Kettle.Footprint, Design).ToList();
+
+            Assert.That(walkways, Has.Count.EqualTo(8));
+            foreach (var submesh in mesh.Submeshes.Where(s => Array.IndexOf(architecture, s.Material) < 0))
+            {
+                for (var i = 0; i < submesh.Indices.Length; i += 3)
+                {
+                    var corners = new[] { submesh.Indices[i], submesh.Indices[i + 1], submesh.Indices[i + 2] }.Select(index => space.Local(mesh.Positions[index])).ToArray();
+                    var low = Vector3.Min(Vector3.Min(corners[0], corners[1]), corners[2]);
+                    var high = Vector3.Max(Vector3.Max(corners[0], corners[1]), corners[2]);
+                    foreach (var way in walkways)
+                    {
+                        // Anything between ankle and head height that reaches into the walkway is in the way.
+                        var blocks = high.X > way.X0 + 0.01f && low.X < way.X1 - 0.01f && high.Z > way.D0 + 0.01f && low.Z < way.D1 - 0.01f &&
+                            high.Y > way.Floor + 0.05f && low.Y < way.Floor + WalkMotion.BodyHeight;
+                        Assert.That(blocks, Is.False, $"{submesh.Material} blocks the way {way.Name}");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void TheAttic_HasTwoRoofWindows_ThatPivotOpen()
+        {
+            var windows = GeneratedVillage.Town.Doors.Where(d => d.Noun == "window").ToList();
+            var openings = CafeAndFlat.RoofWindows(Kettle.Footprint, Design);
+            var attic = CafeAndFlat.Floors(Design)[3];
+
+            Assert.That(windows.Select(w => w.Name), Is.EquivalentTo(new[] { "Roof window 1", "Roof window 2" }));
+            Assert.That(openings, Has.Length.EqualTo(2));
+            foreach (var opening in openings)
+            {
+                Assert.That(opening.B0, Is.GreaterThan(0.5f), "in the back slope");
+                Assert.That(opening.B1, Is.LessThan(1f));
+            }
+
+            foreach (var window in windows)
+            {
+                Assert.That(Math.Abs(window.Axis.Y), Is.LessThan(1e-3f), "pivots about a level line");
+                Assert.That(window.Along.Y, Is.GreaterThan(0.5f), "the top half tips in");
+                Assert.That(window.Hinge.Y - attic, Is.InRange(1.2f, 1.9f), "within reach from the attic floor");
+
+                var shut = window.LatchAt(0f);
+                var open = window.LatchAt(window.OpenDegrees);
+                Assert.That(open.Y, Is.LessThan(shut.Y - 0.2f), "its top edge comes down into the room");
+                Assert.That(Kettle.Footprint.Contains(new Vector2(window.Hinge.X, window.Hinge.Z)), Is.True);
+            }
+        }
+
+        [Test]
+        public void HangingLights_AreFittings_ThatNobodyBumpsInto()
+        {
+            var fittings = GeneratedVillage.Town.Meshes.Where(m => m.Category == MeshCategory.Fittings).ToList();
+            var kettle = Kettle.Footprint;
+
+            Assert.That(MeshCategories.IsSolid(MeshCategory.Fittings), Is.False);
+            Assert.That(fittings.SelectMany(m => m.Mesh.Submeshes).Select(s => s.Material), Has.Member(SurfaceMaterial.LampGlass));
+            Assert.That(fittings.Any(m => m.Mesh.Positions.Any(p => kettle.Contains(new Vector2(p.X, p.Z)))), Is.True);
+
+            // Built alone, without a fittings mesh, the lights fall back into the building's own.
+            var (mesh, _, _) = BuildAlone();
+            Assert.That(mesh.Submeshes.Select(s => s.Material), Has.Member(SurfaceMaterial.LampGlass));
         }
 
         [Test]

@@ -148,14 +148,25 @@ A shop marked `Enterable` (only the Copper Kettle) is built inside as well as ou
   bathroom on the second, and an attic study and snug under the roof, lit through the dormer. The
   attic has upright knee walls where the slopes come down, and the chimney stacks on its party walls
   are plastered in as chimney breasts.
-- Its windows are real openings with clear glass, front and back, and the dormer is built
-  see-through (`Dormer.Build(seeThrough: true)`), so you can look in and out. Interior surfaces use
-  their own materials (tiles, fabrics, linen) so the weather never wets or snows on them.
+- Its windows are real openings with `ClearGlass`, front and back, and the dormer is built
+  see-through (`Dormer.Build(seeThrough: true)`), so you can look in and out. A see-through
+  `WindowStyle` puts the faintly tinted glass on both sides and stands the frames proud of it inside
+  as well as out, with a wooden board along the bottom. Interior surfaces use their own materials
+  (tiles, fabrics, linen) so the weather never wets or snows on them.
+- Two roof windows (`RoofWindow`) light the attic's snug from the back slope: `GableRoof.Build`
+  leaves a `RoofOpening` in the slates for each, the attic's lining is cut round them with reveals
+  up to the slates, and the glazed sash pivots open about a level line across its middle.
+- `CafeAndFlat.Walkways` lists the ways in from each door and through each doorway; a test keeps
+  every bit of furniture out of them.
+- Hanging lights go in `BuildContext.Fittings`, a mesh of their own (`MeshCategory.Fittings`) that
+  isn't solid, so you never snag on one; the landings have flush lights instead of pendants.
 
 Doors that open are not part of the building's mesh. `BuildContext.Door` builds the leaf in its own
-mesh around its hinge and records a `TownDoor` (hinge, the way it closes across, the way it opens,
-size), which `GeneratedTown.Doors` hands to the runtime. The shopfront makes two: the café door in
-the glazed lobby on the right and the flat's door on the left.
+mesh around its hinge and records a `TownDoor` (hinge, the line it turns about, the way it closes
+across, the way it opens, size), which `GeneratedTown.Doors` hands to the runtime. The shopfront
+makes two: the café door in the glazed lobby on the right and the flat's door on the left. The roof
+windows are `TownDoor`s too, turning about a level axis across the slope, so the top of the sash
+tips into the room.
 
 ### Dressing
 
@@ -309,7 +320,8 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   and the river's edge turns you back. Anything implementing `IInteractable` that the crosshair
   is on within reach shows its prompt in `WalkingHud` and is used with E or a click.
 - **Doors.** `SwingingDoor` turns each `TownDoor` into a hinge with the leaf under it, and is the
-  `IInteractable` that swings it open into the room or shut again. In play mode the leaf gets a
+  `IInteractable` that swings it open into the room or shut again, about the door's own axis (so it
+  also opens the roof windows). In play mode the leaf gets a
   convex collider on a kinematic body, so a shut door blocks you and an open one stands aside.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.

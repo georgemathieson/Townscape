@@ -56,6 +56,8 @@ The café door is on the right, in the glazed lobby; the door on the left opens 
 | The café after dark | The counter, the cakes and the espresso machine |
 | ![The flat's living room at night, lit by a pendant lamp](docs/images/gallery/kettle-living-night.jpg) | ![The attic snug at night, with pictures on the walls](docs/images/gallery/kettle-snug-night.jpg) |
 | The flat's living room in the evening | The attic: a snug and a study under the slates |
+| ![Two roof windows over the attic's sofa](docs/images/gallery/kettle-roof-windows-day.jpg) | ![The roof windows in the back slope, from outside](docs/images/gallery/kettle-back-dusk.jpg) |
+| Roof windows over the snug: press E to tip one open | The same windows from behind the terrace at dusk |
 
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*

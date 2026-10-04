@@ -136,7 +136,8 @@ namespace Townscape.Generation.Buildings.Shops
                 var hinge = wall.Point(right, f, back - 0.02f);
                 floor.Context.Door("Shop door", hinge, -wall.Right, -wall.Out, right - left, DoorHeight, door =>
                 {
-                    Leaf(door.Builder, SurfaceMaterial.ShopGlass);
+                    Leaf(door.Builder, SurfaceMaterial.ClearGlass);
+                    wall.QuadInward(door.Builder, left, f + 1.0f, right, f + DoorHeight, back, SurfaceMaterial.ClearGlass);
                     wall.QuadInward(door.Builder, left, f, right, f + 1.0f, back - 0.04f, paint);
                     wall.Block(door.Builder, left, f + 1.0f, right, f + 1.06f, back - 0.04f, back, paint);
                     wall.Block(door.Builder, left, f + DoorHeight - 0.06f, right, f + DoorHeight, back - 0.04f, back, paint);
@@ -168,18 +169,34 @@ namespace Townscape.Generation.Buildings.Shops
             wall.Block(builder, left + 0.12f, f + 0.1f, right - 0.12f, bed - 0.1f, -0.03f, -0.01f, paint);
             wall.Block(builder, left, bed - 0.04f, right, bed, -0.03f, 0.03f, paint);
 
-            // Glass with its frame, mullions and transom.
-            wall.Quad(builder, left, bed, right, top, -0.08f, shop.Display == null ? SurfaceMaterial.WindowGlass : SurfaceMaterial.ShopGlass);
+            // Glass with its frame, mullions and transom. In a shop you can go into, the glass and
+            // frame are seen from inside too.
+            var glass = shop.Enterable ? SurfaceMaterial.ClearGlass : shop.Display == null ? SurfaceMaterial.WindowGlass : SurfaceMaterial.ShopGlass;
+            wall.Quad(builder, left, bed, right, top, -0.08f, glass);
+            if (shop.Enterable)
+            {
+                wall.QuadInward(builder, left, bed, right, top, -0.08f, glass);
+            }
+
+            void Bar(float x0, float y0, float x1, float y1, float front)
+            {
+                wall.Block(builder, x0, y0, x1, y1, -0.1f, front, paint);
+                if (shop.Enterable)
+                {
+                    wall.QuadInward(builder, x0, y0, x1, y1, -0.1f, paint);
+                }
+            }
+
             const float bar = 0.06f;
-            wall.Block(builder, left, bed, left + bar, top, -0.1f, -0.04f, paint);
-            wall.Block(builder, right - bar, bed, right, top, -0.1f, -0.04f, paint);
-            wall.Block(builder, left, top - bar, right, top, -0.1f, -0.04f, paint);
-            wall.Block(builder, left, top - 0.48f, right, top - 0.44f, -0.1f, -0.05f, paint);
+            Bar(left, bed, left + bar, top, -0.04f);
+            Bar(right - bar, bed, right, top, -0.04f);
+            Bar(left, top - bar, right, top, -0.04f);
+            Bar(left, top - 0.48f, right, top - 0.44f, -0.05f);
             var panes = Math.Max(1, (int)MathF.Round((right - left) / 1.2f));
             for (var i = 1; i < panes; i++)
             {
                 var x = left + ((right - left) * i / panes);
-                wall.Block(builder, x - 0.025f, bed, x + 0.025f, top, -0.1f, -0.05f, paint);
+                Bar(x - 0.025f, bed, x + 0.025f, top, -0.05f);
             }
 
             floor.Context.Anchor(AnchorKind.ShopWindow, wall.Point((left + right) * 0.5f, (bed + top) * 0.5f, -0.6f), wall.Out, right - left);

@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Townscape.Runtime.Walking
 {
     /// <summary>
-    /// A door that opens and shuts when you look at it and press E: it swings on its hinges into
-    /// the room over about half a second, easing in and out.
+    /// A door (or roof window) that opens and shuts when you look at it and press E: it swings
+    /// about its hinge into the room over about half a second, easing in and out.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SwingingDoor : MonoBehaviour, IInteractable
@@ -16,10 +16,11 @@ namespace Townscape.Runtime.Walking
 
         private TownDoor _door;
         private float _side = 1f;
+        private Vector3 _axis = Vector3.up;
         private float _amount;
         private bool _open;
 
-        public string Prompt => _open ? "Close the door" : "Open the door";
+        public string Prompt => _door == null ? string.Empty : (_open ? "Close the " : "Open the ") + _door.Noun;
 
         public bool IsOpen => _open;
 
@@ -70,7 +71,8 @@ namespace Townscape.Runtime.Walking
             // Swing whichever way about the hinge carries the latch into the room.
             var along = new Vector3(door.Along.X, door.Along.Y, door.Along.Z);
             var inward = new Vector3(door.Inward.X, door.Inward.Y, door.Inward.Z);
-            _side = Vector3.Dot(Quaternion.AngleAxis(90f, Vector3.up) * along, inward) >= 0f ? 1f : -1f;
+            _axis = new Vector3(door.Axis.X, door.Axis.Y, door.Axis.Z);
+            _side = Vector3.Dot(Quaternion.AngleAxis(90f, _axis) * along, inward) >= 0f ? 1f : -1f;
         }
 
         private void Update()
@@ -88,7 +90,7 @@ namespace Townscape.Runtime.Walking
 
             _amount = Mathf.MoveTowards(_amount, target, Time.deltaTime / SwingSeconds);
             var eased = _amount * _amount * (3f - (2f * _amount));
-            transform.localRotation = Quaternion.AngleAxis(_side * _door.OpenDegrees * eased, Vector3.up);
+            transform.localRotation = Quaternion.AngleAxis(_side * _door.OpenDegrees * eased, _axis);
         }
     }
 }

@@ -22,6 +22,9 @@ namespace Townscape.Generation
         Furniture,
         Vegetation,
         Puddles,
+
+        /// <summary>Light fittings hung from ceilings indoors, which a walker can pass under or brush past.</summary>
+        Fittings,
     }
 
     public static class MeshCategories
@@ -29,7 +32,8 @@ namespace Townscape.Generation
         /// <summary>
         /// Whether a walker bumps into meshes of this kind. Water, road markings and puddles lie
         /// flat on something solid; plants are left out because their leaves would snag, and their
-        /// trunks are marked separately with <see cref="AnchorKind.TreeTrunk"/> anchors.
+        /// trunks are marked separately with <see cref="AnchorKind.TreeTrunk"/> anchors. Hanging
+        /// light fittings are left out so they never catch your head on the stairs.
         /// </summary>
         public static bool IsSolid(MeshCategory category) =>
             category == MeshCategory.Ground || category == MeshCategory.Fells || category == MeshCategory.Structure ||

@@ -129,7 +129,10 @@ before work started; later changes should be recorded here too.
 10. **The Copper Kettle:** go inside the café and the flat above it through doors that open. The café
     has a counter and till, a cake cabinet, an espresso machine, tables and a storeroom; the flat has
     a living room and kitchen, a bedroom and bathroom, and an attic study and snug under the dormer, up a
-    dog-leg stair. Its windows are clear glass you can see in and out of. *(this pull request)*
+    dog-leg stair. Its windows are clear glass you can see in and out of. *(done)*
+    - **Follow-ups:** roof windows over the attic snug that pivot open, window frames that read from
+      inside and faintly tinted glass, doorways kept clear of furniture, and ceiling lights you can't
+      catch your head on. *(this pull request)*
 
 ## Fellside Coffee
 

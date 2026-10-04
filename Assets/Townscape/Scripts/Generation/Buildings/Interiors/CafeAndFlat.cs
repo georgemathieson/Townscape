@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Townscape.Generation.Buildings.Parts;
 using Townscape.Generation.Buildings.Shops;
@@ -49,6 +50,15 @@ namespace Townscape.Generation.Buildings.Interiors
         private const float RoomsWall = 4.9f;
         private const float Thin = 0.1f;
 
+        // The attic's lining under the slates, and the roof windows over its snug.
+        private const float Lining = 0.06f;
+        private const float RoofWindowSill = 1.0f;
+        private const float RoofWindowWidth = 0.78f;
+        private const float RoofWindowLength = 1.18f;
+
+        // The doorway between the front and back rooms upstairs, across (x).
+        private static readonly (float From, float To) Between = (StripB + 0.6f, StripB + 1.5f);
+
         public static bool Fits(Footprint footprint) => footprint.FrontWidth >= MinimumWidth && footprint.Depth >= MinimumDepth;
 
         /// <summary>The levels of the floors, from the ground floor up to the attic.</summary>
@@ -71,7 +81,49 @@ namespace Townscape.Generation.Buildings.Interiors
             };
         }
 
-        public static void Build(BuildContext context, Footprint footprint, UnitDesign design, GableRoof roof, Dormer.Span? dormer)
+        /// <summary>
+        /// The two roof windows in the back slope, over the attic's snug, as holes in the roof:
+        /// their lower edges a metre above the attic floor.
+        /// </summary>
+        public static RoofOpening[] RoofWindows(Footprint footprint, UnitDesign design)
+        {
+            var w = footprint.FrontWidth;
+            var depth = footprint.Depth;
+
+            // On the back slope the roof is rise * (1 - b) above the eaves, which is the attic floor.
+            var rise = 2f * (design.Ridge - design.Eaves);
+            var low = 1f - ((RoofWindowSill + Lining) / rise);
+            var high = low - (RoofWindowLength / MathF.Sqrt((depth * depth) + (rise * rise)));
+            var half = RoofWindowWidth * 0.5f;
+            var mid = Snug(w);
+            return new[]
+            {
+                new RoofOpening((mid - 1f - half) / w, (mid - 1f + half) / w, high, low),
+                new RoofOpening((mid + 1f - half) / w, (mid + 1f + half) / w, high, low),
+            };
+        }
+
+        /// <summary>
+        /// The ways through the building that furniture must keep clear, in <see cref="UnitSpace"/>
+        /// metres on the floor at <c>Floor</c>: in from each front door, and through each doorway
+        /// and a stride either side of it.
+        /// </summary>
+        public static IEnumerable<(string Name, float Floor, float X0, float D0, float X1, float D1)> Walkways(Footprint footprint, UnitDesign design)
+        {
+            const float stride = 0.9f;
+            var f = Floors(design);
+            var layout = TraditionalShopfront.Layout(footprint.FrontWidth);
+            yield return ("into the hall", f[0], layout.FlatDoorLeft, FrontFace, layout.FlatDoorRight, FirstFoot - 0.05f);
+            yield return ("into the café", f[0], layout.DoorLeft, TraditionalShopfront.LobbyDepth, layout.DoorRight, TraditionalShopfront.LobbyDepth + stride);
+            yield return ("into the storeroom", f[0], CafeLeft + 0.5f, StoreWall - stride, CafeLeft + 1.4f, StoreWall + Thin + stride);
+            yield return ("from the landing to the kitchen", f[1], StripB - stride, Turn + 0.2f, StripB + Thin + stride, BackLanding - 0.1f);
+            yield return ("from the kitchen to the living room", f[1], Between.From, RoomsWall - stride, Between.To, RoomsWall + Thin + stride);
+            yield return ("from the landing to the bedroom", f[2], StripB - stride, FrontFace + 0.3f, StripB + Thin + stride, UpperFoot - 0.1f);
+            yield return ("from the bedroom to the bathroom", f[2], Between.From, RoomsWall - stride, Between.To, RoomsWall + Thin + stride);
+            yield return ("off the top of the stairs", f[3], Side + 0.1f, Turn + 0.1f, StripA - 0.1f, Turn + 0.8f);
+        }
+
+        public static void Build(BuildContext context, Footprint footprint, UnitDesign design, GableRoof roof, Dormer.Span? dormer, IReadOnlyList<RoofOpening> roofWindows)
         {
             var space = new UnitSpace(footprint);
             var builder = context.Builder;
@@ -98,7 +150,7 @@ namespace Townscape.Generation.Buildings.Interiors
             UpperFloor(context, space, design, f[1], wallTop[1], firstFloor: true);
             UpperFloor(context, space, design, f[2], wallTop[2], firstFloor: false);
             Banisters(space, builder, flights, f);
-            Attic(context, space, design, roof, f[3], dormer);
+            Attic(context, space, design, roof, f[3], dormer, roofWindows);
         }
 
         // ---- Ground floor -------------------------------------------------------------------
@@ -143,6 +195,7 @@ namespace Townscape.Generation.Buildings.Interiors
             space.WallAcross(builder, StoreWall + Thin, CafeLeft, right, floor, top, true, plaster, storeDoor);
             space.Ceiling(builder, CafeLeft, StoreWall, CafeLeft + 1.4f, StoreWall + Thin, floor + 2.1f, plaster);
             space.WallAcross(builder, back, Side, right, floor, top, false, plaster, BackWindow(space, floor, ground: true));
+            WindowBoard(space, builder, BackWindow(space, floor, ground: true), back, -1f);
 
             // The storeroom's back door, shut, and a light in each space.
             var backDoorX = w * 0.3f;
@@ -251,9 +304,10 @@ namespace Townscape.Generation.Buildings.Interiors
                 space.Round(builder, x, floor + 0.7f, FrontFace + 0.7f, 0.17f, 0.05f, SurfaceMaterial.FabricRust, 10);
             }
 
-            // A potted plant in the corner by the storeroom door, clear of the shop door's swing.
-            space.Round(builder, CafeLeft + 0.3f, floor, StoreWall - 0.6f, 0.18f, 0.35f, SurfaceMaterial.PaintOxblood, 8);
-            builder.AddBlob(space.At(CafeLeft + 0.3f, floor + 0.7f, StoreWall - 0.6f), new Vector3(0.3f, 0.4f, 0.3f), SurfaceMaterial.LeafGreen, context.Random, 0.15f);
+            // A potted plant against the left wall, short of the storeroom door so it's not in the way.
+            var plant = StoreWall - 1.3f;
+            space.Round(builder, CafeLeft + 0.3f, floor, plant, 0.18f, 0.35f, SurfaceMaterial.PaintOxblood, 8);
+            builder.AddBlob(space.At(CafeLeft + 0.3f, floor + 0.7f, plant), new Vector3(0.28f, 0.4f, 0.28f), SurfaceMaterial.LeafGreen, context.Random, 0.12f);
         }
 
         private static void Storeroom(BuildContext context, UnitSpace space, float floor, float right, float back)
@@ -291,8 +345,16 @@ namespace Townscape.Generation.Buildings.Interiors
             var back = space.Depth - FrontFace;
             var plaster = SurfaceMaterial.Interior;
 
-            space.WallAcross(builder, FrontFace, Side, right, floor, top, true, plaster, FrontWindows(space, floor, firstFloor));
-            space.WallAcross(builder, back, Side, right, floor, top, false, plaster, BackWindow(space, floor, ground: false));
+            var front = FrontWindows(space, floor, firstFloor);
+            var backWindow = BackWindow(space, floor, ground: false);
+            space.WallAcross(builder, FrontFace, Side, right, floor, top, true, plaster, front);
+            space.WallAcross(builder, back, Side, right, floor, top, false, plaster, backWindow);
+            foreach (var window in front)
+            {
+                WindowBoard(space, builder, window, FrontFace, 1f);
+            }
+
+            WindowBoard(space, builder, backWindow, back, -1f);
             space.WallAlong(builder, Side, FrontFace, back, floor, top, true, plaster);
             space.WallAlong(builder, right, FrontFace, back, floor, top, false, plaster);
 
@@ -304,7 +366,7 @@ namespace Townscape.Generation.Buildings.Interiors
             space.Ceiling(builder, StripB, doorway.From, StripB + Thin, doorway.To, doorway.Top, plaster);
 
             // The wall between the front and back rooms, with a doorway.
-            var between = new Hole(StripB + 0.6f, floor, StripB + 1.5f, floor + 2.05f);
+            var between = new Hole(Between.From, floor, Between.To, floor + 2.05f);
             space.WallAcross(builder, RoomsWall, StripB + Thin, right, floor, top, false, plaster, between);
             space.WallAcross(builder, RoomsWall + Thin, StripB + Thin, right, floor, top, true, plaster, between);
             space.Ceiling(builder, between.From, RoomsWall, between.To, RoomsWall + Thin, between.Top, plaster);
@@ -318,7 +380,7 @@ namespace Townscape.Generation.Buildings.Interiors
             var roomsCentre = (StripB + Thin + right) * 0.5f;
             Light(context, space, roomsCentre, top, (FrontFace + RoomsWall) * 0.5f, AnchorKind.RoomLight);
             Light(context, space, roomsCentre, top, (RoomsWall + back) * 0.5f, AnchorKind.RoomLight);
-            Light(context, space, (Side + StripB) * 0.5f, top, firstFloor ? (Turn + BackLanding) * 0.5f : 0.9f, AnchorKind.RoomLight);
+            Light(context, space, (Side + StripB) * 0.5f, top, firstFloor ? (Turn + BackLanding) * 0.5f : 0.9f, AnchorKind.RoomLight, flush: true);
 
             if (firstFloor)
             {
@@ -337,12 +399,16 @@ namespace Townscape.Generation.Buildings.Interiors
             var builder = context.Builder;
             var left = StripB + Thin;
 
-            // Rug, sofa against the back wall facing the windows, armchair, coffee table.
+            // Rug, sofa against the back wall facing the windows (clear of the doorway from the
+            // kitchen), armchair against the right wall, coffee table.
+            var sofaLeft = Between.To + 0.15f;
+            var sofaRight = right - 0.6f;
             space.Box(builder, left + 0.7f, floor, 1.4f, right - 0.6f, floor + 0.012f, 3.7f, SurfaceMaterial.FabricRust);
-            Sofa(space, builder, left + 0.9f, right - 1.1f, floor, RoomsWall - 0.95f, RoomsWall - 0.05f, SurfaceMaterial.FabricSage);
-            Armchair(space, builder, right - 0.9f, floor, 2.2f, SurfaceMaterial.FabricNavy);
-            space.Box(builder, left + 1.3f, floor + 0.38f, 2.3f, right - 1.8f, floor + 0.42f, 3.0f, SurfaceMaterial.Timber);
-            space.Box(builder, left + 1.4f, floor, 2.35f, right - 1.9f, floor + 0.38f, 2.95f, SurfaceMaterial.Timber);
+            Sofa(space, builder, sofaLeft, sofaRight, floor, RoomsWall - 0.95f, RoomsWall - 0.05f, SurfaceMaterial.FabricSage);
+            Armchair(space, builder, right - 0.42f, floor, 2.2f, SurfaceMaterial.FabricNavy);
+            var table = (sofaLeft + sofaRight) * 0.5f - 0.2f;
+            space.Box(builder, table - 0.6f, floor + 0.38f, 2.6f, table + 0.6f, floor + 0.42f, 3.25f, SurfaceMaterial.Timber);
+            space.Box(builder, table - 0.5f, floor, 2.65f, table + 0.5f, floor + 0.38f, 3.2f, SurfaceMaterial.Timber);
 
             // Television on a low cabinet between the front windows.
             var tv = (4.04f + 5.39f) * 0.5f * space.Width / 7.07f;
@@ -395,10 +461,10 @@ namespace Townscape.Generation.Buildings.Interiors
         private static void Bedroom(BuildContext context, UnitSpace space, float floor, float right)
         {
             var builder = context.Builder;
-            var left = StripB + Thin;
-            var centre = (left + right) * 0.5f;
 
-            // A double bed with its head against the back wall of the room.
+            // A double bed with its head against the back wall of the room, to the right of the
+            // doorway to the bathroom so its bedside table is out of the way.
+            var centre = Math.Max((StripB + Thin + right) * 0.5f, Between.To + 0.25f + 1.03f + 0.2f);
             var bedFoot = RoomsWall - 2.1f;
             space.Box(builder, centre - 0.8f, floor, bedFoot, centre + 0.8f, floor + 0.35f, RoomsWall - 0.05f, SurfaceMaterial.Timber);
             space.Box(builder, centre - 0.8f, floor, RoomsWall - 0.12f, centre + 0.8f, floor + 1.05f, RoomsWall - 0.04f, SurfaceMaterial.Timber);
@@ -410,15 +476,15 @@ namespace Townscape.Generation.Buildings.Interiors
             }
 
             // Bedside tables with lamps, a wardrobe, and a rug.
-            foreach (var x in new[] { centre - 1.15f, centre + 1.15f })
+            foreach (var x in new[] { centre - 1.03f, centre + 1.03f })
             {
-                space.Box(builder, x - 0.22f, floor, RoomsWall - 0.5f, x + 0.22f, floor + 0.5f, RoomsWall - 0.05f, SurfaceMaterial.Timber);
+                space.Box(builder, x - 0.2f, floor, RoomsWall - 0.45f, x + 0.2f, floor + 0.5f, RoomsWall - 0.05f, SurfaceMaterial.Timber);
                 space.Round(builder, x, floor + 0.5f, RoomsWall - 0.28f, 0.06f, 0.25f, SurfaceMaterial.Porcelain, 8);
                 builder.AddCone(space.At(x, floor + 0.72f, RoomsWall - 0.28f), 0.14f, 0.16f, 8, SurfaceMaterial.Linen, capBase: true);
             }
 
-            space.Box(builder, right - 0.6f, floor, 1.9f, right - 0.02f, floor + 2.0f, 3.1f, SurfaceMaterial.Timber);
-            space.Box(builder, centre - 1.0f, floor, bedFoot - 1.2f, centre + 1.0f, floor + 0.012f, bedFoot + 0.3f, SurfaceMaterial.FabricSage);
+            space.Box(builder, right - 0.6f, floor, 0.75f, right - 0.02f, floor + 2.0f, 1.95f, SurfaceMaterial.Timber);
+            space.Box(builder, centre - 0.9f, floor, bedFoot - 1.0f, centre + 0.9f, floor + 0.012f, bedFoot + 0.3f, SurfaceMaterial.FabricSage);
         }
 
         private static void Bathroom(BuildContext context, UnitSpace space, float floor, float right, float back)
@@ -444,15 +510,15 @@ namespace Townscape.Generation.Buildings.Interiors
 
         // ---- The attic ----------------------------------------------------------------------
 
-        private static void Attic(BuildContext context, UnitSpace space, UnitDesign design, GableRoof roof, float floor, Dormer.Span? dormer)
+        private static void Attic(BuildContext context, UnitSpace space, UnitDesign design, GableRoof roof, float floor, Dormer.Span? dormer, IReadOnlyList<RoofOpening> roofWindows)
         {
             var builder = context.Builder;
             var w = space.Width;
             var depth = space.Depth;
             var right = w - Side;
             var plaster = SurfaceMaterial.Interior;
-            const float lining = 0.06f;
-            float Under(float d) => roof.PlaneHeight(d / depth) - lining;
+            float Under(float d) => roof.PlaneHeight(d / depth) - Lining;
+            float Slates(float d) => roof.PlaneHeight(d / depth) + roof.Thickness;
             var ridgeD = depth * 0.5f;
 
             // Knee walls stand upright where the slopes come down, level with the foot of the
@@ -485,7 +551,6 @@ namespace Townscape.Generation.Buildings.Interiors
                 Slope(Side, right, d1, ridgeD, true);
 
                 // Close the gap between the lining and the slates round the edges of the hole.
-                float Slates(float d) => roof.PlaneHeight(d / depth) + roof.Thickness;
                 builder.AddQuadFacing(space.At(x0, Under(d0), d0), space.At(x0, Under(d1), d1), space.At(x0, Slates(d1), d1), space.At(x0, Slates(d0), d0), space.Right, plaster);
                 builder.AddQuadFacing(space.At(x1, Under(d0), d0), space.At(x1, Under(d1), d1), space.At(x1, Slates(d1), d1), space.At(x1, Slates(d0), d0), -space.Right, plaster);
                 space.WallAcross(builder, d1, x0, x1, Under(d1), span.Top, false, plaster);
@@ -496,7 +561,34 @@ namespace Townscape.Generation.Buildings.Interiors
                 Slope(Side, right, kneeFront, ridgeD, true);
             }
 
-            Slope(Side, right, ridgeD, kneeBack, false);
+            // The back slope, cut round the roof windows, with their reveals up to the slates.
+            var windows = (roofWindows ?? Array.Empty<RoofOpening>()).Select(h => (X0: h.A0 * w, X1: h.A1 * w, D0: h.B0 * depth, D1: h.B1 * depth)).OrderBy(h => h.X0).ToList();
+            if (windows.Count == 0)
+            {
+                Slope(Side, right, ridgeD, kneeBack, false);
+            }
+            else
+            {
+                var top = windows.Min(h => h.D0);
+                var bottom = windows.Max(h => h.D1);
+                Slope(Side, right, ridgeD, top, false);
+                Slope(Side, right, bottom, kneeBack, false);
+                var x = Side;
+                foreach (var hole in windows)
+                {
+                    Slope(x, hole.X0, top, bottom, false);
+                    Slope(hole.X0, hole.X1, top, hole.D0, false);
+                    Slope(hole.X0, hole.X1, hole.D1, bottom, false);
+                    x = hole.X1;
+
+                    builder.AddQuadFacing(space.At(hole.X0, Under(hole.D0), hole.D0), space.At(hole.X0, Under(hole.D1), hole.D1), space.At(hole.X0, Slates(hole.D1), hole.D1), space.At(hole.X0, Slates(hole.D0), hole.D0), space.Right, plaster);
+                    builder.AddQuadFacing(space.At(hole.X1, Under(hole.D0), hole.D0), space.At(hole.X1, Under(hole.D1), hole.D1), space.At(hole.X1, Slates(hole.D1), hole.D1), space.At(hole.X1, Slates(hole.D0), hole.D0), -space.Right, plaster);
+                    space.WallAcross(builder, hole.D0, hole.X0, hole.X1, Under(hole.D0), Slates(hole.D0), true, plaster);
+                    space.WallAcross(builder, hole.D1, hole.X0, hole.X1, Under(hole.D1), Slates(hole.D1), false, plaster);
+                }
+
+                Slope(x, right, top, bottom, false);
+            }
 
             // The gable ends, between the knee walls.
             foreach (var (x, facingRight) in new[] { (Side, true), (right, false) })
@@ -547,7 +639,7 @@ namespace Townscape.Generation.Buildings.Interiors
 
             // A snug under the back slope: a low sofa against the knee wall, beanbags, a rug and a
             // little table, with a plant by the window.
-            var mid = (StripA + right) * 0.5f + 0.2f;
+            var mid = Snug(w);
             space.Box(builder, mid - 1.5f, floor, ridgeD + 0.2f, mid + 1.5f, floor + 0.012f, kneeBack - 1.0f, SurfaceMaterial.FabricRust);
             Sofa(space, builder, mid - 1.1f, mid + 1.1f, floor, kneeBack - 0.9f, kneeBack - 0.05f, SurfaceMaterial.FabricNavy);
             space.Box(builder, mid - 0.4f, floor + 0.32f, kneeBack - 2.0f, mid + 0.4f, floor + 0.36f, kneeBack - 1.45f, SurfaceMaterial.Timber);
@@ -582,7 +674,7 @@ namespace Townscape.Generation.Buildings.Interiors
             Picture(space, builder, Side, true, ridgeD + 1.5f, floor + 1.45f, 0.7f, 0.5f, new[] { SurfaceMaterial.PaintPink, SurfaceMaterial.PaintPurple, SurfaceMaterial.PaintBlue });
             Picture(space, builder, Side, true, kneeBack - 1.35f, floor + 1.35f, 0.45f, 0.6f, new[] { SurfaceMaterial.PaintDuckEgg, SurfaceMaterial.PaintGold, SurfaceMaterial.PaintRed });
 
-            Light(context, space, (StripB + right) * 0.5f, roof.PlaneHeight(0.5f) - lining, ridgeD, AnchorKind.RoomLight);
+            Light(context, space, (StripB + right) * 0.5f, roof.PlaneHeight(0.5f) - Lining, ridgeD, AnchorKind.RoomLight);
         }
 
         // A chimney breast standing out from a party wall (at wallX) to faceX, from y0 up to the
@@ -603,6 +695,9 @@ namespace Townscape.Generation.Buildings.Interiors
             builder.AddQuadFacing(space.At(wallX, y0, d1), space.At(faceX, y0, d1), space.At(faceX, under(d1), d1), space.At(wallX, under(d1), d1), space.Back, plaster);
             builder.AddQuadFacing(space.At(wallX, y0, d0), space.At(faceX, y0, d0), space.At(faceX, y0, d1), space.At(wallX, y0, d1), -Vector3.UnitY, plaster);
         }
+
+        // Across the middle of the attic's snug, clear of the stairwell.
+        private static float Snug(float width) => ((StripA + width - Side) * 0.5f) + 0.2f;
 
         // Two shelves of books and plants against the front knee wall, from x0 to x1.
         private static void LowShelf(BuildContext context, UnitSpace space, float x0, float x1, float floor, float wall)
@@ -767,13 +862,33 @@ namespace Townscape.Generation.Buildings.Interiors
                 : new Hole((width * 0.5f) - 0.5f, floor + 0.85f, (width * 0.5f) + 0.5f, floor + 2.1f);
         }
 
-        // A pendant lamp hanging from the ceiling, and the light it gives.
-        private static void Light(BuildContext context, UnitSpace space, float x, float ceiling, float d, AnchorKind kind)
+        // A wooden board along the bottom of a window, inside, standing out into the room from a
+        // wall at depth wallD (towards the back when into is 1, the front when it is -1).
+        private static void WindowBoard(UnitSpace space, MeshBuilder builder, Hole window, float wallD, float into)
         {
-            var builder = context.Builder;
-            space.Box(builder, x - 0.01f, ceiling - 0.45f, d - 0.01f, x + 0.01f, ceiling, d + 0.01f, SurfaceMaterial.PaintBlack);
-            builder.AddCone(space.At(x, ceiling - 0.6f, d), 0.2f, 0.16f, 10, SurfaceMaterial.PaintCream);
-            builder.AddBlob(space.At(x, ceiling - 0.6f, d), new Vector3(0.05f), SurfaceMaterial.LampGlass);
+            var d0 = wallD - (0.012f * into);
+            var d1 = wallD + (0.1f * into);
+            space.Box(builder, window.From - 0.06f, window.Bottom - 0.035f, Math.Min(d0, d1), window.To + 0.06f, window.Bottom, Math.Max(d0, d1), SurfaceMaterial.Timber);
+        }
+
+        // A light hanging from the ceiling on a cord, or (flush) a glass dome fixed to it, for
+        // landings where you pass close under it. Either way it goes in the fittings mesh, which
+        // nobody bumps into.
+        private static void Light(BuildContext context, UnitSpace space, float x, float ceiling, float d, AnchorKind kind, bool flush = false)
+        {
+            var builder = context.Fittings;
+            if (flush)
+            {
+                space.Round(builder, x, ceiling - 0.025f, d, 0.17f, 0.025f, SurfaceMaterial.PaintWhite, 12);
+                space.Round(builder, x, ceiling - 0.09f, d, 0.14f, 0.065f, SurfaceMaterial.LampGlass, 12);
+            }
+            else
+            {
+                space.Box(builder, x - 0.01f, ceiling - 0.45f, d - 0.01f, x + 0.01f, ceiling, d + 0.01f, SurfaceMaterial.PaintBlack);
+                builder.AddCone(space.At(x, ceiling - 0.6f, d), 0.2f, 0.16f, 10, SurfaceMaterial.PaintCream);
+                builder.AddBlob(space.At(x, ceiling - 0.6f, d), new Vector3(0.05f), SurfaceMaterial.LampGlass);
+            }
+
             context.Anchor(kind, space.At(x, ceiling - 0.05f, d), -Vector3.UnitY, 3f);
         }
 

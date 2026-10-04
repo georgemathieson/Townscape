@@ -128,6 +128,7 @@ namespace Townscape.Generation.Geometry
                 [SurfaceMaterial.Sponge] = new SurfaceAppearance(0.86f, 0.68f, 0.40f, 0.20f),
                 [SurfaceMaterial.Icing] = new SurfaceAppearance(0.95f, 0.78f, 0.82f, 0.50f),
                 [SurfaceMaterial.Chalkboard] = new SurfaceAppearance(0.12f, 0.14f, 0.13f, 0.15f),
+                [SurfaceMaterial.ClearGlass] = new SurfaceAppearance(0.48f, 0.58f, 0.58f, 0.96f, 0.3f),
                 [SurfaceMaterial.BulbRed] = new SurfaceAppearance(0.62f, 0.06f, 0.05f, 0.80f),
                 [SurfaceMaterial.BulbGreen] = new SurfaceAppearance(0.07f, 0.46f, 0.14f, 0.80f),
                 [SurfaceMaterial.BulbOrange] = new SurfaceAppearance(0.74f, 0.30f, 0.04f, 0.80f),

@@ -87,7 +87,7 @@ namespace Townscape.Tests.Simulation
                 Assert.That(MeshCategories.IsSolid(solid), Is.True, solid.ToString());
             }
 
-            foreach (var soft in new[] { MeshCategory.Water, MeshCategory.Markings, MeshCategory.Vegetation, MeshCategory.Puddles })
+            foreach (var soft in new[] { MeshCategory.Water, MeshCategory.Markings, MeshCategory.Vegetation, MeshCategory.Puddles, MeshCategory.Fittings })
             {
                 Assert.That(MeshCategories.IsSolid(soft), Is.False, soft.ToString());
             }

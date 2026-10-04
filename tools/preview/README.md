@@ -22,7 +22,7 @@ the Fellside Coffee game takes the camera) and the petrol station's `petrol`, `p
 `petrolNear` and `petrolWindow`, are worked out by the exporter into `views.json`, as are the
 Copper Kettle's (`kettle` from the street, then inside: `kettleCafe`, `kettleCounter`, `kettleStore`,
 `kettleHall`, `kettleLanding`, `kettleLiving`, `kettleKitchen`, `kettleBedroom`, `kettleBathroom` and
-`kettleAttic` and `kettleSnug`), which are drawn without rain or snow. The exporter also writes `lights.json` and
+`kettleAttic`, `kettleSnug` and `kettleRoofWindows`, and `kettleBack` from behind the terrace), which are drawn without rain or snow. The exporter also writes `lights.json` and
 `storm.json`, worked out by the same `Townscape.Simulation` code Unity uses: glowing materials and
 lamps, wet surfaces, rain, ripples, chimney smoke and bolts. Rain and smoke are frozen in a single
 moment and only approximate the particles in Unity: judge geometry, layout and colours here, and

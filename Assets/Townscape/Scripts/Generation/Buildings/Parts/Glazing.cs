@@ -38,14 +38,23 @@ namespace Townscape.Generation.Buildings.Parts
         public SurfaceMaterial? Surround { get; }
 
         public SurfaceMaterial Glass { get; init; } = SurfaceMaterial.WindowGlass;
+
+        /// <summary>
+        /// Clear glass you can look through from inside too: the glass has a face on each side
+        /// and the frames stand proud of it on both.
+        /// </summary>
+        public bool SeeThrough => Glass == SurfaceMaterial.ClearGlass;
     }
 
     /// <summary>Window and door infill for openings, plus "applied" windows for walls without holes.</summary>
     public static class Glazing
     {
-        private const float FrameWidth = 0.06f;
-        private const float BarWidth = 0.03f;
-        private const float BarDepth = 0.035f;
+        private const float FrameWidth = 0.075f;
+        private const float BarWidth = 0.04f;
+        private const float BarDepth = 0.04f;
+
+        // How far the frames of a see-through window stand proud of the glass on the inside.
+        private const float InsideDepth = 0.04f;
 
         /// <summary>Glass and frames at the back of a recessed opening, plus a sill and optional surround.</summary>
         public static void FillWindow(BuildContext context, WallFrame wall, Opening opening, WindowStyle style, AnchorKind anchor = AnchorKind.Window)
@@ -53,6 +62,11 @@ namespace Townscape.Generation.Buildings.Parts
             var builder = context.Builder;
             var back = -opening.Depth;
             wall.Quad(builder, opening.X0, opening.Y0, opening.X1, opening.Y1, back, GlassFor(context, style));
+            if (style.SeeThrough)
+            {
+                wall.QuadInward(builder, opening.X0, opening.Y0, opening.X1, opening.Y1, back, style.Glass);
+            }
+
             Frames(builder, wall, opening.X0, opening.Y0, opening.X1, opening.Y1, back, style);
             SillAndSurround(builder, wall, opening.X0, opening.Y0, opening.X1, opening.Y1, style);
 
@@ -126,44 +140,48 @@ namespace Townscape.Generation.Buildings.Parts
         private static void Frames(MeshBuilder builder, WallFrame wall, float x0, float y0, float x1, float y1, float glassZ, WindowStyle style)
         {
             var front = glassZ + BarDepth;
+            var behind = style.SeeThrough ? glassZ - InsideDepth : glassZ;
             var frame = style.Frame;
 
+            // A bar of the frame, standing proud of the glass outside (and inside, for see-through windows).
+            void Bar(float bx0, float by0, float bx1, float by1)
+            {
+                wall.Block(builder, bx0, by0, bx1, by1, behind, front, frame);
+                if (style.SeeThrough)
+                {
+                    wall.QuadInward(builder, bx0, by0, bx1, by1, behind, frame);
+                }
+            }
+
+            void Across(float y, float width) => Bar(x0, y - (width * 0.5f), x1, y + (width * 0.5f));
+            void Upright(float x) => Bar(x - (BarWidth * 0.5f), y0, x + (BarWidth * 0.5f), y1);
+
             // Outer frame.
-            wall.Block(builder, x0, y0, x1, y0 + FrameWidth, glassZ, front, frame);
-            wall.Block(builder, x0, y1 - FrameWidth, x1, y1, glassZ, front, frame);
-            wall.Block(builder, x0, y0 + FrameWidth, x0 + FrameWidth, y1 - FrameWidth, glassZ, front, frame);
-            wall.Block(builder, x1 - FrameWidth, y0 + FrameWidth, x1, y1 - FrameWidth, glassZ, front, frame);
+            Bar(x0, y0, x1, y0 + FrameWidth);
+            Bar(x0, y1 - FrameWidth, x1, y1);
+            Bar(x0, y0 + FrameWidth, x0 + FrameWidth, y1 - FrameWidth);
+            Bar(x1 - FrameWidth, y0 + FrameWidth, x1, y1 - FrameWidth);
 
             var midX = (x0 + x1) * 0.5f;
             var midY = (y0 + y1) * 0.5f;
             switch (style.Pattern)
             {
                 case GlazingPattern.TwoOverTwo:
-                    HorizontalBar(builder, wall, x0, x1, midY, FrameWidth, glassZ, front, frame);
-                    VerticalBar(builder, wall, midX, y0, y1, glassZ, front, frame);
+                    Across(midY, FrameWidth);
+                    Upright(midX);
                     break;
                 case GlazingPattern.SixOverSix:
-                    HorizontalBar(builder, wall, x0, x1, midY, FrameWidth, glassZ, front, frame);
-                    VerticalBar(builder, wall, x0 + ((x1 - x0) / 3f), y0, y1, glassZ, front, frame);
-                    VerticalBar(builder, wall, x0 + ((x1 - x0) * 2f / 3f), y0, y1, glassZ, front, frame);
-                    HorizontalBar(builder, wall, x0, x1, y0 + ((midY - y0) * 0.5f), BarWidth, glassZ, front, frame);
-                    HorizontalBar(builder, wall, x0, x1, midY + ((y1 - midY) * 0.5f), BarWidth, glassZ, front, frame);
+                    Across(midY, FrameWidth);
+                    Upright(x0 + ((x1 - x0) / 3f));
+                    Upright(x0 + ((x1 - x0) * 2f / 3f));
+                    Across(y0 + ((midY - y0) * 0.5f), BarWidth);
+                    Across(midY + ((y1 - midY) * 0.5f), BarWidth);
                     break;
                 case GlazingPattern.Casement:
-                    VerticalBar(builder, wall, midX, y0, y1, glassZ, front, frame);
-                    HorizontalBar(builder, wall, x0, x1, y0 + ((y1 - y0) * 0.72f), BarWidth, glassZ, front, frame);
+                    Upright(midX);
+                    Across(y0 + ((y1 - y0) * 0.72f), BarWidth);
                     break;
             }
-        }
-
-        private static void HorizontalBar(MeshBuilder builder, WallFrame wall, float x0, float x1, float y, float width, float glassZ, float front, SurfaceMaterial frame)
-        {
-            wall.Block(builder, x0, y - (width * 0.5f), x1, y + (width * 0.5f), glassZ, front, frame);
-        }
-
-        private static void VerticalBar(MeshBuilder builder, WallFrame wall, float x, float y0, float y1, float glassZ, float front, SurfaceMaterial frame)
-        {
-            wall.Block(builder, x - (BarWidth * 0.5f), y0, x + (BarWidth * 0.5f), y1, glassZ, front, frame);
         }
 
         private static void SillAndSurround(MeshBuilder builder, WallFrame wall, float x0, float y0, float x1, float y1, WindowStyle style)
