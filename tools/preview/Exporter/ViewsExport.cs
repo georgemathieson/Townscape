@@ -138,7 +138,8 @@ internal static class ViewsExport
             views.Add(View("peopleCallout", outside - (inward * 8.2f) - (along * 9f) + (up * 4.5f), outside - (inward * 2.5f) + (along * 2f) + (up * 0.8f), 55f, open: new[] { "Shop door" }, cast: "callout"));
             views.Add(View("peopleLineup", outside - (along * 6f) - (inward * 4.2f) + (up * 1.4f), outside - (along * 6f) + (up * 1.0f), 40f, cast: "lineup"));
             views.Add(View("policeCar", outside - (inward * 7f) + (along * 5.5f) + (up * 2.2f), outside - (inward * 3.6f) + (up * 0.7f), 50f, cast: "callout"));
-            views.Add(View("burglarTill", Stop($"{CafeAndFlat.ShopAlarm}: café") + (up * 1.65f), Stop($"{CafeAndFlat.ShopAlarm}: till") + (up * 1.0f), 65f, indoor: true, open: new[] { "Shop door" }, cast: "till"));
+            var till = Stop($"{CafeAndFlat.ShopAlarm}: till");
+            views.Add(View("burglarTill", till - (inward * 2.3f) - (along * 1.6f) + (up * 1.75f), till + (up * 1.15f), 60f, indoor: true, open: new[] { "Shop door" }, cast: "till"));
             var centre = town.AlarmCentres.FirstOrDefault();
             if (centre?.GuardPost != null)
             {

@@ -207,6 +207,22 @@ first (operators' desks facing a wall of screens; a `TownAlarmCentre` in
 the second. It fits its own alarm and broadband as the Copper Kettle does, and `MillWorks.Walkways`
 keeps its doorways clear. The centre's panel lights are `OfficeLight` anchors, on whenever it's dark.
 
+**Getting about.** Each alarmed building also gives the ways through it that people walk, as a
+`TownSite` (`GeneratedTown.Sites`): `TownRoute`s of `RouteStop`s on its floors (through its doors,
+up its stairs) and the names of the places on them: outside on the pavement, at the keypad, the
+middle of each room, and what a burglar would be after (the café's till). Mill Works adds the
+guard's post in the alarm receiving centre (`TownAlarmCentre.GuardPost`). `RouteNetworkBuilder`
+then lays out two `RouteNetwork`s: walking (along both pavements of the high street, both edges of
+each lane, down each footpath, across the roads now and then and over the bridge's deck, joined
+end to end where they meet, and on into each site, with dead ends at the edge of the town where
+people come and go) and driving (each side of every road, keeping left, with turns into the lanes
+and places to turn round). Stops carry their heights (the bridge's hump, the stairs), and A* finds
+the shortest way, with the doors along it. A test walks a body's width of lines along every link
+and checks that nothing solid crosses them, so nobody walks through a wall, a pillar or a table.
+`PeopleModels` builds the people (a guard in hi-vis, a constable in a custodian helmet, a burglar in
+a striped jumper with a mask and a sack) in parts that swing as they walk, and the police car, white
+with Battenburg sides and a light bar.
+
 Props can have doors that open too: `PropFrame.Door` builds a leaf in its own mesh, in the prop's
 own coordinates, and records a `TownDoor` as `BuildContext.Door` does. The phone box's whole front
 is a door that swings out, and inside (clear glass both ways, so you can see in and out) are a
@@ -409,12 +425,38 @@ applies them. Everything is driven from code on stock URP materials, apart from 
   (or a tamper) opens an incident; a second, different zone makes it confirmed (`BurglarAlarm` keeps
   the zones that have activated since it was set). The operator acknowledges incidents, sends a
   guard, calls the police (refused unless the alarm is confirmed or a guard has found a break-in)
-  and closes them. Guards and police are timed for now (`TimedResponders`): there and back, and a
-  guard who finds the building secure unsets the alarm; `Arrived` and `Checked` let people walking
-  the streets drive them later. In Unity, `AlarmCentreSystem` runs it, lights the wall of screens
+  and closes them. Zones that trip once a responder has gone in (`GoingIn`) are theirs, and don't
+  confirm anything. With `TimedResponders` on, guards and police are timed: there and back, going on
+  what the centre knows. In play, people walk the streets instead (below). In Unity, `AlarmCentreSystem` runs it, lights the wall of screens
   (one per site: green unset, blue set, amber for a fault or no signal, flashing red in alarm),
   chimes while an incident waits, and each desk's `AlarmCentreConsole` brings up its window: the
   sites, the open incidents with their buttons, and the log.
+- **The guard's judgement.** `GuardAssessment` (engine-free and tested) weighs up an alarm as a
+  suspicion score: someone seen inside (+100), an outside door left open (+40) or a window (+25),
+  how many zones went off (one +10; two, the police's rule, +35; more +45), a door and then a
+  sensor (+10), the control box tampered with (+25) or its lid still off (+15), cut wires (+20
+  each), the signal lost mid-alarm (+15); and against: a panel with no power (-20) or a fault
+  (-15), and someone putting the right code in (-30). Fifty or more is a break-in. Two zones alone
+  isn't enough: it needs something more to go with it. `AlarmReceivingCentre.Evidence` gives what
+  the centre and the panel know; the guard adds what they find.
+- **People.** `TownPeople` (engine-free and tested) walks the guard, the police and a burglar about
+  the routes, each errand a coroutine stepped once a tick so it reads in order. Sent by the
+  operator, the guard walks from their post to the site, checks the outside, and (if the door's
+  shut and nobody's in sight) lets themselves in, puts the code in and looks round every room. A
+  false alarm they set again on the way out; a break-in they back out of and wait outside for the
+  police, then secure the building once the police have gone. Called, the police car drives in from
+  the edge of the town with its lights and siren, stops outside, and two officers get out: one
+  keeps the door while the other searches room by room, catching anyone still there, and they drive
+  off. A burglar, sent from the panel, walks in from the edge of the town, forces the door, goes for
+  the loot and a look round, and runs off once the alarm has been going a while (longer for some
+  than others), leaving the door open. `RouteWalker` takes each along a path, opening doors (and
+  waiting for them to swing), shutting them behind if they're that sort, and waiting for the player
+  to get out of the way. In Unity, `PeopleSystem` draws them (`FigureView`, `PoliceCarView`: the
+  car pitched to the road, wheels turning, the light bar flashing blue light about, a two-tone
+  siren from `PoliceSounds`), opens the town's `SwingingDoor`s for them, and answers whether they
+  can see each other (a line clear of walls). The alarms' sensors see them as they see the walker
+  (`AlarmSystem.Others`); people are on the Ignore Raycast layer, so you bump into them but nothing
+  else does.
 - **`ControlPanel`** is drawn with Unity's immediate-mode GUI and a skin made in code
   (`PanelSkin`), so it needs no assets, works with either input system and scales with the screen.
   Like `TownscapeShortcuts`, it only dispatches actions. Its weather section switches between the
