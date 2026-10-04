@@ -179,5 +179,49 @@ namespace Townscape.Tests.Simulation
             Assert.That(AudioMix.Variant(3, 0), Is.EqualTo(-1));
             Assert.That(Enumerable.Range(0, 200).Select(id => AudioMix.Variant(id, 3)).Distinct().OrderBy(v => v), Is.EqualTo(new[] { 0, 1, 2 }));
         }
+
+        [Test]
+        public void TheSiren_GoesHighThenLow_AndLoopsWithoutAClick()
+        {
+            var siren = PoliceSounds.Siren(pairs: 2);
+            var rate = ProceduralSounds.SampleRate;
+
+            Assert.That(siren.Length / (float)rate, Is.EqualTo(4f * PoliceSounds.NoteSeconds).Within(0.02f));
+            Assert.That(siren.Max(System.Math.Abs), Is.InRange(0.3f, 1f));
+            // From the end back to the start is no bigger a step than any within it: no click.
+            var steepest = Enumerable.Range(1, siren.Length - 1).Max(i => System.Math.Abs(siren[i] - siren[i - 1]));
+            Assert.That(System.Math.Abs(siren[0] - siren[siren.Length - 1]), Is.LessThanOrEqualTo(steepest * 1.01f), "the loop comes back to the start");
+
+            // Count the upward zero crossings of the first and second notes: their pitch.
+            float Pitch(int from, int count)
+            {
+                var crossings = 0;
+                for (var i = from + 1; i < from + count; i++)
+                {
+                    if (siren[i - 1] < 0f && siren[i] >= 0f)
+                    {
+                        crossings++;
+                    }
+                }
+
+                return crossings * rate / (float)count;
+            }
+
+            var note = (int)(PoliceSounds.NoteSeconds * rate * 0.9f);
+            Assert.That(Pitch(0, note), Is.EqualTo(PoliceSounds.HighTone).Within(25f));
+            Assert.That(Pitch((int)(PoliceSounds.NoteSeconds * rate) + 50, note), Is.EqualTo(PoliceSounds.LowTone).Within(25f));
+        }
+
+        [Test]
+        public void AForcedDoor_ThumpsAndCracks_ThenStops()
+        {
+            var forced = PoliceSounds.DoorForced();
+            var rate = ProceduralSounds.SampleRate;
+
+            Assert.That(forced.Max(System.Math.Abs), Is.InRange(0.2f, 1f));
+            var early = forced.Take(rate / 10).Max(System.Math.Abs);
+            var late = forced.Skip(forced.Length - (rate / 20)).Max(System.Math.Abs);
+            Assert.That(late, Is.LessThan(early * 0.1f), "it dies away");
+        }
     }
 }

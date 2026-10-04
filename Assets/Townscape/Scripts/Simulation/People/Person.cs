@@ -45,7 +45,7 @@ namespace Townscape.Simulation.People
         /// <summary>Out and about, rather than sitting in a car or gone.</summary>
         public bool Visible { get; set; } = true;
 
-        /// <summary>What they're up to, for the control panel: "forcing the door".</summary>
+        /// <summary>What they're up to, for the control panel: "forcing the door of The Copper Kettle".</summary>
         public string Doing { get; set; } = string.Empty;
 
         /// <summary>A burglar with a bag of what they've taken.</summary>

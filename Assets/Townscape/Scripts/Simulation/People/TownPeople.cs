@@ -569,7 +569,7 @@ namespace Townscape.Simulation.People
             }
 
             // Force the door, and in.
-            burglar.Doing = "forcing the door";
+            burglar.Doing = $"forcing the door of {site.Name}";
             var keypad = _walking.Point(_walking.Find(site.Keypad));
             burglar.Walker.Face(keypad - burglar.Position);
             foreach (var step in Wait(ForceSeconds))
@@ -602,7 +602,7 @@ namespace Townscape.Simulation.People
                         yield return step;
                     }
 
-                    burglar.Doing = "rummaging";
+                    burglar.Doing = $"rummaging about in {site.Name}";
                     foreach (var step in Wait(6f + ((float)_random.NextDouble() * 6f)))
                     {
                         if (Spooked())
@@ -624,7 +624,7 @@ namespace Townscape.Simulation.People
 
             // Off, leaving the door open: running if the alarm's going.
             var running = alarm != null && alarm.State == AlarmState.Sounding;
-            burglar.Doing = running ? "running off" : "slipping away";
+            burglar.Doing = running ? $"running off from {site.Name}" : $"slipping away from {site.Name}";
             burglar.Walker.Speed = running ? RunSpeed : BurglarSpeed;
             foreach (var step in Walk(burglar, site.Outside))
             {

@@ -175,6 +175,13 @@ namespace Townscape.Runtime.Security
             var selected = _selected;
             GUILayout.Space(4f);
             GUILayout.Label($"Guard: {Responder(selected.Guard)}.   Police: {Responder(selected.Police)}.{(selected.CancelledAtKeypad ? "   Someone put the code in at the keypad." : string.Empty)}", _small);
+            if (selected.Assessment is { } report)
+            {
+                // The guard's reasoning: everything that counted, for and against.
+                var verdict = report.BreakIn ? "BREAK-IN" : "false alarm";
+                GUILayout.Label($"Guard's report: suspicion {report.Score} (a break-in at {GuardAssessment.BreakInScore}): {verdict}", _smallBold);
+                GUILayout.Label(string.Join("   ", report.Factors.Select(f => f.ToString())), _small);
+            }
             GUILayout.BeginHorizontal();
             GUI.enabled = !selected.Acknowledged;
             if (GUILayout.Button("Acknowledge", _smallButton))
@@ -202,7 +209,7 @@ namespace Townscape.Runtime.Security
 
             GUILayout.EndHorizontal();
             GUILayout.Label(
-                "The police only come to a confirmed alarm (two different zones), or once a guard has found a break-in. A guard who finds the building secure puts the code in and unsets the alarm.",
+                "The police only come to a confirmed alarm (two different zones), or once a guard has found a break-in. The guard walks over from here, checks the doors and looks round, and weighs it all up: a false alarm they set again; a break-in they wait outside for the police.",
                 _skin.Status);
         }
 
@@ -239,10 +246,13 @@ namespace Townscape.Runtime.Security
         {
             GUILayout.Space(6f);
             GUILayout.Label("LOG", _skin.Heading);
-            var rect = GUILayoutUtility.GetRect(600f, (LogLines * 17f) + 12f, GUILayout.ExpandWidth(true));
+
+            // A few lines fewer while the guard's report is up, to make room for it.
+            var lines = _selected?.Assessment != null ? LogLines - 4 : LogLines;
+            var rect = GUILayoutUtility.GetRect(600f, (lines * 17f) + 12f, GUILayout.ExpandWidth(true));
             Fill(rect, new Color(0.04f, 0.05f, 0.06f));
             var log = _centre.Log;
-            var first = Mathf.Max(0, log.Count - LogLines);
+            var first = Mathf.Max(0, log.Count - lines);
             var y = rect.y + 6f;
             for (var i = first; i < log.Count; i++)
             {
