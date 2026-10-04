@@ -125,7 +125,7 @@ namespace Townscape.Tests.Simulation
         [Test]
         public void EveryLitAnchorKindHasALight()
         {
-            foreach (var kind in new[] { AnchorKind.StreetLamp, AnchorKind.ShopWindow, AnchorKind.DoorLamp, AnchorKind.Beacon, AnchorKind.LitSign, AnchorKind.CanopyLight })
+            foreach (var kind in new[] { AnchorKind.StreetLamp, AnchorKind.ShopWindow, AnchorKind.DoorLamp, AnchorKind.Beacon, AnchorKind.LitSign, AnchorKind.CanopyLight, AnchorKind.RoomLight })
             {
                 Assert.That(NightLights.TryGetLight(kind, out var spec), Is.True, kind.ToString());
                 Assert.That(spec.Range, Is.GreaterThan(1f));

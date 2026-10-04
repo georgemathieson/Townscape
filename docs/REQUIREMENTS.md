@@ -125,8 +125,11 @@ before work started; later changes should be recorded here too.
    settles and thaws, whiteout fog, blowing snow, a weather switch on the panel and the N key.
    *(done)*
 9. **Walking mode:** walk the village at eye level (V), bumping into buildings, walls, street
-   furniture and tree trunks, with a crosshair and E to use things. *(this pull request)*
-10. **The Copper Kettle:** go inside the café and the flat above it through doors that open.
+   furniture and tree trunks, with a crosshair and E to use things. *(done)*
+10. **The Copper Kettle:** go inside the café and the flat above it through doors that open. The café
+    has a counter and till, a cake cabinet, an espresso machine, tables and a storeroom; the flat has
+    a living room and kitchen, a bedroom and bathroom, and an attic study and snug under the dormer, up a
+    dog-leg stair. Its windows are clear glass you can see in and out of. *(this pull request)*
 
 ## Fellside Coffee
 

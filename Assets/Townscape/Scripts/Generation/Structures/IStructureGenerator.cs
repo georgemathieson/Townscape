@@ -17,6 +17,7 @@ namespace Townscape.Generation.Structures
     {
         private readonly List<GeneratedMesh> _meshes = new List<GeneratedMesh>();
         private readonly List<TownAnchor> _anchors = new List<TownAnchor>();
+        private readonly List<TownDoor> _doors = new List<TownDoor>();
 
         public IReadOnlyList<GeneratedMesh> Meshes => _meshes;
 
@@ -24,6 +25,11 @@ namespace Townscape.Generation.Structures
         public ICollection<TownAnchor> Anchors => _anchors;
 
         public IReadOnlyList<TownAnchor> AnchorList => _anchors;
+
+        /// <summary>Doors that open, each with its own leaf mesh.</summary>
+        public ICollection<TownDoor> Doors => _doors;
+
+        public IReadOnlyList<TownDoor> DoorList => _doors;
 
         public void AddMesh(MeshData mesh, MeshCategory category)
         {

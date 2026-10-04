@@ -146,6 +146,7 @@ namespace Townscape.Runtime
             Town = new TownGenerator().Generate(new LakeDistrictVillageLayout().Create());
             _materials = new MaterialLibrary();
             _spawned = TownMeshSpawner.Spawn(Town, _materials, _root.transform, hideFlags, _owned);
+            SwingingDoor.SpawnAll(Town, _materials, _root.transform, hideFlags, _owned, solid: playing);
 
             var sun = CreateSunAndMoon(hideFlags);
             Lighting = TownMeshSpawner.CreateChild("Time Of Day", _root.transform, hideFlags).AddComponent<TimeOfDayLighting>();

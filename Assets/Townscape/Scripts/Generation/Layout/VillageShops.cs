@@ -10,7 +10,7 @@ namespace Townscape.Generation.Layout
         public static readonly ShopDefinition LanternBooks = new ShopDefinition("LANTERN BOOKS", SurfaceMaterial.PaintDarkGreen, new BookshopDisplay()) { HangingSign = true };
         public static readonly ShopDefinition Inkwell = new ShopDefinition("THE INKWELL", SurfaceMaterial.PaintOxblood, new BookshopDisplay());
         public static readonly ShopDefinition FellsideCoffee = new ShopDefinition("FELLSIDE COFFEE", SurfaceMaterial.PaintTeal, new CoffeeShopDisplay(), SurfaceMaterial.PaintCream) { Awning = true, HangingSign = true };
-        public static readonly ShopDefinition CopperKettle = new ShopDefinition("THE COPPER KETTLE", SurfaceMaterial.PaintSage, new CoffeeShopDisplay(), SurfaceMaterial.PaintOxblood) { Awning = true, AwningStripe = SurfaceMaterial.PaintWhite };
+        public static readonly ShopDefinition CopperKettle = new ShopDefinition("THE COPPER KETTLE", SurfaceMaterial.PaintSage, new CoffeeShopDisplay(), SurfaceMaterial.PaintOxblood) { Awning = true, AwningStripe = SurfaceMaterial.PaintWhite, Enterable = true };
         public static readonly ShopDefinition PixelAndByte = new ShopDefinition("PIXEL & BYTE", SurfaceMaterial.PaintBlack, new ComputerShopDisplay(), SurfaceMaterial.PaintDuckEgg);
         public static readonly ShopDefinition HartleysNews = new ShopDefinition("HARTLEY'S NEWS", SurfaceMaterial.PaintNavy, new NewsagentDisplay());
 

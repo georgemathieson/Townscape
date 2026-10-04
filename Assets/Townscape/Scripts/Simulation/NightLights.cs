@@ -165,6 +165,9 @@ namespace Townscape.Simulation
                 case AnchorKind.CanopyLight:
                     spec = new LightSpec(CanopyWhite, 9f, 7f, 0f);
                     return true;
+                case AnchorKind.RoomLight:
+                    spec = new LightSpec(HomeWarmth[0], 5.5f, 2.6f, 0.3f);
+                    return true;
                 default:
                     spec = default;
                     return false;
@@ -188,6 +191,9 @@ namespace Townscape.Simulation
                     return SmoothStepDarkness(darkness);
                 case AnchorKind.CanopyLight:
                     return SmoothStepDarkness(darkness);
+                case AnchorKind.RoomLight:
+                    // Like a home window, minus the television group: on as it gets dark, off at bedtime.
+                    return LightSchedule.HomeWindow(seed % (LightSchedule.HomeWindowGroups - 1), hour, darkness);
                 default:
                     return 0f;
             }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Townscape.Generation.Buildings.Interiors;
 using Townscape.Generation.Buildings.Parts;
 using Townscape.Generation.Buildings.Shops;
 using Townscape.Generation.Geometry;
@@ -51,6 +52,8 @@ namespace Townscape.Generation.Buildings.Styles
     /// <summary>
     /// One unit of a terrace: a shop or house on the ground floor, homes on the floors above
     /// with sash windows, a slate roof running along the street, and chimneys on the party walls.
+    /// A unit whose shop you can go into (<see cref="ShopDefinition.Enterable"/>) is built inside
+    /// too, as a café with a flat above, and its windows are clear glass you can see through.
     /// </summary>
     public sealed class TerracedUnitStyle : IBuildingStyle
     {
@@ -63,10 +66,15 @@ namespace Townscape.Generation.Buildings.Styles
 
         public UnitDesign Design => _design;
 
+        /// <summary>Whether this unit is built with rooms you can walk into.</summary>
+        public bool Enterable => _design.Shop != null && _design.Shop.Enterable;
+
         public void Build(Footprint footprint, BuildContext context)
         {
             var builder = context.Builder;
             var design = _design;
+            var enterable = Enterable && CafeAndFlat.Fits(footprint);
+            var windows = enterable ? Clear(design.Windows) : design.Windows;
             var front = footprint.FrontWall;
             var floor = BuildingLevels.Floor;
             var upperBase = floor + design.GroundFloorHeight;
@@ -75,9 +83,9 @@ namespace Townscape.Generation.Buildings.Styles
             var ground = new GroundFloor(context, front, floor, design.GroundFloorHeight, design.Wall, design.Windows, design.DoorPaint, design.Shop);
             design.GroundFloor.Build(ground);
 
-            BuildUpperFront(context, front, upperBase);
+            BuildUpperFront(context, front, upperBase, windows);
             Courses.String(builder, front, upperBase, design.Windows.Sill);
-            BuildSidesAndBack(context, footprint);
+            BuildSidesAndBack(context, footprint, enterable);
 
             var roof = new GableRoof(footprint, design.Eaves, design.Ridge, overhang: 0.28f, verge: 0f);
             roof.Build(builder, SurfaceMaterial.Slate, design.Trim);
@@ -93,14 +101,26 @@ namespace Townscape.Generation.Buildings.Styles
                 Stack(context, footprint.At(1f, 0.5f), along, design.RightNeighbourRidge);
             }
 
+            Dormer.Span? dormer = null;
             if (design.Dormer)
             {
                 var dormerWindows = new WindowStyle(design.Windows.Frame, GlazingPattern.Casement, SurfaceMaterial.StoneDark);
-                Dormer.Build(context, footprint, roof, 0.5f, Math.Min(1.6f, footprint.FrontWidth * 0.3f), design.Wall, dormerWindows);
+                var width = Math.Min(1.6f, footprint.FrontWidth * 0.3f);
+                Dormer.Build(context, footprint, roof, 0.5f, width, design.Wall, enterable ? Clear(dormerWindows) : dormerWindows, seeThrough: enterable);
+                dormer = Dormer.Measure(footprint, roof, 0.5f, width);
+            }
+
+            if (enterable)
+            {
+                CafeAndFlat.Build(context, footprint, design, roof, dormer);
             }
         }
 
-        private void BuildUpperFront(BuildContext context, WallFrame front, float upperBase)
+        // The same windows with clear glass, for rooms you can look into and out of.
+        private static WindowStyle Clear(WindowStyle style) =>
+            new WindowStyle(style.Frame, style.Pattern, style.Sill, style.Surround) { Glass = SurfaceMaterial.ShopGlass };
+
+        private void BuildUpperFront(BuildContext context, WallFrame front, float upperBase, WindowStyle windows)
         {
             var design = _design;
             var width = front.Width;
@@ -122,7 +142,7 @@ namespace Townscape.Generation.Buildings.Styles
             WallBuilder.Build(context.Builder, front, upperBase, design.Eaves, openings, design.Wall);
             for (var i = 0; i < openings.Count; i++)
             {
-                Glazing.FillWindow(context, front, openings[i], design.Windows);
+                Glazing.FillWindow(context, front, openings[i], windows);
                 if (design.WindowBoxes && i < columns)
                 {
                     WindowBox.Build(context, front, openings[i].X0, openings[i].X1, openings[i].Y0, design.DoorPaint);
@@ -130,7 +150,7 @@ namespace Townscape.Generation.Buildings.Styles
             }
         }
 
-        private void BuildSidesAndBack(BuildContext context, Footprint footprint)
+        private void BuildSidesAndBack(BuildContext context, Footprint footprint, bool enterable)
         {
             var builder = context.Builder;
             var design = _design;
@@ -141,9 +161,15 @@ namespace Townscape.Generation.Buildings.Styles
             }
 
             var back = footprint.BackWall;
-            back.Quad(builder, 0f, BuildingLevels.Base, back.Width, design.Eaves, 0f, design.Wall);
             var plain = new WindowStyle(design.Windows.Frame, GlazingPattern.Casement, SurfaceMaterial.StoneDark);
             var floor = BuildingLevels.Floor;
+            if (enterable)
+            {
+                BuildOpenBack(context, footprint, back, Clear(plain));
+                return;
+            }
+
+            back.Quad(builder, 0f, BuildingLevels.Base, back.Width, design.Eaves, 0f, design.Wall);
             Glazing.AppliedWindow(context, back, (back.Width * 0.3f) - 0.45f, floor + 0.9f, (back.Width * 0.3f) + 0.45f, floor + 2.1f, plain);
             back.Quad(builder, (back.Width * 0.7f) - 0.45f, floor, (back.Width * 0.7f) + 0.45f, floor + 2.1f, 0.012f, design.DoorPaint);
             var y = floor + design.GroundFloorHeight;
@@ -152,6 +178,31 @@ namespace Townscape.Generation.Buildings.Styles
                 Glazing.AppliedWindow(context, back, (back.Width * 0.5f) - 0.5f, y + 0.85f, (back.Width * 0.5f) + 0.5f, y + 2.1f, plain);
                 y += design.UpperFloorHeight;
             }
+        }
+
+        // The back of a unit you can go into: real windows (where the interior expects them)
+        // instead of ones drawn on the wall, and the back door, which stays shut.
+        private void BuildOpenBack(BuildContext context, Footprint footprint, WallFrame back, WindowStyle clear)
+        {
+            var design = _design;
+            var space = new UnitSpace(footprint);
+            var floors = CafeAndFlat.Floors(design);
+            var openings = new List<Opening>();
+            for (var i = 0; i < floors.Length - 1; i++)
+            {
+                // The back wall's x runs from the right of the unit as seen from the street.
+                var hole = CafeAndFlat.BackWindow(space, floors[i], ground: i == 0);
+                openings.Add(new Opening(back.Width - hole.To, hole.Bottom, back.Width - hole.From, hole.Top, 0.15f));
+            }
+
+            WallBuilder.Build(context.Builder, back, BuildingLevels.Base, design.Eaves, openings, design.Wall);
+            foreach (var opening in openings)
+            {
+                Glazing.FillWindow(context, back, opening, clear);
+            }
+
+            var floor = BuildingLevels.Floor;
+            back.Quad(context.Builder, (back.Width * 0.7f) - 0.45f, floor, (back.Width * 0.7f) + 0.45f, floor + 2.1f, 0.012f, design.DoorPaint);
         }
 
         private void Stack(BuildContext context, System.Numerics.Vector2 centre, System.Numerics.Vector2 along, float neighbourRidge)

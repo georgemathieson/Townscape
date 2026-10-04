@@ -78,7 +78,7 @@ namespace Townscape.Generation.Buildings.Parts
         {
             var builder = context.Builder;
             var back = -opening.Depth;
-            var doorTop = fanlight ? opening.Y1 - 0.38f : opening.Y1;
+            var doorTop = fanlight ? opening.Y1 - FanlightHeight : opening.Y1;
             wall.Quad(builder, opening.X0, opening.Y0, opening.X1, doorTop, back, paint);
 
             // Four raised panels.
@@ -93,12 +93,25 @@ namespace Townscape.Generation.Buildings.Parts
 
             if (fanlight)
             {
-                wall.Quad(builder, opening.X0, doorTop, opening.X1, opening.Y1, back, HomeWindowGroup(context));
-                wall.Block(builder, opening.X0, doorTop, opening.X1, doorTop + 0.06f, back, back + BarDepth, frame);
-                wall.Block(builder, midX - (BarWidth * 0.5f), doorTop, midX + (BarWidth * 0.5f), opening.Y1, back, back + BarDepth, frame);
-                context.Anchor(AnchorKind.Fanlight, wall.Point(opening.CentreX, (doorTop + opening.Y1) * 0.5f, back), wall.Out, opening.Width);
+                Fanlight(context, wall, opening, frame);
             }
         }
+
+        /// <summary>The glazed fanlight over a door in <paramref name="opening"/>, which fills its top 0.38 m.</summary>
+        public static void Fanlight(BuildContext context, WallFrame wall, Opening opening, SurfaceMaterial frame)
+        {
+            var builder = context.Builder;
+            var back = -opening.Depth;
+            var doorTop = opening.Y1 - FanlightHeight;
+            var midX = opening.CentreX;
+            wall.Quad(builder, opening.X0, doorTop, opening.X1, opening.Y1, back, HomeWindowGroup(context));
+            wall.Block(builder, opening.X0, doorTop, opening.X1, doorTop + 0.06f, back, back + BarDepth, frame);
+            wall.Block(builder, midX - (BarWidth * 0.5f), doorTop, midX + (BarWidth * 0.5f), opening.Y1, back, back + BarDepth, frame);
+            context.Anchor(AnchorKind.Fanlight, wall.Point(opening.CentreX, (doorTop + opening.Y1) * 0.5f, back), wall.Out, opening.Width);
+        }
+
+        /// <summary>How much of a door opening its fanlight takes.</summary>
+        public const float FanlightHeight = 0.38f;
 
         /// <summary>
         /// Plain window glass becomes one of the home window groups at random, so each window

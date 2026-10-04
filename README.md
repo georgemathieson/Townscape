@@ -45,6 +45,18 @@ the weather (rain, snow, lightning, wind and mist), and even its sounds.
 | ![Fell View Garage at dusk, its canopy lit over the pumps](docs/images/gallery/petrol-station-dusk.jpg) | ![String lights and bunting in the garage's shop window at night](docs/images/gallery/petrol-station-window-night.jpg) |
 | Fell View Garage at dusk, with bunting from the canopy | String lights in the shop window after dark |
 
+### The Copper Kettle
+
+You can go inside the Copper Kettle and the flat above it: press V to walk, then E at either door.
+The café door is on the right, in the glazed lobby; the door on the left opens onto the stairs.
+
+| | |
+|---|---|
+| ![Inside the Copper Kettle café at night](docs/images/gallery/kettle-cafe-night.jpg) | ![The counter, cake cabinet and espresso machine](docs/images/gallery/kettle-counter-day.jpg) |
+| The café after dark | The counter, the cakes and the espresso machine |
+| ![The flat's living room at night, lit by a pendant lamp](docs/images/gallery/kettle-living-night.jpg) | ![The attic snug at night, with pictures on the walls](docs/images/gallery/kettle-snug-night.jpg) |
+| The flat's living room in the evening | The attic: a snug and a study under the slates |
+
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*
 

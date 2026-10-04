@@ -96,6 +96,20 @@ namespace Townscape.Generation.Geometry
         BulbYellow,
         BulbBlue,
 
+        // Inside the Copper Kettle and its flat: only ever under a roof, so rain and snow leave them be.
+        TileLight,
+        TileDark,
+        FabricSage,
+        FabricRust,
+        FabricNavy,
+        Linen,
+        Porcelain,
+        Chrome,
+        Cardboard,
+        Sponge,
+        Icing,
+        Chalkboard,
+
         // Water that moves: the river flows and puddles ripple in the rain.
         RiverWater,
         Puddle,
