@@ -7,11 +7,12 @@ namespace Townscape.Generation.Buildings.Parts
     /// <summary>What a building style draws into: the mesh, anchors for later systems, and a seeded random.</summary>
     public sealed class BuildContext
     {
-        public BuildContext(MeshBuilder builder, ICollection<TownAnchor> anchors, int seed, ICollection<TownDoor> doors = null, MeshBuilder fittings = null)
+        public BuildContext(MeshBuilder builder, ICollection<TownAnchor> anchors, int seed, ICollection<TownDoor> doors = null, MeshBuilder fittings = null, ICollection<TownAlarm> alarms = null)
         {
             Builder = builder;
             Anchors = anchors;
             Doors = doors ?? new List<TownDoor>();
+            Alarms = alarms ?? new List<TownAlarm>();
             Fittings = fittings ?? builder;
             Random = new Random(seed);
         }
@@ -28,6 +29,9 @@ namespace Townscape.Generation.Buildings.Parts
 
         /// <summary>Doors that open, each built as its own mesh.</summary>
         public ICollection<TownDoor> Doors { get; }
+
+        /// <summary>Burglar alarms fitted to the building.</summary>
+        public ICollection<TownAlarm> Alarms { get; }
 
         public Random Random { get; }
 
@@ -48,7 +52,7 @@ namespace Townscape.Generation.Buildings.Parts
         /// <param name="axis">What it turns about, if not straight up (a roof window pivots across the slope).</param>
         public void Door(string name, System.Numerics.Vector3 hinge, System.Numerics.Vector3 along, System.Numerics.Vector3 inward, float width, float height, Action<BuildContext> buildLeaf, float openDegrees = 100f, System.Numerics.Vector3? axis = null, string noun = "door")
         {
-            var leaf = new BuildContext(new MeshBuilder(), Anchors, Random.Next(), Doors);
+            var leaf = new BuildContext(new MeshBuilder(), Anchors, Random.Next(), Doors, alarms: Alarms);
             buildLeaf(leaf);
             var mesh = leaf.Builder.Build(name);
             for (var i = 0; i < mesh.Positions.Length; i++)

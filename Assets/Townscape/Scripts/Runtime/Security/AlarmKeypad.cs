@@ -3,15 +3,15 @@ using UnityEngine;
 
 namespace Townscape.Runtime.Security
 {
-    /// <summary>One of the alarm's keypads on the wall inside a front door: look at it and press E to bring it up.</summary>
+    /// <summary>One of an alarm's keypads on the wall inside a front door: look at it and press E to bring it up.</summary>
     [DisallowMultipleComponent]
     public sealed class AlarmKeypad : MonoBehaviour, IInteractable
     {
         private AlarmSystem _system;
 
-        public string Prompt => "Use the alarm panel";
+        public string Prompt => "Use the alarm keypad";
 
-        /// <summary>The panel's buzzer, for its key clicks and beeps.</summary>
+        /// <summary>The keypad's buzzer, for its key clicks and beeps.</summary>
         public AudioSource Beeper { get; private set; }
 
         public void Initialize(AlarmSystem system, AudioSource beeper)
@@ -24,7 +24,7 @@ namespace Townscape.Runtime.Security
         {
             if (_system != null)
             {
-                _system.OpenPanel(this);
+                _system.OpenKeypad(this);
             }
         }
     }

@@ -10,6 +10,7 @@ namespace Townscape.Tests.Simulation
     public sealed class BurglarAlarmTests
     {
         private const string Code = BurglarAlarm.DefaultCode;
+        private const string Engineer = BurglarAlarm.DefaultEngineerCode;
 
         // Runs the alarm on in small steps, as frames would, and counts the beeps.
         private static int Run(BurglarAlarm alarm, float seconds, float step = 0.05f)
@@ -35,7 +36,7 @@ namespace Townscape.Tests.Simulation
             Assert.That(alarm.Remaining, Is.EqualTo(BurglarAlarm.EntryExitSeconds));
 
             // Walking about on the way out sets nothing off.
-            alarm.Detected();
+            alarm.Detected(0);
             Run(alarm, 29.5f);
             Assert.That(alarm.State, Is.EqualTo(AlarmState.Exiting));
             Run(alarm, 1f);
@@ -61,13 +62,13 @@ namespace Townscape.Tests.Simulation
             alarm.Set(Code);
             Run(alarm, 31f);
 
-            alarm.Detected();
+            alarm.Detected(0);
             Assert.That(alarm.State, Is.EqualTo(AlarmState.Entry));
             Run(alarm, 20f);
-            alarm.Detected();
+            alarm.Detected(0);
             Assert.That(alarm.Remaining, Is.EqualTo(10f).Within(0.01f), "seeing you again doesn't restart the clock");
 
-            Assert.That(alarm.Unset("9999"), Is.EqualTo(KeypadResult.WrongCode));
+            Assert.That(alarm.Unset("5555"), Is.EqualTo(KeypadResult.WrongCode));
             Assert.That(alarm.Unset(Code), Is.EqualTo(KeypadResult.Done));
             Assert.That(alarm.State, Is.EqualTo(AlarmState.Unset));
             Assert.That(alarm.Armed, Is.False);
@@ -79,7 +80,7 @@ namespace Townscape.Tests.Simulation
             var alarm = new BurglarAlarm();
             alarm.Set(Code);
             Run(alarm, 31f);
-            alarm.Detected();
+            alarm.Detected(0);
             Run(alarm, 30.5f);
 
             Assert.That(alarm.State, Is.EqualTo(AlarmState.Sounding));
@@ -93,6 +94,160 @@ namespace Townscape.Tests.Simulation
             Assert.That(alarm.Unset(Code), Is.EqualTo(KeypadResult.Done));
             Assert.That(alarm.StrobeFlashing, Is.False);
             Assert.That(alarm.Unset(Code), Is.EqualTo(KeypadResult.NothingToDo));
+        }
+
+        // Set, with nobody about.
+        private static BurglarAlarm SetAlarm(int zones = 3)
+        {
+            var alarm = new BurglarAlarm(zones);
+            alarm.Set(Code);
+            Run(alarm, 31f);
+            return alarm;
+        }
+
+        [Test]
+        public void ACutZone_SeesNothing()
+        {
+            var alarm = SetAlarm();
+            alarm.ConnectZone(1, false);
+
+            alarm.Detected(1);
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Set), "the cut sensor");
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.None), "and nothing on the keypad gives it away");
+
+            alarm.Detected(2);
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Entry), "the others still work");
+        }
+
+        [Test]
+        public void OpeningTheControlBox_WithoutTheEngineerCode_SetsOffTheTamper()
+        {
+            var alarm = new BurglarAlarm();
+            alarm.OpenLid();
+
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Sounding), "even when it's unset");
+            Assert.That(alarm.Tampered, Is.True);
+            Assert.That(alarm.BellRinging, Is.True);
+            Assert.That(alarm.Unset(Code), Is.EqualTo(KeypadResult.Done));
+            Assert.That(alarm.BellRinging, Is.False);
+        }
+
+        [Test]
+        public void TheEngineerCode_LetsTheLidOff_AndWontLeaveUntilItsBackOn()
+        {
+            var alarm = new BurglarAlarm();
+
+            Assert.That(alarm.Engineer(Code), Is.EqualTo(KeypadResult.WrongCode), "the user's code won't do");
+            Assert.That(alarm.Engineer(Engineer), Is.EqualTo(KeypadResult.Done));
+            Assert.That(alarm.EngineerMode, Is.True);
+            Assert.That(alarm.Set(Code), Is.EqualTo(KeypadResult.EngineerMode), "no setting it with an engineer at work");
+
+            alarm.OpenLid();
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Unset), "no tamper");
+            Assert.That(alarm.Engineer(Engineer), Is.EqualTo(KeypadResult.CloseTheLid));
+            alarm.CloseLid();
+            Assert.That(alarm.Engineer(Engineer), Is.EqualTo(KeypadResult.Done));
+            Assert.That(alarm.EngineerMode, Is.False);
+
+            // Only when it's unset.
+            alarm.Set(Code);
+            Assert.That(alarm.Engineer(Engineer), Is.EqualTo(KeypadResult.NothingToDo));
+        }
+
+        [Test]
+        public void WithoutMains_ItRunsTenMinutesOnItsBattery_ThenTheBellBoxSoundsForTwo()
+        {
+            var alarm = SetAlarm();
+            alarm.ConnectMains(false);
+
+            Assert.That(alarm.Powered, Is.True);
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.Mains));
+            Run(alarm, BurglarAlarm.BatterySeconds - 1f, step: 0.5f);
+            Assert.That(alarm.Powered, Is.True, "still going on the battery");
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Set));
+
+            Run(alarm, 2f);
+            Assert.That(alarm.Powered, Is.False, "the battery's flat: the panel dies");
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.None), "and the keypad goes blank");
+            Assert.That(alarm.BellRinging, Is.True, "the bell box sounds on its own battery");
+            Assert.That(alarm.StrobeFlashing, Is.True);
+            Assert.That(alarm.Set(Code), Is.EqualTo(KeypadResult.NoPower));
+
+            Run(alarm, BurglarAlarm.SelfActivateSeconds, step: 0.5f);
+            Assert.That(alarm.BellRinging, Is.False, "for two minutes");
+            Assert.That(alarm.StrobeFlashing, Is.False);
+
+            // The mains back: it starts up again, unset, and charges its battery.
+            alarm.ConnectMains(true);
+            Assert.That(alarm.Powered, Is.True);
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Unset));
+            Run(alarm, 60f, step: 1f);
+            Assert.That(alarm.BatteryLeft, Is.EqualTo(60f).Within(0.1f));
+        }
+
+        [Test]
+        public void WithoutMainsOrBattery_ThePanelDiesAtOnce()
+        {
+            var alarm = SetAlarm();
+            alarm.ConnectBattery(false);
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.Battery), "the fault light for the battery");
+
+            alarm.ConnectMains(false);
+            Assert.That(alarm.Powered, Is.False);
+            Assert.That(alarm.BellRinging, Is.True, "the bell box sounds on its own");
+
+            // Power back while it's sounding: the panel takes over and quietens it.
+            alarm.ConnectBattery(true);
+            Assert.That(alarm.Powered, Is.True);
+            Assert.That(alarm.BellRinging, Is.False);
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.Mains));
+        }
+
+        [Test]
+        public void UnpluggingTheNetwork_IsACommsFault()
+        {
+            var alarm = new BurglarAlarm();
+            alarm.ConnectEthernet(false);
+
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.Comms));
+            alarm.ConnectEthernet(true);
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.None));
+        }
+
+        [Test]
+        public void TheBellBoxWiredBackwards_BlowsItsFuse_AndItNeverSoundsUntilPutRight()
+        {
+            var alarm = new BurglarAlarm(3);
+            alarm.ReverseBell(true);
+
+            Assert.That(alarm.FuseBlown, Is.True, "the fuse goes at once");
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.Bell));
+
+            // Broken in: it sees you, the entry time runs out, and nothing happens outside.
+            alarm.Set(Code);
+            Run(alarm, 31f);
+            alarm.Detected(0);
+            Run(alarm, 31f);
+            Assert.That(alarm.State, Is.EqualTo(AlarmState.Sounding));
+            Assert.That(alarm.BellRinging, Is.False);
+            Assert.That(alarm.StrobeFlashing, Is.False);
+
+            // Nor when the panel dies.
+            alarm.ConnectMains(false);
+            alarm.ConnectBattery(false);
+            Assert.That(alarm.BellRinging, Is.False);
+            alarm.ConnectMains(true);
+            alarm.ConnectBattery(true);
+
+            // A new fuse alone blows again; wired right and with a new fuse, it's mended.
+            alarm.FitNewFuse();
+            Assert.That(alarm.FuseBlown, Is.True);
+            alarm.ReverseBell(false);
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.Bell), "still a dead fuse");
+            alarm.FitNewFuse();
+            Assert.That(alarm.Faults, Is.EqualTo(AlarmFaults.None));
+            alarm.OpenLid();
+            Assert.That(alarm.BellRinging, Is.True, "and it sounds again");
         }
 
         [Test]

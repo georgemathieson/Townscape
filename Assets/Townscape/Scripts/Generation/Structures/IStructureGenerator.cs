@@ -18,6 +18,7 @@ namespace Townscape.Generation.Structures
         private readonly List<GeneratedMesh> _meshes = new List<GeneratedMesh>();
         private readonly List<TownAnchor> _anchors = new List<TownAnchor>();
         private readonly List<TownDoor> _doors = new List<TownDoor>();
+        private readonly List<TownAlarm> _alarms = new List<TownAlarm>();
 
         public IReadOnlyList<GeneratedMesh> Meshes => _meshes;
 
@@ -30,6 +31,11 @@ namespace Townscape.Generation.Structures
         public ICollection<TownDoor> Doors => _doors;
 
         public IReadOnlyList<TownDoor> DoorList => _doors;
+
+        /// <summary>Burglar alarms, each with its zones, keypads, control box and bell box.</summary>
+        public ICollection<TownAlarm> Alarms => _alarms;
+
+        public IReadOnlyList<TownAlarm> AlarmList => _alarms;
 
         public void AddMesh(MeshData mesh, MeshCategory category)
         {

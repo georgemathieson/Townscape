@@ -36,18 +36,6 @@ namespace Townscape.Generation
 
         /// <summary>The foot of a tree's trunk; <see cref="TownAnchor.Size"/> is its radius. Walkers can't pass through it.</summary>
         TreeTrunk,
-
-        /// <summary>
-        /// A burglar alarm's motion sensor, high in the corner of a room. <see cref="TownAnchor.Facing"/>
-        /// is the level way it looks into the room.
-        /// </summary>
-        AlarmSensor,
-
-        /// <summary>A burglar alarm's control panel on a wall: facing out of the wall, <see cref="TownAnchor.Size"/> its width.</summary>
-        AlarmKeypad,
-
-        /// <summary>A burglar alarm's bell box on the outside of a building, at its strobe.</summary>
-        AlarmBell,
     }
 
     /// <summary>

@@ -32,6 +32,8 @@ namespace Townscape.Tests.Generation
             return (builder.Build("Copper Kettle"), anchors, doors);
         }
 
+        private static TownAlarm Alarm(string name) => GeneratedVillage.Town.Alarms.Single(a => a.Name == name);
+
         private static int Triangles(MeshData mesh, Func<SurfaceMaterial, bool> which) =>
             mesh.Submeshes.Where(s => which(s.Material)).Sum(s => s.Indices.Length / 3);
 
@@ -243,12 +245,36 @@ namespace Townscape.Tests.Generation
         }
 
         [Test]
-        public void TheAlarm_HasASensorInEveryRoom_HighUpAndLookingIn()
+        public void TheCafeAndTheFlat_HaveAlarmsOfTheirOwn_WithAZoneForEverySensorAndDoor()
         {
-            var (_, anchors, _) = BuildAlone();
+            var shop = Alarm(CafeAndFlat.ShopAlarm);
+            var flat = Alarm(CafeAndFlat.FlatAlarm);
+
+            Assert.That(GeneratedVillage.Town.Alarms, Has.Count.EqualTo(2));
+            Assert.That(shop.Zones.Select(z => z.Name), Is.EqualTo(new[] { "Café door", "Café sensor", "Storeroom sensor" }));
+            Assert.That(flat.Zones.Select(z => z.Name), Is.EqualTo(new[]
+            {
+                "Front door", "Hall sensor", "Living room sensor", "Kitchen sensor", "Bedroom sensor", "Bathroom sensor", "Attic sensor", "Roof window 1", "Roof window 2",
+            }));
+
+            // Each door zone watches a door that's really there, on its own side.
+            var doors = GeneratedVillage.Town.Doors.Select(d => d.Name).ToList();
+            foreach (var zone in shop.Zones.Concat(flat.Zones).Where(z => z.Kind == AlarmZoneKind.Door))
+            {
+                Assert.That(doors, Has.Member(zone.Door), zone.Name);
+            }
+
+            Assert.That(shop.Zones.Single(z => z.Kind == AlarmZoneKind.Door).Door, Is.EqualTo("Shop door"));
+            Assert.That(flat.Zones.First().Door, Is.EqualTo("Flat door"));
+        }
+
+        [Test]
+        public void EverySensor_IsHighUp_AndLooksIntoItsRoom()
+        {
             var space = new UnitSpace(Kettle.Footprint);
             var floors = CafeAndFlat.Floors(Design);
-            var sensors = anchors.Where(a => a.Kind == AnchorKind.AlarmSensor).Select(a => (Local: space.Local(a.Position), a.Facing)).ToList();
+            var sensors = GeneratedVillage.Town.Alarms.SelectMany(a => a.Zones).Where(z => z.Kind == AlarmZoneKind.Motion)
+                .Select(z => (Local: space.Local(z.Position), z.Facing, Led: space.Local(z.Led))).ToList();
 
             // The café, its storeroom and the hall; the living room and kitchen; the bedroom and bathroom; the attic.
             var perFloor = new[] { 3, 2, 2, 1 };
@@ -265,6 +291,7 @@ namespace Townscape.Tests.Generation
                 var world = space.At(sensor.Local.X, 0f, sensor.Local.Z);
                 Assert.That(Kettle.Footprint.Contains(new Vector2(world.X, world.Z)), Is.True);
                 Assert.That(Math.Abs(sensor.Facing.Y), Is.LessThan(1e-3f), "faces level; the alarm tilts it down");
+                Assert.That(Vector3.Distance(sensor.Led, sensor.Local), Is.LessThan(0.06f), "its LED is on its front");
 
                 // Looking into the room, away from the walls it's on.
                 var ahead = space.Local(space.At(sensor.Local.X, sensor.Local.Y, sensor.Local.Z) + sensor.Facing);
@@ -274,59 +301,90 @@ namespace Townscape.Tests.Generation
         }
 
         [Test]
-        public void TheAlarmHasAKeypad_InsideEachFrontDoor_AtHandHeight()
+        public void EachAlarmsKeypad_IsInsideItsFrontDoor_AtHandHeight_AndOnlyReachableFromInside()
         {
-            var (_, anchors, doors) = BuildAlone();
-            var keypads = anchors.Where(a => a.Kind == AnchorKind.AlarmKeypad).ToList();
+            var (_, _, doors) = BuildAlone();
             var site = Kettle.Footprint;
             var outward = new Vector3(site.Outward.X, 0f, site.Outward.Y);
 
-            Assert.That(keypads, Has.Count.EqualTo(2));
-            foreach (var name in new[] { "Flat door", "Shop door" })
+            foreach (var (alarm, doorName) in new[] { (CafeAndFlat.ShopAlarm, "Shop door"), (CafeAndFlat.FlatAlarm, "Flat door") })
             {
-                var door = doors.Single(d => d.Name == name);
-                float Apart(TownAnchor k) => new Vector2(k.Position.X - door.Hinge.X, k.Position.Z - door.Hinge.Z).Length();
-                var keypad = keypads.OrderBy(Apart).First();
+                var door = doors.Single(d => d.Name == doorName);
+                var keypad = Alarm(alarm).Keypads.Single();
+                var panel = keypad.Panel;
+                var apart = new Vector2(panel.Position.X - door.Hinge.X, panel.Position.Z - door.Hinge.Z).Length();
 
-                Assert.That(Apart(keypad), Is.LessThan(1.4f), $"by the {name}");
-                Assert.That(Vector3.Dot(keypad.Position - site.FrontWall.Origin, outward), Is.LessThan(-0.15f), $"inside the {name}");
-                Assert.That(keypad.Position.Y - door.Hinge.Y, Is.InRange(1.2f, 1.7f));
-                Assert.That(keypad.Size, Is.InRange(0.1f, 0.2f), "small");
+                Assert.That(apart, Is.LessThan(1.4f), $"by the {doorName}");
+                Assert.That(Vector3.Dot(panel.Position - site.FrontWall.Origin, outward), Is.LessThan(-0.15f), $"inside the {doorName}");
+                Assert.That(panel.Position.Y - door.Hinge.Y, Is.InRange(1.2f, 1.7f));
+                Assert.That(panel.Width, Is.InRange(0.1f, 0.2f), "small");
+                Assert.That(Vector3.Distance(keypad.PowerLed, panel.Position), Is.LessThan(0.1f));
+                Assert.That(Vector3.Distance(keypad.FaultLed, panel.Position), Is.LessThan(0.1f));
 
                 // Clear of the door as it swings open.
                 for (var a = 0f; a <= door.OpenDegrees; a += 5f)
                 {
                     var edge = door.LatchAt(a);
-                    var toKeypad = new Vector2(keypad.Position.X - door.Hinge.X, keypad.Position.Z - door.Hinge.Z);
+                    var toKeypad = new Vector2(panel.Position.X - door.Hinge.X, panel.Position.Z - door.Hinge.Z);
                     var toEdge = new Vector2(edge.X - door.Hinge.X, edge.Z - door.Hinge.Z);
                     var along = Math.Clamp(Vector2.Dot(toKeypad, toEdge) / toEdge.LengthSquared(), 0f, 1f);
-                    Assert.That(Vector2.Distance(toKeypad, toEdge * along), Is.GreaterThan(0.05f), $"{name} at {a}°");
+                    Assert.That(Vector2.Distance(toKeypad, toEdge * along), Is.GreaterThan(0.05f), $"{doorName} at {a}°");
                 }
             }
         }
 
         [Test]
-        public void TheBellBox_IsHighOnTheFront_BetweenTwoSecondFloorWindows()
+        public void TheControlBoxes_AreOutOfTheWay_InTheStoreroomAndTheAttic()
         {
-            var (mesh, anchors, _) = BuildAlone();
-            var bell = anchors.Single(a => a.Kind == AnchorKind.AlarmBell);
+            var space = new UnitSpace(Kettle.Footprint);
+            var floors = CafeAndFlat.Floors(Design);
+            var shop = space.Local(Alarm(CafeAndFlat.ShopAlarm).ControlBox.Position);
+            var flat = space.Local(Alarm(CafeAndFlat.FlatAlarm).ControlBox.Position);
+
+            Assert.That(shop.Y - floors[0], Is.InRange(1.2f, 1.8f), "at hand height in the storeroom");
+            Assert.That(shop.Z, Is.GreaterThan(6.7f), "behind the café, in the storeroom");
+            Assert.That(flat.Y - floors[3], Is.InRange(0.9f, 1.5f), "in the attic");
+            foreach (var box in new[] { Alarm(CafeAndFlat.ShopAlarm).ControlBox, Alarm(CafeAndFlat.FlatAlarm).ControlBox })
+            {
+                Assert.That(box.Width, Is.EqualTo(box.Height), "a square");
+                Assert.That(box.Width, Is.InRange(0.25f, 0.35f));
+            }
+        }
+
+        [Test]
+        public void TheBellBoxes_TheFlatsWhiteBetweenTheWindows_TheCafesRedOnItsSign()
+        {
+            var (mesh, _, _) = BuildAlone();
             var front = Kettle.Footprint.FrontWall;
             var floors = CafeAndFlat.Floors(Design);
-            var across = Vector3.Dot(bell.Position - front.Origin, front.Right);
+            float Across(Vector3 p) => Vector3.Dot(p - front.Origin, front.Right);
+            float Out(Vector3 p) => Vector3.Dot(p - front.Origin, front.Out);
 
-            Assert.That(Vector3.Dot(bell.Facing, front.Out), Is.GreaterThan(0.99f), "on the street side");
-            Assert.That(Vector3.Dot(bell.Position - front.Origin, front.Out), Is.InRange(0.05f, 0.15f), "on the face of the wall");
-            Assert.That(bell.Position.Y, Is.InRange(floors[2] + 1.4f, floors[3]), "up on the second floor");
-            Assert.That(bell.Size, Is.InRange(0.25f, 0.35f), "a real bell box's size");
-
-            // Between the first two windows' columns, clear of both.
+            // The flat's: high between the first two second-floor windows, clear of both.
+            var flat = Alarm(CafeAndFlat.FlatAlarm).BellStrobe;
             var columnWidth = front.Width / 3f;
-            Assert.That(across, Is.InRange(columnWidth * 0.5f + 0.5f + AlarmFittings.BellBoxWidth * 0.5f, columnWidth * 1.5f - 0.5f - AlarmFittings.BellBoxWidth * 0.5f));
+            Assert.That(Vector3.Dot(flat.Facing, front.Out), Is.GreaterThan(0.99f), "on the street side");
+            Assert.That(Out(flat.Position), Is.InRange(0.05f, 0.15f), "on the face of the wall");
+            Assert.That(flat.Position.Y, Is.InRange(floors[2] + 1.4f, floors[3]), "up on the second floor");
+            Assert.That(Across(flat.Position), Is.InRange(columnWidth * 0.5f + 0.5f + AlarmFittings.BellBoxWidth * 0.5f, columnWidth * 1.5f - 0.5f - AlarmFittings.BellBoxWidth * 0.5f));
 
-            // White, with a blue strobe at its foot.
-            var strobe = mesh.Submeshes.Single(s => s.Material == SurfaceMaterial.AlarmStrobe).Indices.Select(i => mesh.Positions[i]).ToList();
-            Assert.That(strobe.Max(p => p.Y), Is.LessThan(bell.Position.Y + 0.05f));
-            Assert.That(strobe.Min(p => p.Y), Is.GreaterThan(bell.Position.Y - 0.05f));
+            // The café's: on the fascia over its door, at the right-hand end of the sign.
+            var shop = Alarm(CafeAndFlat.ShopAlarm).BellStrobe;
+            var layout = TraditionalShopfront.Layout(front.Width);
+            Assert.That(Out(shop.Position), Is.InRange(TraditionalShopfront.FasciaDepth + 0.05f, TraditionalShopfront.FasciaDepth + 0.15f), "on the face of the sign");
+            Assert.That(shop.Position.Y - floors[0], Is.InRange(TraditionalShopfront.OpeningTop, 3.2f), "on the sign");
+            Assert.That(Across(shop.Position), Is.InRange(layout.DoorLeft, layout.DoorRight), "over the door");
+
+            // The flat's case is white and the café's red; each has a blue strobe at its foot.
+            int Near(Vector3 strobe, SurfaceMaterial material) => mesh.Submeshes.Where(s => s.Material == material).SelectMany(s => s.Indices)
+                .Count(i => Vector3.Distance(mesh.Positions[i], strobe) < 0.3f);
+            Assert.That(Near(flat.Position, SurfaceMaterial.Porcelain), Is.GreaterThan(0));
+            Assert.That(Near(shop.Position, SurfaceMaterial.PaintRed), Is.GreaterThan(0));
+            Assert.That(Near(shop.Position, SurfaceMaterial.Porcelain), Is.Zero, "not a copy of the flat's");
+            foreach (var strobe in new[] { flat, shop })
+            {
+                Assert.That(Near(strobe.Position, SurfaceMaterial.AlarmStrobe), Is.GreaterThan(0));
+            }
         }
 
         [Test]

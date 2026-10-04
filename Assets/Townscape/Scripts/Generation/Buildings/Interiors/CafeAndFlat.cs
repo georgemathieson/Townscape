@@ -762,32 +762,72 @@ namespace Townscape.Generation.Buildings.Interiors
 
         public const float KeypadHeight = 1.5f;
 
-        // A sensor high in a corner of every room, looking across it (in the attic, on the gable,
-        // under the chimney breast); a keypad inside each front door, on the hall wall for the
-        // flat and on the side of the café's entrance lobby, on your left as you come in, clear of
-        // the door's swing; and the bell box out on the front, high up between the second floor's
-        // first two windows.
+        /// <summary>The names the two alarms go by.</summary>
+        public const string ShopAlarm = "The Copper Kettle";
+
+        public const string FlatAlarm = "The flat";
+
+        // Two alarms, the café's and the flat's, each with its own zones, keypad, control box and
+        // bell box. A sensor high in a corner of every room (in the attic, on the gable, under
+        // the chimney breast) and a contact on every door and roof window are its zones. The
+        // keypads are inside the front doors: on the side of the café's entrance lobby, on your
+        // left as you come in, and on the hall wall for the flat, both clear of the door's swing.
+        // The control boxes are out of the way: in the storeroom, and up in the attic. The café's
+        // bell box is red, on the right of its sign; the flat's is white, high on the front
+        // between the second floor's first two windows.
         private static void Alarm(BuildContext context, UnitSpace space, Footprint footprint, float[] f, float[] top)
         {
             var right = space.Width - Side;
             var back = space.Depth - FrontFace;
-            AlarmFittings.CornerSensor(context, space, CafeLeft, top[0], StoreWall, 1f, -1f);
-            AlarmFittings.CornerSensor(context, space, right, top[0], back, -1f, -1f);
-            AlarmFittings.CornerSensor(context, space, HallWall, top[0], FrontFace, -1f, 1f);
-            foreach (var ceiling in new[] { top[1], top[2] })
+            var front = footprint.FrontWall;
+            TownDoor Door(string name) => context.Doors.LastOrDefault(d => d.Name == name);
+            var shopDoor = Door("Shop door");
+            var flatDoor = Door("Flat door");
+            if (shopDoor == null || flatDoor == null)
             {
-                AlarmFittings.CornerSensor(context, space, right, ceiling, FrontFace, -1f, 1f);
-                AlarmFittings.CornerSensor(context, space, right, ceiling, back, -1f, -1f);
+                return;
             }
 
-            AlarmFittings.WallSensor(context, space, Side, f[3] + 2.4f, space.Depth * 0.5f, 1f, 0f);
-            AlarmFittings.Keypad(context, space, HallWall, -1f, KeypadD, f[0] + KeypadHeight);
             var lobby = TraditionalShopfront.Layout(space.Width);
-            AlarmFittings.Keypad(context, space, lobby.DoorLeft, -1f, (FrontFace + TraditionalShopfront.LobbyDepth) * 0.5f, f[0] + KeypadHeight);
+            var sign = TraditionalShopfront.FasciaBellBox(space.Width);
+            context.Alarms.Add(new TownAlarm(
+                ShopAlarm,
+                new[]
+                {
+                    AlarmFittings.DoorContact("Café door", shopDoor),
+                    AlarmFittings.CornerSensor(context, space, "Café sensor", CafeLeft, top[0], StoreWall, 1f, -1f),
+                    AlarmFittings.CornerSensor(context, space, "Storeroom sensor", right, top[0], back, -1f, -1f),
+                },
+                new[] { AlarmFittings.Keypad(context, space, lobby.DoorLeft, -1f, (FrontFace + TraditionalShopfront.LobbyDepth) * 0.5f, f[0] + KeypadHeight) },
+                AlarmFittings.ControlBox(context, space, CafeLeft, 1f, (StoreWall + Thin + back) * 0.5f, f[0] + 1.55f),
+                AlarmFittings.BellBox(context, front, sign.CentreX, f[0] + sign.Top, TraditionalShopfront.FasciaDepth, SurfaceMaterial.PaintRed)));
 
-            var front = footprint.FrontWall;
+            var zones = new List<AlarmZone>
+            {
+                AlarmFittings.DoorContact("Front door", flatDoor),
+                AlarmFittings.CornerSensor(context, space, "Hall sensor", HallWall, top[0], FrontFace, -1f, 1f),
+                AlarmFittings.CornerSensor(context, space, "Living room sensor", right, top[1], FrontFace, -1f, 1f),
+                AlarmFittings.CornerSensor(context, space, "Kitchen sensor", right, top[1], back, -1f, -1f),
+                AlarmFittings.CornerSensor(context, space, "Bedroom sensor", right, top[2], FrontFace, -1f, 1f),
+                AlarmFittings.CornerSensor(context, space, "Bathroom sensor", right, top[2], back, -1f, -1f),
+                AlarmFittings.WallSensor(context, space, "Attic sensor", Side, f[3] + 2.4f, space.Depth * 0.5f, 1f, 0f),
+            };
+            foreach (var name in new[] { "Roof window 1", "Roof window 2" })
+            {
+                var window = Door(name);
+                if (window != null)
+                {
+                    zones.Add(AlarmFittings.DoorContact(name, window));
+                }
+            }
+
             var windowTop = f[2] + 0.8f + 1.3f;
-            AlarmFittings.BellBox(context, front, front.Width / 3f, windowTop - 0.02f);
+            context.Alarms.Add(new TownAlarm(
+                FlatAlarm,
+                zones,
+                new[] { AlarmFittings.Keypad(context, space, HallWall, -1f, KeypadD, f[0] + KeypadHeight) },
+                AlarmFittings.ControlBox(context, space, right, -1f, 2f, f[3] + 1.15f),
+                AlarmFittings.BellBox(context, front, front.Width / 3f, windowTop - 0.02f, 0f, SurfaceMaterial.Porcelain)));
         }
 
         // ---- Stairs and floors --------------------------------------------------------------
