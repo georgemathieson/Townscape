@@ -91,6 +91,7 @@ internal static class ViewsExport
             views.Add(View("millWorks", space.At(space.Width * 0.3f, f[0] + 2.2f, -15f), space.At(space.Width * 0.5f, f[0] + 4.6f, 0f), 60f));
             Inside("millReception", 6.0f, f[0] + 1.65f, 0.9f, 2.8f, f[0] + 0.9f, 4.8f);
             Inside("millDesks", 8.6f, f[0] + 1.7f, 6.9f, 2.6f, f[0] + 0.8f, 2.8f);
+            Inside("millEntrance", 6.6f, f[0] + 1.65f, 4.2f, 7.4f, f[0] + 1.1f, 0.2f);
             Inside("millStairs", 10.1f, f[0] + 1.6f, 0.45f, 11.3f, f[0] + 2.4f, 5.0f);
             Inside("millComms", 10.65f, f[0] + 1.6f, 4.2f, 9.7f, f[0] + 1.45f, 5.1f);
             Inside("millLanding", 11.4f, f[1] + 1.65f, 7.5f, 9.4f, f[1] + 1.2f, 4.2f);

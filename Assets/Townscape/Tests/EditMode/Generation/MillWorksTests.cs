@@ -93,6 +93,90 @@ namespace Townscape.Tests.Generation
         }
 
         [Test]
+        public void TheDoorways_AndEveryWindow_AreOpenRightThrough()
+        {
+            // Nothing of the walls (stone outside, plaster inside) may cross a door, a doorway or
+            // a window: each is checked with lines straight through it.
+            var (mesh, _, _) = BuildAlone();
+            var space = new UnitSpace(Mill.Footprint);
+            var walls = new List<(Vector3 A, Vector3 B, Vector3 C)>();
+            foreach (var submesh in mesh.Submeshes.Where(s => s.Material == SurfaceMaterial.Interior || s.Material == SurfaceMaterial.Stone))
+            {
+                for (var i = 0; i < submesh.Indices.Length; i += 3)
+                {
+                    walls.Add((space.Local(mesh.Positions[submesh.Indices[i]]), space.Local(mesh.Positions[submesh.Indices[i + 1]]), space.Local(mesh.Positions[submesh.Indices[i + 2]])));
+                }
+            }
+
+            void Open(string what, Vector3 from, Vector3 to) =>
+                Assert.That(walls.Any(t => Crosses(from, to, t.A, t.B, t.C)), Is.False, $"a wall crosses {what} at {from}");
+
+            var door = MillWorks.Door(space);
+            foreach (var up in new[] { 0.4f, 1.2f, 2.0f })
+            {
+                var x = (door.From + door.To) * 0.5f;
+                Open("the front door", new Vector3(x, door.Bottom + up, -0.5f), new Vector3(x, door.Bottom + up, 1.0f));
+            }
+
+            var core = MillWorks.CoreX(space);
+            foreach (var doorway in MillWorks.CoreDoorways())
+            {
+                var d = (doorway.From + doorway.To) * 0.5f;
+                foreach (var up in new[] { 0.4f, 1.2f, 1.9f })
+                {
+                    Open("a doorway into the stair core", new Vector3(core - 0.5f, doorway.Bottom + up, d), new Vector3(core + 0.6f, doorway.Bottom + up, d));
+                }
+            }
+
+            Vector3 Middle(Hole h, float x, float d, bool along) =>
+                along ? new Vector3(x, (h.Bottom + h.Top) * 0.5f, (h.From + h.To) * 0.5f) : new Vector3((h.From + h.To) * 0.5f, (h.Bottom + h.Top) * 0.5f, d);
+            foreach (var window in MillWorks.FrontWindows(space))
+            {
+                var m = Middle(window, 0f, 0f, along: false);
+                Open("a front window", m - new Vector3(0f, 0f, 0.5f), m + new Vector3(0f, 0f, 0.5f));
+            }
+
+            foreach (var window in MillWorks.BackWindows(space))
+            {
+                var m = Middle(window, 0f, space.Depth, along: false);
+                Open("a back window", m - new Vector3(0f, 0f, 0.5f), m + new Vector3(0f, 0f, 0.5f));
+            }
+
+            foreach (var window in MillWorks.LeftWindows(space))
+            {
+                var m = Middle(window, 0f, 0f, along: true);
+                Open("a left window", m - new Vector3(0.5f, 0f, 0f), m + new Vector3(0.5f, 0f, 0f));
+            }
+
+            foreach (var window in MillWorks.RightWindows(space))
+            {
+                var m = Middle(window, space.Width, 0f, along: true);
+                Open("a right window", m - new Vector3(0.5f, 0f, 0f), m + new Vector3(0.5f, 0f, 0f));
+            }
+        }
+
+        // Whether the segment from p to q passes through the triangle (a, b, c).
+        private static bool Crosses(Vector3 p, Vector3 q, Vector3 a, Vector3 b, Vector3 c)
+        {
+            var direction = q - p;
+            var e1 = b - a;
+            var e2 = c - a;
+            var h = Vector3.Cross(direction, e2);
+            var det = Vector3.Dot(e1, h);
+            if (Math.Abs(det) < 1e-9f)
+            {
+                return false;
+            }
+
+            var s = p - a;
+            var u = Vector3.Dot(s, h) / det;
+            var k = Vector3.Cross(s, e1);
+            var v = Vector3.Dot(direction, k) / det;
+            var t = Vector3.Dot(e2, k) / det;
+            return u >= 0f && v >= 0f && u + v <= 1f && t >= 0f && t <= 1f;
+        }
+
+        [Test]
         public void ItHasItsOwnAlarm_WithAKeypadInsideTheDoor_AndAYellowBellBox()
         {
             var alarm = GeneratedVillage.Town.Alarms.Single(a => a.Name == MillWorks.Name);

@@ -142,6 +142,15 @@ namespace Townscape.Generation.Buildings.Interiors
             yield return new Hole(d - 0.45f, f[2] + 0.85f, d + 0.45f, f[2] + 2.35f);
         }
 
+        /// <summary>The doorways through the stair core's wall (back and up), one on each floor.</summary>
+        public static IEnumerable<Hole> CoreDoorways()
+        {
+            var f = Floors();
+            yield return new Hole(FrontDoorway.From, f[0], FrontDoorway.To, f[0] + DoorwayHeight);
+            yield return new Hole(CentreDoorway.From, f[1], CentreDoorway.To, f[1] + DoorwayHeight);
+            yield return new Hole(FrontDoorway.From, f[2], FrontDoorway.To, f[2] + DoorwayHeight);
+        }
+
         /// <summary>
         /// The ways through the building that furniture must keep clear, in <see cref="UnitSpace"/>
         /// metres on the floor at <c>Floor</c>.
@@ -185,12 +194,16 @@ namespace Townscape.Generation.Buildings.Interiors
             CafeAndFlat.Slabs(space, builder, f[2], left, Shell, right, back, Hole(flights[1]));
             space.Ceiling(builder, left, Shell, right, back, ceiling, plaster);
 
-            // The inside of the stone walls, with every window and the door cut out.
+            // The inside of the stone walls, a floor at a time (the holes in a wall have to sit
+            // side by side, not one above another), with every window and the door cut out.
             var front = FrontWindows(space).Append(Door(space)).ToArray();
-            space.WallAcross(builder, Shell, left, right, f[0], ceiling, true, plaster, front);
-            space.WallAcross(builder, back, left, right, f[0], ceiling, false, plaster, BackWindows(space).ToArray());
-            space.WallAlong(builder, left, Shell, back, f[0], ceiling, true, plaster, LeftWindows(space).ToArray());
-            space.WallAlong(builder, right, Shell, back, f[0], ceiling, false, plaster, RightWindows(space).ToArray());
+            foreach (var (y0, y1) in Storeys(f, ceiling))
+            {
+                space.WallAcross(builder, Shell, left, right, y0, y1, true, plaster, Within(front, y0, y1));
+                space.WallAcross(builder, back, left, right, y0, y1, false, plaster, Within(BackWindows(space), y0, y1));
+                space.WallAlong(builder, left, Shell, back, y0, y1, true, plaster, Within(LeftWindows(space), y0, y1));
+                space.WallAlong(builder, right, Shell, back, y0, y1, false, plaster, Within(RightWindows(space), y0, y1));
+            }
             foreach (var window in FrontWindows(space))
             {
                 CafeAndFlat.WindowBoard(space, builder, window, Shell, 1f);
@@ -219,6 +232,19 @@ namespace Townscape.Generation.Buildings.Interiors
             context.AlarmCentres.Add(centre);
         }
 
+        // Each floor's height, from its floor to the next floor up (or the top ceiling).
+        private static IEnumerable<(float Y0, float Y1)> Storeys(float[] f, float ceiling)
+        {
+            for (var i = 0; i < f.Length; i++)
+            {
+                yield return (f[i], i + 1 < f.Length ? f[i + 1] : ceiling);
+            }
+        }
+
+        // The holes that fall between y0 and y1.
+        private static Hole[] Within(IEnumerable<Hole> holes, float y0, float y1) =>
+            holes.Where(h => h.Bottom >= y0 - 1e-3f && h.Top <= y1 + 1e-3f).ToArray();
+
         private static float Middle(UnitSpace space) => CoreX(space) + Thin + ((CoreWidth - Thin) * 0.5f);
 
         private static (float X0, float D0, float X1, float D1) Hole(StairFlight flight) => (flight.X0, flight.NearD, flight.X1, flight.FarD);
@@ -240,15 +266,13 @@ namespace Townscape.Generation.Buildings.Interiors
             var inside = core + Thin;
             var middle = Middle(space);
             var plaster = SurfaceMaterial.Interior;
-            var doorways = new[]
-            {
-                new Hole(FrontDoorway.From, f[0], FrontDoorway.To, f[0] + DoorwayHeight),
-                new Hole(CentreDoorway.From, f[1], CentreDoorway.To, f[1] + DoorwayHeight),
-                new Hole(FrontDoorway.From, f[2], FrontDoorway.To, f[2] + DoorwayHeight),
-            };
+            var doorways = CoreDoorways().ToArray();
 
-            space.WallAlong(builder, core, Shell, space.Depth - Shell, f[0], ceiling, false, plaster, doorways);
-            space.WallAlong(builder, inside, Shell, space.Depth - Shell, f[0], ceiling, true, plaster, doorways);
+            foreach (var (y0, y1) in Storeys(f, ceiling))
+            {
+                space.WallAlong(builder, core, Shell, space.Depth - Shell, y0, y1, false, plaster, Within(doorways, y0, y1));
+                space.WallAlong(builder, inside, Shell, space.Depth - Shell, y0, y1, true, plaster, Within(doorways, y0, y1));
+            }
             foreach (var doorway in doorways)
             {
                 space.Ceiling(builder, core, doorway.From, inside, doorway.To, doorway.Top, plaster);
