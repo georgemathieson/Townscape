@@ -132,6 +132,9 @@ namespace Townscape.Simulation.Security
 
         public bool EthernetConnected { get; private set; } = true;
 
+        /// <summary>Whether the building's broadband (the router the network cable goes to) is working.</summary>
+        public bool InternetUp { get; private set; } = true;
+
         /// <summary>The bell box's power is wired the wrong way round.</summary>
         public bool BellReversed { get; private set; }
 
@@ -172,7 +175,7 @@ namespace Townscape.Simulation.Security
                 var faults = AlarmFaults.None;
                 faults |= MainsConnected ? AlarmFaults.None : AlarmFaults.Mains;
                 faults |= BatteryConnected && BatteryLeft > 0f ? AlarmFaults.None : AlarmFaults.Battery;
-                faults |= EthernetConnected ? AlarmFaults.None : AlarmFaults.Comms;
+                faults |= EthernetConnected && InternetUp ? AlarmFaults.None : AlarmFaults.Comms;
                 faults |= FuseBlown || BellReversed ? AlarmFaults.Bell : AlarmFaults.None;
                 return faults;
             }
@@ -298,6 +301,9 @@ namespace Townscape.Simulation.Security
         public void ConnectBattery(bool connected) => Repower(() => BatteryConnected = connected);
 
         public void ConnectEthernet(bool connected) => EthernetConnected = connected;
+
+        /// <summary>The building's broadband has come up or gone down: without it the panel can't report.</summary>
+        public void ConnectInternet(bool up) => InternetUp = up;
 
         /// <summary>Wires the bell box's power the wrong way round (or back): with power on, the fuse blows at once.</summary>
         public void ReverseBell(bool reversed)

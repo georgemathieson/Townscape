@@ -60,8 +60,21 @@ int MaterialFor(SurfaceMaterial material)
     return materials.Count - 1;
 }
 
-// Doors that open are built apart from their buildings; show them hanging shut.
-foreach (var generated in town.Meshes.Concat(town.Doors.Select(door => new GeneratedMesh(door.ClosedLeaf(), MeshCategory.Building))))
+// Doors that open are built apart from their buildings: each is exported hanging shut and
+// swung open, and page.html shows the open one only in views that ask for it.
+var doorMeshes = new Dictionary<MeshData, (string Door, bool Open)>();
+var leaves = new List<GeneratedMesh>();
+foreach (var door in town.Doors)
+{
+    foreach (var open in new[] { false, true })
+    {
+        var leaf = open ? door.LeafAt(door.OpenDegrees) : door.ClosedLeaf();
+        doorMeshes[leaf] = (door.Name, open);
+        leaves.Add(new GeneratedMesh(leaf, MeshCategory.Building));
+    }
+}
+
+foreach (var generated in town.Meshes.Concat(leaves))
 {
     var mesh = generated.Mesh;
     var positions = new float[mesh.VertexCount * 3];
@@ -130,7 +143,8 @@ foreach (var generated in town.Meshes.Concat(town.Doors.Select(door => new Gener
     }
 
     meshes.Add($"{{\"name\":\"{mesh.Name}\",\"primitives\":[{string.Join(",", primitives)}]}}");
-    nodes.Add($"{{\"name\":\"{mesh.Name}\",\"mesh\":{meshes.Count - 1},\"extras\":{{\"category\":\"{generated.Category}\"}}}}");
+    var door = doorMeshes.TryGetValue(mesh, out var leafOf) ? $",\"door\":\"{leafOf.Door}\",\"open\":{(leafOf.Open ? "true" : "false")}" : string.Empty;
+    nodes.Add($"{{\"name\":\"{mesh.Name}\",\"mesh\":{meshes.Count - 1},\"extras\":{{\"category\":\"{generated.Category}\"{door}}}}}");
 }
 
 var nodeIndices = new List<string>();

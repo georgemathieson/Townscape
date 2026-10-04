@@ -66,5 +66,21 @@ namespace Townscape.Generation
         /// <summary>The leaf where it hangs shut, in town coordinates (for previews and tests).</summary>
         public MeshData ClosedLeaf() =>
             new MeshData(Name, Leaf.Positions.Select(p => p + Hinge).ToArray(), Leaf.Normals, Leaf.Submeshes) { Uvs = Leaf.Uvs };
+
+        /// <summary>The leaf swung open by <paramref name="degrees"/>, in town coordinates (for previews).</summary>
+        public MeshData LeafAt(float degrees)
+        {
+            var angle = degrees * MathF.PI / 180f;
+            var (cos, sin) = (MathF.Cos(angle), MathF.Sin(angle));
+            Vector3 Turn(Vector3 v)
+            {
+                var along = Vector3.Dot(v, Along);
+                var inward = Vector3.Dot(v, Inward);
+                var rest = v - (Along * along) - (Inward * inward);
+                return rest + (Along * ((along * cos) - (inward * sin))) + (Inward * ((along * sin) + (inward * cos)));
+            }
+
+            return new MeshData(Name, Leaf.Positions.Select(p => Turn(p) + Hinge).ToArray(), Leaf.Normals.Select(Turn).ToArray(), Leaf.Submeshes) { Uvs = Leaf.Uvs };
+        }
     }
 }

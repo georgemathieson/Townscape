@@ -3,6 +3,7 @@ using Townscape.Generation;
 using Townscape.Generation.Buildings.Interiors;
 using Townscape.Generation.Geometry;
 using Townscape.Runtime.Rendering;
+using Townscape.Runtime.UI;
 using Townscape.Runtime.Walking;
 using Townscape.Simulation.Audio;
 using Townscape.Simulation.Security;
@@ -24,7 +25,7 @@ namespace Townscape.Runtime.Security
     /// something you do inside the town, not a setting.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed partial class AlarmSystem : MonoBehaviour
+    public sealed partial class AlarmSystem : MonoBehaviour, IScreenWindow
     {
         private const float ChestHeight = 1.2f;
         private const float MovingSpeed = 0.25f;

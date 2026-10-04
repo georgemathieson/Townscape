@@ -24,6 +24,9 @@ namespace Townscape.Generation.Layout
         public const float WaterLevel = -0.9f;
         public const float GrassLevel = 0.1f;
 
+        /// <summary>The label on the fibre cabinet beside the phone box.</summary>
+        public const string FibreCabinetName = "FTTP 1";
+
         public TownLayout Create()
         {
             // Straight and due south for 32 m either side of the bridge, so the arch sits square.
@@ -110,6 +113,7 @@ namespace Townscape.Generation.Layout
             var props = new List<PlacedProp>
             {
                 new PlacedProp(new PhoneBox(), new Vector2(-12.5f, 9f), new Vector2(0f, -1f)),
+                new PlacedProp(new FibreCabinet(FibreCabinetName), new Vector2(-11.05f, 8.95f), new Vector2(0f, -1f)),
                 new PlacedProp(new Bench(), new Vector2(-8.6f, 11f), new Vector2(1f, 0f)),
                 new PlacedProp(new PillarBox(), OnHighStreet(44.5f, -(high.HalfWidth + 0.45f)), TowardsRoad(44.5f, -(high.HalfWidth + 0.45f))),
                 new PlacedProp(new BusStop(), OnHighStreet(-78f, -(high.HalfWidth + 0.35f)), TowardsRoad(-78f, -(high.HalfWidth + 0.35f))),

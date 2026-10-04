@@ -151,6 +151,7 @@ namespace Townscape.Generation.Buildings.Interiors
             Banisters(space, builder, flights, f);
             Attic(context, space, design, roof, f[3], dormer, roofWindows);
             Alarm(context, space, footprint, f, wallTop);
+            Broadband(context, space, f);
         }
 
         // ---- Ground floor -------------------------------------------------------------------
@@ -828,6 +829,21 @@ namespace Townscape.Generation.Buildings.Interiors
                 new[] { AlarmFittings.Keypad(context, space, HallWall, -1f, KeypadD, f[0] + KeypadHeight) },
                 AlarmFittings.ControlBox(context, space, right, -1f, 2f, f[3] + 1.15f),
                 AlarmFittings.BellBox(context, front, front.Width / 3f, windowTop - 0.02f, 0f, SurfaceMaterial.Porcelain)));
+        }
+
+        // Each has its own fibre from the street cabinet: 500 megabits for the café, 900 for the
+        // flat, both ways. The café's comes into the storeroom, where its router sits by the
+        // alarm's control box, with a cable across to it; the flat's comes into the living room,
+        // on the wall past the bookcase.
+        private static void Broadband(BuildContext context, UnitSpace space, float[] f)
+        {
+            var y = f[0] + 1.55f;
+            var shop = BroadbandFittings.Fit(context, space, ShopAlarm, 500f, CafeLeft, 1f, f[0], y, 7.05f, 7.42f);
+            var boxD = ((StoreWall + Thin + space.Depth - FrontFace) * 0.5f) - (AlarmFittings.ControlBoxSize * 0.5f);
+            var routerEdge = 7.42f + (BroadbandFittings.RouterWidth * 0.5f);
+            space.Box(context.Builder, CafeLeft, shop.Router.Position.Y - 0.054f, routerEdge, CafeLeft + 0.012f, shop.Router.Position.Y - 0.046f, boxD, SurfaceMaterial.PaintBlue);
+
+            BroadbandFittings.Fit(context, space, FlatAlarm, 900f, StripB + Thin, 1f, f[1], f[1] + 1.3f, 2.75f, 3.15f);
         }
 
         // ---- Stairs and floors --------------------------------------------------------------

@@ -76,6 +76,26 @@ off the mains and the panel runs on its battery for ten minutes before it dies (
 sounds on its own battery for two). Swap the bell box's + and − and its fuse blows: it won't go off
 again, and the keypad shows a fault, until it's wired right and given a new fuse.
 
+### The phone box and the fibre cabinet
+
+| | |
+|---|---|
+| ![The red phone box lit from inside at dusk, with a dark green cabinet labelled FTTP 1 beside it](docs/images/gallery/phone-box-dusk.jpg) | ![Inside the phone box: the payphone on the back wall, a 999 card and the directories](docs/images/gallery/phone-box-inside-night.jpg) |
+| The phone box, and the fibre cabinet beside it | Step inside: the payphone, the 999 card and the directories |
+| ![The cabinet's double doors open on a rack of kit and a little screen](docs/images/gallery/fibre-cabinet-day.jpg) | ![An ONT and a router on the café storeroom wall, cabled to the alarm's control box](docs/images/gallery/kettle-broadband-day.jpg) |
+| Inside the cabinet: patch tray, switch, router, UPS, and the screen | The café's ONT and router, by its alarm's control box |
+
+The phone box's door opens (press E) and you can step inside. The green cabinet beside it carries
+fibre broadband to the café and the flat, each of which has an ONT (where the fibre ends) and a
+router on the wall. Open the cabinet's doors and press E on the kit inside:
+- **Patch tray:** unplug a customer and the lights in their building blink red (and their burglar
+  alarm's keypad shows a comms fault); plug them back in and the lights blink while the line gets
+  back in sync, about eight seconds.
+- **Screen:** test a port's speed. Now and then something goes wrong, one thing at a time: a dirty
+  connector, a fibre bent too tight in the tray, a failing switch port, or an overloaded uplink.
+  The light level, speeds, ping, loss and port errors tell them apart (the card inside the door
+  says how), and naming the fault rightly gets it fixed.
+
 *Rendered by [`tools/preview`](tools/preview/README.md), which draws the generated town with three.js
 outside Unity. In Unity the rain, snow and smoke move, the water ripples and the lightning flickers.*
 
@@ -127,8 +147,9 @@ puts them back. Everything also has a key:
 | C | Open or close Fellside Coffee |
 | V | Walk about at eye level, or go back to flying |
 | Space | Jump (walking) |
-| E or left click | Open or close what the dot in the middle is on (walking), or bring up an alarm's keypad or control box |
+| E or left click | Open or close what the dot in the middle is on (walking), or bring up an alarm's keypad or control box, or the fibre cabinet's kit |
 | 0–9, Enter, Esc | On an alarm keypad: type the code, set or unset, close |
+| Esc | Close the fibre cabinet's window |
 
 ## Fellside Coffee
 

@@ -8,7 +8,7 @@ namespace Townscape.Generation.Dressing
     {
         public void Generate(TownContext context, StructureSink sink)
         {
-            var dressing = new DressingContext(context, sink.Anchors);
+            var dressing = new DressingContext(context, sink.Anchors, sink.Doors, sink.Cabinets);
             var rules = context.Layout.Dressing;
             for (var i = 0; i < rules.Count; i++)
             {
