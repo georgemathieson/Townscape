@@ -21,6 +21,7 @@ namespace Townscape.Generation.Structures
         private readonly List<TownAlarm> _alarms = new List<TownAlarm>();
         private readonly List<TownBroadband> _broadband = new List<TownBroadband>();
         private readonly List<TownCabinet> _cabinets = new List<TownCabinet>();
+        private readonly List<TownAlarmCentre> _alarmCentres = new List<TownAlarmCentre>();
 
         public IReadOnlyList<GeneratedMesh> Meshes => _meshes;
 
@@ -48,6 +49,11 @@ namespace Townscape.Generation.Structures
         public ICollection<TownCabinet> Cabinets => _cabinets;
 
         public IReadOnlyList<TownCabinet> CabinetList => _cabinets;
+
+        /// <summary>Alarm receiving centres, where the alarms report.</summary>
+        public ICollection<TownAlarmCentre> AlarmCentres => _alarmCentres;
+
+        public IReadOnlyList<TownAlarmCentre> AlarmCentreList => _alarmCentres;
 
         public void AddMesh(MeshData mesh, MeshCategory category)
         {

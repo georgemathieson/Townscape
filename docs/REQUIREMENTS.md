@@ -157,7 +157,17 @@ before work started; later changes should be recorded here too.
     now and then, one at a time (a dirty connector, a fibre bent too tight, a failing switch port, an
     overloaded uplink): speed tests from the screen show the light level, speeds, ping, loss and port
     errors, and naming the fault rightly gets it fixed. The phone box's door opens and you can step
-    inside, where there's a payphone, a 999 card and the directories, lit at night. *(this pull request)*
+    inside, where there's a payphone, a 999 card and the directories, lit at night. *(done)*
+14. **Mill Works and the alarm receiving centre:** the old mill becomes Mill Works, a co-working
+    office you can walk into: reception, hot desks and a kitchenette on the ground floor, the
+    village's alarm receiving centre (ARC) on the first, and a meeting room on the second, up a stair
+    at one end. It has its own burglar alarm and its own fibre line from the street cabinet. Every
+    alarm reports to the ARC over its building's broadband (so a line unplugged at the cabinet loses
+    its signal). At any operator's console: each site's state and faults, the incidents its alarms
+    open (the room chimes until one's acknowledged), sending a guard (who unsets the alarm if all's
+    well), calling the police (who only come to a confirmed alarm, or once a guard has found a
+    break-in), closing incidents, and a log. The guard and police are timed for now, ready for
+    people to walk the streets later. *(this pull request)*
 
 ## Fellside Coffee
 

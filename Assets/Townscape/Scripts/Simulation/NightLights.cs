@@ -71,6 +71,7 @@ namespace Townscape.Simulation
 
         // The canopy over the pumps is lit a cool, clean white, unlike everything else in the village.
         private static readonly Rgb CanopyWhite = new Rgb(0.88f, 0.94f, 1.0f);
+        private static readonly Rgb OfficeWhite = new Rgb(0.95f, 0.97f, 1.0f);
 
         // String-light bulbs: red, green, orange, yellow, blue. Nearly pure and not too bright, because ACES
         // tone mapping turns a bright colour with a little of the other channels in it into a pastel.
@@ -168,6 +169,9 @@ namespace Townscape.Simulation
                 case AnchorKind.RoomLight:
                     spec = new LightSpec(HomeWarmth[0], 5.5f, 2.6f, 0.3f);
                     return true;
+                case AnchorKind.OfficeLight:
+                    spec = new LightSpec(OfficeWhite, 5.5f, 2.4f, 0.3f);
+                    return true;
                 default:
                     spec = default;
                     return false;
@@ -190,6 +194,8 @@ namespace Townscape.Simulation
                 case AnchorKind.LitSign:
                     return SmoothStepDarkness(darkness);
                 case AnchorKind.CanopyLight:
+                    return SmoothStepDarkness(darkness);
+                case AnchorKind.OfficeLight:
                     return SmoothStepDarkness(darkness);
                 case AnchorKind.RoomLight:
                     // Like a home window, minus the television group: on as it gets dark, off at bedtime.

@@ -31,7 +31,7 @@ namespace Townscape.Generation.Buildings.Interiors
         // Inner faces of the shell.
         private const float Side = 0.15f;
         private const float FrontFace = 0.16f;
-        private const float Slab = 0.12f;
+        internal const float Slab = 0.12f;
 
         // The stair strips up the left: A next to the party wall, B beside it.
         private const float StripA = 1.35f;
@@ -851,7 +851,7 @@ namespace Townscape.Generation.Buildings.Interiors
         private static (float X0, float D0, float X1, float D1) Hole(StairFlight flight) => (flight.X0, flight.NearD, flight.X1, flight.FarD);
 
         // A floor with the ceiling of the room below under it, and the sides of a stairwell.
-        private static void Slabs(UnitSpace space, MeshBuilder builder, float y, float x0, float d0, float x1, float d1, (float X0, float D0, float X1, float D1)? hole)
+        internal static void Slabs(UnitSpace space, MeshBuilder builder, float y, float x0, float d0, float x1, float d1, (float X0, float D0, float X1, float D1)? hole)
         {
             Floor(space, builder, y, x0, d0, x1, d1, hole, SurfaceMaterial.InteriorFloor);
             foreach (var (a0, b0, a1, b1) in Around(x0, d0, x1, d1, hole))
@@ -870,7 +870,7 @@ namespace Townscape.Generation.Buildings.Interiors
             }
         }
 
-        private static void Floor(UnitSpace space, MeshBuilder builder, float y, float x0, float d0, float x1, float d1, (float X0, float D0, float X1, float D1)? hole, SurfaceMaterial material)
+        internal static void Floor(UnitSpace space, MeshBuilder builder, float y, float x0, float d0, float x1, float d1, (float X0, float D0, float X1, float D1)? hole, SurfaceMaterial material)
         {
             foreach (var (a0, b0, a1, b1) in Around(x0, d0, x1, d1, hole))
             {
@@ -879,7 +879,7 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         // The rectangle with the hole cut out, as up to four rectangles.
-        private static IEnumerable<(float, float, float, float)> Around(float x0, float d0, float x1, float d1, (float X0, float D0, float X1, float D1)? hole)
+        internal static IEnumerable<(float, float, float, float)> Around(float x0, float d0, float x1, float d1, (float X0, float D0, float X1, float D1)? hole)
         {
             if (!hole.HasValue)
             {
@@ -919,7 +919,7 @@ namespace Townscape.Generation.Buildings.Interiors
             Rail(space, builder, StripA, UpperFoot, StripA, Turn, f[3]);
         }
 
-        private static void Rail(UnitSpace space, MeshBuilder builder, float x0, float d0, float x1, float d1, float floor)
+        internal static void Rail(UnitSpace space, MeshBuilder builder, float x0, float d0, float x1, float d1, float floor)
         {
             const float half = 0.03f;
             space.Box(builder, Math.Min(x0, x1) - half, floor, Math.Min(d0, d1) - half, Math.Max(x0, x1) + half, floor + 0.9f, Math.Max(d0, d1) + half, SurfaceMaterial.PaintWhite);
@@ -959,7 +959,7 @@ namespace Townscape.Generation.Buildings.Interiors
 
         // A wooden board along the bottom of a window, inside, standing out into the room from a
         // wall at depth wallD (towards the back when into is 1, the front when it is -1).
-        private static void WindowBoard(UnitSpace space, MeshBuilder builder, Hole window, float wallD, float into)
+        internal static void WindowBoard(UnitSpace space, MeshBuilder builder, Hole window, float wallD, float into)
         {
             var d0 = wallD - (0.012f * into);
             var d1 = wallD + (0.1f * into);
@@ -969,7 +969,7 @@ namespace Townscape.Generation.Buildings.Interiors
         // A light hanging from the ceiling on a cord, or (flush) a glass dome fixed to it, for
         // landings where you pass close under it. Either way it goes in the fittings mesh, which
         // nobody bumps into.
-        private static void Light(BuildContext context, UnitSpace space, float x, float ceiling, float d, AnchorKind kind, bool flush = false)
+        internal static void Light(BuildContext context, UnitSpace space, float x, float ceiling, float d, AnchorKind kind, bool flush = false)
         {
             var builder = context.Fittings;
             if (flush)
@@ -989,7 +989,7 @@ namespace Townscape.Generation.Buildings.Interiors
 
         // ---- Furniture ------------------------------------------------------------------------
 
-        private static void Tiles(UnitSpace space, MeshBuilder builder, float y, float x0, float d0, float x1, float d1)
+        internal static void Tiles(UnitSpace space, MeshBuilder builder, float y, float x0, float d0, float x1, float d1)
         {
             const float size = 0.5f;
             for (var x = x0; x < x1 - 1e-3f; x += size)
@@ -1012,7 +1012,7 @@ namespace Townscape.Generation.Buildings.Interiors
             space.Floor(builder, x0, d0, x1, d1, y1, glass);
         }
 
-        private static void Table(UnitSpace space, MeshBuilder builder, float x, float floor, float d, float radius)
+        internal static void Table(UnitSpace space, MeshBuilder builder, float x, float floor, float d, float radius)
         {
             space.Round(builder, x, floor, d, 0.2f, 0.03f, SurfaceMaterial.Iron, 8);
             space.Round(builder, x, floor, d, 0.04f, 0.72f, SurfaceMaterial.Iron, 6);
@@ -1020,7 +1020,7 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         // A chair whose seat faces (faceX, faceD); its back is on the other side.
-        private static void Chair(UnitSpace space, MeshBuilder builder, float x, float floor, float d, float faceX, float faceD, SurfaceMaterial material)
+        internal static void Chair(UnitSpace space, MeshBuilder builder, float x, float floor, float d, float faceX, float faceD, SurfaceMaterial material)
         {
             const float half = 0.21f;
             space.Box(builder, x - half, floor + 0.43f, d - half, x + half, floor + 0.47f, d + half, material);
@@ -1037,7 +1037,7 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         // A sofa across the room with its back on the far side (d1).
-        private static void Sofa(UnitSpace space, MeshBuilder builder, float x0, float x1, float floor, float d0, float d1, SurfaceMaterial fabric)
+        internal static void Sofa(UnitSpace space, MeshBuilder builder, float x0, float x1, float floor, float d0, float d1, SurfaceMaterial fabric)
         {
             space.Box(builder, x0, floor, d0, x1, floor + 0.42f, d1, fabric);
             space.Box(builder, x0, floor + 0.42f, d1 - 0.22f, x1, floor + 0.85f, d1, fabric);
@@ -1048,7 +1048,7 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         // An armchair turned to face the room's centre, its back to the right-hand wall.
-        private static void Armchair(UnitSpace space, MeshBuilder builder, float x, float floor, float d, SurfaceMaterial fabric)
+        internal static void Armchair(UnitSpace space, MeshBuilder builder, float x, float floor, float d, SurfaceMaterial fabric)
         {
             space.Box(builder, x - 0.4f, floor, d - 0.4f, x + 0.4f, floor + 0.42f, d + 0.4f, fabric);
             space.Box(builder, x + 0.2f, floor + 0.42f, d - 0.4f, x + 0.4f, floor + 0.9f, d + 0.4f, fabric);
@@ -1057,7 +1057,7 @@ namespace Townscape.Generation.Buildings.Interiors
         }
 
         // Shelves of books against the left wall of the rooms (at x), from d0 to d1.
-        private static void Bookcase(BuildContext context, UnitSpace space, float x, float floor, float d0, float d1, float height)
+        internal static void Bookcase(BuildContext context, UnitSpace space, float x, float floor, float d0, float d1, float height)
         {
             var builder = context.Builder;
             space.Box(builder, x, floor, d0, x + 0.32f, floor + 0.03f, d1, SurfaceMaterial.Timber);
